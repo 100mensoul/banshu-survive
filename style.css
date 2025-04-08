@@ -1,5 +1,3 @@
-/* style.css に貼るスタイル命令（コピーしてOK） */
-
 body {
   font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
   background-color: #fefefe;
@@ -40,4 +38,41 @@ footer {
   padding: 1rem;
   font-size: 0.9rem;
   border-top: 1px solid #ccc;
+}
+
+.hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background-image: url('himeji-night.jpg'); /* ← ここを画像ファイル名に合わせてね */
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-align: center;
+}
+
+.hero-overlay {
+  background-color: rgba(0, 0, 0, 0.5); /* 黒の半透明で読みやすく */
+  padding: 2rem;
+  border-radius: 1rem;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.catch {
+  font-size: 1.2rem;
+  line-height: 1.6;
 }
