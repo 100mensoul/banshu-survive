@@ -128,4 +128,23 @@ footer {
   text-decoration: underline;
 }
 
+.nav-bar {
+  background-color: #ffe600; /* 阪神タイガースっぽい黄色 */
+  color: #000;
+  text-align: center;
+  font-weight: bold;
+  padding: 1rem 0;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+}
+
+.nav-bar a {
+  text-decoration: none;
+  color: #000;
+  margin: 0 0.5rem;
+}
+
+.nav-bar a:hover {
+  text-decoration: underline;
+}
 
