@@ -41,13 +41,12 @@ footer {
 }
 
 .hero {
+  position: relative;
   background-image: url("images/main-visual.jpg");
-  background-size: cover;
-  background-position: center top;  /* ←ここを調整 */
-  background-repeat: no-repeat;     /* ← 念のためリピート防止 */
-  height: 100vh;
-  margin: 0;                        /* ← 念のためゼロに */
-  padding: 0;
+  background-size: 100% auto;
+  background-repeat: no-repeat;
+  background-position: center top;
+  min-height: 100vh;
 }
 
 
