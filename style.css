@@ -55,17 +55,11 @@ footer {
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
-  background-color: rgba(0, 0, 0, 0.4); /* 半透明の背景（任意） */
-  padding: 2rem;
-  border-radius: 0.5rem;
-}
-
-
-.hero-overlay {
-  background-color: rgba(0, 0, 0, 0.5); /* 黒の半透明で読みやすく */
+  background-color: rgba(0, 0, 0, 0.5); /* ← ← ここに統一！ */
   padding: 2rem;
   border-radius: 1rem;
 }
+
 
 .hero h1 {
   font-size: 3rem;
