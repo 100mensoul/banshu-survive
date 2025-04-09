@@ -97,5 +97,35 @@ footer {
   /* 読みやすくするための影（任意） */
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
 }
+.main-nav {
+  background-color: #fff9dc;
+  border-top: 2px solid #ccc;
+  border-bottom: 2px solid #ccc;
+  text-align: center;
+  padding: 0.5rem 0;
+  font-weight: bold;
+  font-size: 1rem;
+  font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+}
+
+.main-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.main-nav li {
+  display: inline;
+  margin: 0 1rem;
+}
+
+.main-nav a {
+  color: #333;
+  text-decoration: none;
+}
+
+.main-nav a:hover {
+  text-decoration: underline;
+}
 
 
