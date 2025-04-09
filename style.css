@@ -77,3 +77,18 @@ footer {
   font-size: 1.2rem;
   line-height: 1.6;
 }
+.catch-right {
+  position: absolute;
+  top: 50%;
+  right: 2%;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-size: 2rem;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.4); /* 読みやすさ調整用 */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  line-height: 1.8;
+}
