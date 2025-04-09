@@ -43,20 +43,7 @@
   </div>
 </section>
 
-  <button id="toggle-scroll">一時停止</button>
-
-  <script>
-  const toggleButton = document.getElementById("toggle-scroll");
-  const scrollWrapper = document.querySelector(".scroll-wrapper");
-
-  let isPaused = false;
-
-  toggleButton.addEventListener("click", () => {
-    isPaused = !isPaused;
-    scrollWrapper.style.animationPlayState = isPaused ? "paused" : "running";
-    toggleButton.textContent = isPaused ? "再開" : "一時停止";
-  });
-</script>
+ 
 
   <!-- フッター -->
   <footer>
