@@ -90,6 +90,39 @@ body {
   margin-top: 0;
 }
 
+<script>
+  const container = document.getElementById('scrollContainer');
+  let scrollSpeed = 0.5; // 自動スクロールの速度
+  let isUserInteracting = false;
+
+  let autoScroll = setInterval(() => {
+    if (!isUserInteracting) {
+      container.scrollLeft += scrollSpeed;
+    }
+  }, 16); // 60fps 相当
+
+  container.addEventListener('mousedown', () => {
+    isUserInteracting = true;
+  });
+
+  container.addEventListener('touchstart', () => {
+    isUserInteracting = true;
+  });
+
+  container.addEventListener('mouseup', () => {
+    isUserInteracting = false;
+  });
+
+  container.addEventListener('touchend', () => {
+    isUserInteracting = false;
+  });
+
+  container.addEventListener('scroll', () => {
+    // 動かした後に自動で再スタートさせたい場合はここでタイマーを組む
+  });
+</script>
+
+
 
 
 /* フッター */
@@ -153,36 +186,4 @@ footer {
   border-radius: 6px;
   box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
 }
-
-<script>
-  const container = document.getElementById('scrollContainer');
-  let scrollSpeed = 0.5; // 自動スクロールの速度
-  let isUserInteracting = false;
-
-  let autoScroll = setInterval(() => {
-    if (!isUserInteracting) {
-      container.scrollLeft += scrollSpeed;
-    }
-  }, 16); // 60fps 相当
-
-  container.addEventListener('mousedown', () => {
-    isUserInteracting = true;
-  });
-
-  container.addEventListener('touchstart', () => {
-    isUserInteracting = true;
-  });
-
-  container.addEventListener('mouseup', () => {
-    isUserInteracting = false;
-  });
-
-  container.addEventListener('touchend', () => {
-    isUserInteracting = false;
-  });
-
-  container.addEventListener('scroll', () => {
-    // 動かした後に自動で再スタートさせたい場合はここでタイマーを組む
-  });
-</script>
 
