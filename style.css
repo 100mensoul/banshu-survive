@@ -13,7 +13,6 @@ body {
 
 .hero {
   background-image: url("images/main-visual.jpg");
-  background-size: cover;                /* 常に画面をカバー */
   background-position: center;           /* 画像の中央を表示 */
   background-repeat: no-repeat;
   width: 100%;
@@ -24,22 +23,25 @@ body {
   padding: 0;
 }
 
-
-.hero img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-
-
-
 @media screen and (max-width: 768px) {
   .hero {
     background-size: contain;
     background-position: center top;
   }
 }
+
+@media screen and (min-width: 769px) {
+  .hero {
+    background-size: contain;
+    background-position: center top;
+    background-repeat: no-repeat;
+  }
+}
+
+
+
+
+
 
 
 
