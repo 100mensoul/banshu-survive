@@ -81,40 +81,6 @@ body {
   margin-top: 0;
 }
 
-<script>
-  const container = document.getElementById('scrollContainer');
-  let scrollSpeed = 0.5; // 自動スクロールの速度
-  let isUserInteracting = false;
-
-  let autoScroll = setInterval(() => {
-    if (!isUserInteracting) {
-      container.scrollLeft += scrollSpeed;
-    }
-  }, 16); // 60fps 相当
-
-  container.addEventListener('mousedown', () => {
-    isUserInteracting = true;
-  });
-
-  container.addEventListener('touchstart', () => {
-    isUserInteracting = true;
-  });
-
-  container.addEventListener('mouseup', () => {
-    isUserInteracting = false;
-  });
-
-  container.addEventListener('touchend', () => {
-    isUserInteracting = false;
-  });
-
-  container.addEventListener('scroll', () => {
-    // 動かした後に自動で再スタートさせたい場合はここでタイマーを組む
-  });
-</script>
-
-
-
 
 /* フッター */
 footer {
@@ -126,55 +92,82 @@ footer {
 }
 
 /* --- 瓦版スクロールセクション --- */
-.scroll-wrapper {
-  position: relative;
-  padding: 20px;
-  background: url('placeholder.jpg'); /* 後で瓦版風背景に差し替え */
-  background-size: cover;
-  overflow: hidden;
-  border: 2px solid #3c2f1d;
-  font-family: serif;
+/* フォント：筆文字 */
+@import url('https://fonts.googleapis.com/css2?family=Yuji+Boku&display=swap');
+
+/* NEWSセクション見出し */
+.section-title {
+  font-family: 'Yuji Boku', serif;
+  font-size: 2.2rem;
+  text-align: center;
+  margin: 2rem 0 1rem;
+  color: #111;
+  letter-spacing: 0.1em;
+}
+.section-title .en {
+  font-size: 1rem;
+  margin-left: 0.5rem;
+  color: #666;
 }
 
-.scroll-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  background: rgba(255, 245, 220, 0.85);
-  padding: 10px;
-  z-index: 10;
-  border-bottom: 1px solid #bbb;
-}
-
-.scroll-title {
+/* ナビゲーションバーの整え */
+.nav-bar {
+  background-color: #ffe600;
+  color: #000;
   font-weight: bold;
-  font-size: 20px;
+  padding: 1rem 0.5rem;
+  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem;
+}
+.nav-bar a {
+  text-decoration: none;
+  color: #000;
+  font-size: 1rem;
+}
+.nav-bar a:hover {
+  text-decoration: underline;
 }
 
-.scroll-date {
-  font-size: 14px;
-}
-
-.scroll-container {
+/* 瓦版（テロップ） */
+.kawaraban-marquee {
+  background: url("images/washi-texture.jpg");
+  padding: 2rem 0;
   overflow-x: auto;
   white-space: nowrap;
-  cursor: grab;
+  border-top: 4px double #aaa;
+  border-bottom: 4px double #aaa;
 }
-
+.scroll-wrapper {
+  display: inline-block;
+  animation: scroll-right 30s linear infinite; /* ← 左→右に変更 */
+}
 .scroll-content {
-  display: inline-flex;
-  gap: 20px;
-  padding: 10px;
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+}
+.news-item {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-family: 'Yuji Boku', serif;
+  font-size: 1.5rem;
+  color: #111;
+  border-left: 2px dashed #ccc;
+  padding: 0 1rem;
+  background-color: rgba(255,255,255,0.85);
+  white-space: nowrap;
 }
 
-.news-item {
-  flex: 0 0 auto;
-  background: rgba(255,255,240,0.9);
-  border: 1px solid #ccc;
-  padding: 10px 20px;
-  border-radius: 6px;
-  box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+/* 左→右に流れるアニメーション */
+@keyframes scroll-right {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
