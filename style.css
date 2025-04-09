@@ -1,3 +1,10 @@
+.hero {
+  background-image: url("images/main-visual.jpg");
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  width: 100%;
+}
 /* 共通設定 */
 body {
   font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
