@@ -16,7 +16,7 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   width: 100%;
-  min-height: 100vh; /* ← heightよりmin-heightが良い */
+  min-height 100dvh; /* ← heightよりmin-heightが良い */
   display: flex;
   align-items: flex-end; /* ヒーロー内に何か置くとき下揃え */
 }
