@@ -84,11 +84,13 @@ footer {
   transform: translateY(-50%);
   writing-mode: vertical-rl;
   text-orientation: upright;
-  font-size: 2rem;
+  font-size: 2.4rem; /* 大きめに調整 */
   color: #fff;
-  background-color: rgba(0, 0, 0, 0.4); /* 読みやすさ調整用 */
-  padding: 1rem;
-  border-radius: 0.5rem;
   font-weight: bold;
-  line-height: 1.8;
+  line-height: 2.4; /* ゆとりを持たせる */
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6); /* 背景が暗いときの読みやすさアップ */
+  background: none; /* 背景なしにする */
+  padding: 0; /* パディング削除 */
+  border-radius: 0; /* ボーダーも不要に */
 }
+
