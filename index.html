@@ -67,5 +67,34 @@
     <p>© 2025 Banshu-Survive Project</p>
   </footer>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('.chat-form');
+    const messages = document.querySelector('.messages');
+    const nameInput = form.querySelectorAll('input')[0];
+    const messageInput = form.querySelectorAll('input')[1];
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault(); // ページリロード防止
+
+      const name = nameInput.value.trim() || '名無し'; // 空なら「名無し」
+      const message = messageInput.value.trim();
+
+      if (message !== '') {
+        const newMessage = document.createElement('p');
+        newMessage.innerHTML = `<strong>${name}：</strong> ${message}`;
+        messages.appendChild(newMessage);
+
+        // スクロールを一番下へ
+        messages.scrollTop = messages.scrollHeight;
+
+        // フォームをクリア
+        messageInput.value = '';
+      }
+    });
+  });
+</script>
+
+  
 </body>
 </html>
