@@ -18,6 +18,13 @@ body {
   height: 100vh;
 }
 
+@media screen and (max-width: 768px) {
+  .hero {
+    background-size: contain;
+    background-position: center top;
+  }
+}
+
 .section-title {
   text-align: center;
   font-size: 1.8rem;
