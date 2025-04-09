@@ -40,69 +40,15 @@ footer {
   border-top: 1px solid #ccc;
 }
 
+/* hero セクション：背景画像のみ表示 */
 .hero {
-  position: relative;
-  background-image: url("images/main-visual.jpg"); /* main-visual.jpg */
+  background-image: url("images/main-visual.jpg"); /* 背景画像 */
   background-size: cover;
   background-position: center;
   height: 100vh; /* 画面全体の高さ */
-  color: #fff; /* テキストが見えるように */
 }
 
-.hero-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  background-color: transparent;
-  padding: 2rem;
-  border-radius: 1rem;
-}
-
-
-.hero h1 {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  font-weight: bold;
-  letter-spacing: 0.1em;
-}
-
-.subtitle {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-.catch {
-  font-size: 1.2rem;
-  line-height: 1.6;
-}
-
-.catch-right {
-  position: absolute;
-  top: 50%;
-  right: 2%;
-  transform: translateY(-50%);
-  writing-mode: vertical-rl;
-  text-orientation: upright;
-  font-size: 3.2rem;
-  color: #f6f7f8;
-  padding: 0;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
-  line-height: 1.8;
-  /* 読みやすくするための影（任意） */
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
-} /* ← ここでカッコを閉じる */
-
-/* 下のtext-shadow重複 & 余計な閉じ括弧は消す */
-.main-nav {
-  background-color: #fff9dc;
-  /* ... 以下省略 ... */
-}
-
-
+/* main-nav（上下のナビゲーションバー） */
 .main-nav {
   background-color: #fff9dc;
   border-top: 2px solid #ccc;
@@ -134,8 +80,9 @@ footer {
   text-decoration: underline;
 }
 
+/* 上の黄色バー */
 .nav-bar {
-  background-color: #ffe600; /* 阪神タイガースっぽい黄色 */
+  background-color: #ffe600;
   color: #000;
   text-align: center;
   font-weight: bold;
@@ -153,4 +100,5 @@ footer {
 .nav-bar a:hover {
   text-decoration: underline;
 }
+
 
