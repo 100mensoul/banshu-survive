@@ -78,21 +78,22 @@ footer {
   line-height: 1.6;
 }
 
-.catch-right {
+  .catch-right {
   position: absolute;
   top: 50%;
   right: 2%;
   transform: translateY(-50%);
-  writing-mode: vertical-rl;
-  text-orientation: upright;
+  writing-mode: vertical-rl;  /* ← 縦書き */
+  text-orientation: upright; /* ← 文字を直立に */
   font-size: 3.2rem;
-  color: #f6f7f8; /* 月白 */
-  /* background-color: rgba(0, 0, 0, 0.2); ← 削除 */
-  padding: 1rem 0; /* 横方向は不要 */
+  color: #f6f7f8;
+  padding: 0; /* 横padding不要 */
   font-weight: 600;
   letter-spacing: 0.15em;
   font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
   line-height: 1.8;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
+}
 
   /* 読みやすくするための影（任意） */
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
