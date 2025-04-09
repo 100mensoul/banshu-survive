@@ -8,6 +8,45 @@ body {
   padding: 0;
 }
 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>播州サバイブ 〜姫の路〜</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ヒーロービジュアル部分（背景画像のみ） -->
+  <div class="hero">
+  </div>
+
+.hero {
+  background-image: url("images/main-visual.jpg");
+  background-size: cover;
+  background-position: center top;  /* ←ここを調整 */
+  background-repeat: no-repeat;     /* ← 念のためリピート防止 */
+  height: 100vh;
+  margin: 0;                        /* ← 念のためゼロに */
+  padding: 0;
+}
+
+  <!-- 上部ナビゲーションバー -->
+  <nav class="nav-bar">
+    <a href="#news">最新情報</a>｜
+    <a href="#summary">あらすじ</a>｜
+    <a href="#chart">登場人物</a>｜
+    <a href="#map">マップ</a>｜
+    <a href="#guide">手引書</a>｜
+    <a href="#diary">ダイアリー</a>｜
+    <a href="#live">ライブ</a>｜
+    <a href="#contact">問合せ</a>
+  </nav>
+
+
+
+
 /* ナビゲーションバー */
 .nav-bar {
   background-color: #ffe600;
