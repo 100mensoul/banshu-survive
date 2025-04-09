@@ -12,15 +12,30 @@ body {
 
 .hero {
   background-image: url("images/main-visual.jpg");
-  background-size: cover;
-  background-position: center;
+  background-size: cover;                /* 常に画面をカバー */
+  background-position: center;           /* 画像の中央を表示 */
   background-repeat: no-repeat;
   width: 100%;
-  min-height 100dvh; /* ← heightよりmin-heightが良い */
+  min-height: 100dvh;                    /* iOSでもアドレスバーを除いた高さ */
   display: flex;
-  align-items: flex-end; /* ヒーロー内に何か置くとき下揃え */
+  align-items: flex-end;
+  margin: 0;
+  padding: 0;
 }
 
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+.nav-bar {
+  margin-top: 0;
+}
+
+h1, h2, h3, p {
+  margin: 0;
+  padding: 0;
+}
 
 @media screen and (max-width: 768px) {
   .hero {
