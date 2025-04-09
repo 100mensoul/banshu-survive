@@ -42,7 +42,7 @@ footer {
 
 .hero {
   position: relative;
-  background-image: url("images/main-visual.png"); /* main-visual.png */
+  background-image: url("images/main-visual.jpg"); /* main-visual.jpg */
   background-size: cover;
   background-position: center;
   height: 100vh; /* 画面全体の高さ */
