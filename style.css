@@ -77,6 +77,7 @@ footer {
   font-size: 1.2rem;
   line-height: 1.6;
 }
+
 .catch-right {
   position: absolute;
   top: 50%;
@@ -84,13 +85,14 @@ footer {
   transform: translateY(-50%);
   writing-mode: vertical-rl;
   text-orientation: upright;
-  font-size: 2.4rem; /* 大きめに調整 */
-  color: #fff;
-  font-weight: bold;
-  line-height: 2.4; /* ゆとりを持たせる */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6); /* 背景が暗いときの読みやすさアップ */
-  background: none; /* 背景なしにする */
-  padding: 0; /* パディング削除 */
-  border-radius: 0; /* ボーダーも不要に */
+  font-size: 3.2rem; /* ← サイズを大きく */
+  color: #f6f7f8;     /* ← 月白 (げっぱく) をイメージ */
+  background-color: rgba(0, 0, 0, 0.2); /* 読みやすさのために淡く */
+  padding: 1.2rem;
+  border-radius: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.15em; /* ← 文字間隔をゆったり */
+  font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; /* ややポップ寄りに */
+  line-height: 1.8;
 }
 
