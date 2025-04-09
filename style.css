@@ -21,6 +21,20 @@ body {
   display: block;
 }
 
+.section-title {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin: 2rem 0 1rem;
+  letter-spacing: 0.1em;
+  color: #000;
+}
+
+.section-title .en {
+  font-size: 1rem;
+  color: #555;
+}
+
 /* ナビゲーションバー */
 .nav-bar {
   background-color: #ffe600;
@@ -66,7 +80,7 @@ footer {
 
 .scroll-content {
   display: flex;
-  flex-direction: row-reverse;
+  flex-direction: row;
   gap: 2rem;
 }
 
@@ -84,9 +98,11 @@ footer {
 
 @keyframes scroll-left {
   0% {
-    transform: translateX(100%);
-  }
-  100% {
     transform: translateX(-100%);
   }
+  100% {
+    transform: translateX(100%);
+  }
 }
+
+
