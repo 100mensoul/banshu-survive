@@ -23,6 +23,12 @@ body {
   padding: 0;
 }
 
+.hero-inner {
+  width: 100%;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
 html, body {
   margin: 0;
   padding: 0;
