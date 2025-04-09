@@ -39,23 +39,27 @@ body {
   color: #555;
 }
 
-/* ナビゲーションバー */
 .nav-bar {
   background-color: #ffe600;
-  color: #000;
-  text-align: center;
+  display: flex;              /* 横並びにする */
+  flex-wrap: wrap;            /* 小さい画面で折り返す */
+  justify-content: center;    /* 中央揃え */
+  gap: 1rem;                  /* メニューの間にスペース */
+  padding: 1rem;
   font-weight: bold;
-  padding: 1rem 0;
   font-size: 1.1rem;
   letter-spacing: 0.05em;
 }
+
 .nav-bar a {
   text-decoration: none;
   color: #000;
-  margin: 0 0.5rem;
+  padding: 0.2rem 0.5rem;
+  border-right: 1px solid #000;
 }
-.nav-bar a:hover {
-  text-decoration: underline;
+
+.nav-bar a:last-child {
+  border-right: none; /* 最後のリンクには線を引かない */
 }
 
 /* フッター */
