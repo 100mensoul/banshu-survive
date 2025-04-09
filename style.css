@@ -67,32 +67,29 @@ h1, h2, h3, p {
   color: #555;
 }
 
+
 .nav-bar {
   background-color: #ffe600;
-  display: flex;              /* 横並びにする */
-  flex-wrap: wrap;            /* 小さい画面で折り返す */
-  justify-content: center;    /* 中央揃え */
-  gap: 1rem;                  /* メニューの間にスペース */
   padding: 1rem;
   font-weight: bold;
   font-size: 1.1rem;
   letter-spacing: 0.05em;
 }
 
-.nav-bar a {
+.nav-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.nav-group a {
   text-decoration: none;
   color: #000;
-  padding: 0.2rem 0.5rem;
-  border-right: 1px solid #000;
+  padding: 0.3rem;
+  border-bottom: 1px solid #000;
 }
 
-.nav-bar a:last-child {
-  border-right: none; /* 最後のリンクには線を引かない */
-}
-
-.nav-bar {
-  margin-top: 0;
-}
 
 /* フッター */
 footer {
