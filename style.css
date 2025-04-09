@@ -66,6 +66,10 @@ body {
   border-right: none; /* 最後のリンクには線を引かない */
 }
 
+.nav-bar {
+  margin-top: 0;
+}
+
 /* フッター */
 footer {
   background-color: #f2f2f2;
