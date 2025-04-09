@@ -85,14 +85,17 @@ footer {
   transform: translateY(-50%);
   writing-mode: vertical-rl;
   text-orientation: upright;
-  font-size: 3.2rem; /* ← サイズを大きく */
-  color: #f6f7f8;     /* ← 月白 (げっぱく) をイメージ */
-  background-color: rgba(0, 0, 0, 0.2); /* 読みやすさのために淡く */
-  padding: 1.2rem;
-  border-radius: 0.8rem;
+  font-size: 3.2rem;
+  color: #f6f7f8; /* 月白 */
+  /* background-color: rgba(0, 0, 0, 0.2); ← 削除 */
+  padding: 1rem 0; /* 横方向は不要 */
   font-weight: 600;
-  letter-spacing: 0.15em; /* ← 文字間隔をゆったり */
-  font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; /* ややポップ寄りに */
+  letter-spacing: 0.15em;
+  font-family: 'Yu Gothic', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
   line-height: 1.8;
+
+  /* 読みやすくするための影（任意） */
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
 }
+
 
