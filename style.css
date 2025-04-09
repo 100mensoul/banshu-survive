@@ -10,41 +10,29 @@ body {
   padding: 0;
 }
 
+
 .hero {
   background-image: url("images/main-visual.jpg");
   background-size: cover;                /* 常に画面をカバー */
   background-position: center;           /* 画像の中央を表示 */
   background-repeat: no-repeat;
   width: 100%;
-  min-height: 100dvh;                    /* iOSでもアドレスバーを除いた高さ */
+  overflow: hidden;
   display: flex;
   align-items: flex-end;
   margin: 0;
   padding: 0;
 }
 
-.hero-inner {
+
+.hero img {
   width: 100%;
-  padding: 2rem;
-  box-sizing: border-box;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow-x: hidden;
+  height: auto;
+  display: block;
 }
 
 
-.nav-bar {
-  margin-top: 0;
-}
 
-h1, h2, h3, p {
-  margin: 0;
-  padding: 0;
-}
 
 @media screen and (max-width: 768px) {
   .hero {
@@ -52,6 +40,9 @@ h1, h2, h3, p {
     background-position: center top;
   }
 }
+
+
+
 
 .section-title {
   text-align: center;
@@ -66,6 +57,9 @@ h1, h2, h3, p {
   font-size: 1rem;
   color: #555;
 }
+
+
+
 
 
 .nav-bar {
@@ -89,6 +83,11 @@ h1, h2, h3, p {
   padding: 0.3rem;
   border-bottom: 1px solid #000;
 }
+
+.nav-bar {
+  margin-top: 0;
+}
+
 
 
 /* フッター */
