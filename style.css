@@ -92,6 +92,17 @@ footer {
   gap: 2rem;
 }
 
+.scroll-wrapper {
+  display: inline-block;
+  animation: scroll-left 30s linear infinite;
+  animation-play-state: running;
+}
+
+/* 指で触ったらアニメーションを止める */
+.kawaraban-marquee:active .scroll-wrapper {
+  animation-play-state: paused;
+}
+
 .news-item {
   writing-mode: vertical-rl;
   text-orientation: upright;
