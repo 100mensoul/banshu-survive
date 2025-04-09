@@ -10,7 +10,6 @@ body {
   padding: 0;
 }
 
-/* ヒーロー画像 */
 .hero {
   width: 100%;
   overflow: hidden;
@@ -21,7 +20,6 @@ body {
   height: auto;
   display: block;
 }
-  
 
 /* ナビゲーションバー */
 .nav-bar {
