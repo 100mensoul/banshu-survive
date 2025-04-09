@@ -22,15 +22,7 @@ body {
   <div class="hero">
   </div>
 
-.hero {
-  background-image: url("images/main-visual.jpg");
-  background-size: cover;
-  background-position: center top;  /* ←ここを調整 */
-  background-repeat: no-repeat;     /* ← 念のためリピート防止 */
-  height: 100vh;
-  margin: 0;                        /* ← 念のためゼロに */
-  padding: 0;
-}
+
 
   <!-- 上部ナビゲーションバー -->
   <nav class="nav-bar">
