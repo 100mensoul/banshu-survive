@@ -40,13 +40,16 @@ footer {
   border-top: 1px solid #ccc;
 }
 
-/* hero セクション：背景画像のみ表示 */
 .hero {
-  background-image: url("images/main-visual.jpg"); /* 背景画像 */
+  background-image: url("images/main-visual.jpg");
   background-size: cover;
-  background-position: top;
-  height: 100vh; /* 画面全体の高さ */
+  background-position: center top;  /* ←ここを調整 */
+  background-repeat: no-repeat;     /* ← 念のためリピート防止 */
+  height: 100vh;
+  margin: 0;                        /* ← 念のためゼロに */
+  padding: 0;
 }
+
 
 /* main-nav（上下のナビゲーションバー） */
 .main-nav {
