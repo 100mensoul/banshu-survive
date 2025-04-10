@@ -326,7 +326,7 @@ footer {
 
 .hero-teaser {
   position: relative;
-  background-image: url('images/shikkui-wall.jpg');
+  background-image: url('images/shikkui-wall.png'); /* 漆喰テクスチャ */
   background-size: cover;
   background-position: center;
   height: 60vh;
@@ -347,3 +347,4 @@ footer {
   backdrop-filter: blur(1px); /* 背景なじませてもOK */
   box-shadow: 0 0 10px rgba(0,0,0,0.05);
 }
+
