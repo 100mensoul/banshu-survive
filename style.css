@@ -337,11 +337,10 @@ footer {
 
 
 .hero-teaser .teaser-text {
-  background-color: rgba(255, 255, 255, 0.4); /* 少しだけ読みやすさ確保 */
   padding: 2rem;
   font-family: 'Igymyou Mincho', serif; /* 異形明朝を読み込んでいればここで反映 */
   font-size: 1.4rem;
-  color: #111;
+  color: #444;
   line-height: 1.9;
   max-width: 800px;
   text-align: center;
