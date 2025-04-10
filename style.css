@@ -326,11 +326,10 @@ footer {
 
 .hero-teaser {
   position: relative;
-  background-image: url('images/shikkui-wall.png'); /* 漆喰の白壁テクスチャ */
+  background-image: url('images/shikkui-wall.jpg');
   background-size: cover;
   background-position: center;
   height: 60vh;
-  color: #111; /* 墨っぽい濃いグレー */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -346,12 +345,16 @@ footer {
   justify-content: center;
 }
 
+
 .hero-teaser .teaser-text {
-  text-align: center;
-  font-size: 1.2rem;
-  line-height: 1.8;
+  background-color: rgba(255, 255, 255, 0.4); /* 少しだけ読みやすさ確保 */
+  padding: 2rem;
+  font-family: 'Igymyou Mincho', serif; /* 異形明朝を読み込んでいればここで反映 */
+  font-size: 1.4rem;
+  color: #111;
+  line-height: 1.9;
   max-width: 800px;
-  font-family: 'Yuji Boku', serif;
+  text-align: center;
+  backdrop-filter: blur(1px); /* 背景なじませてもOK */
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
 }
-
-
