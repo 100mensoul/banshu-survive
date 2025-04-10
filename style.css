@@ -322,9 +322,11 @@ footer {
 .insta-follow:hover {
   opacity: 0.8;
 }
+
+
 .hero-teaser {
   position: relative;
-  background-image: url('images/shikkui-wall.jpg'); /* 漆喰の白壁テクスチャ */
+  background-image: url('images/shikkui-wall.png'); /* 漆喰の白壁テクスチャ */
   background-size: cover;
   background-position: center;
   height: 60vh;
@@ -351,3 +353,5 @@ footer {
   max-width: 800px;
   font-family: 'Yuji Boku', serif;
 }
+
+
