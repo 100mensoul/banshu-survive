@@ -237,3 +237,34 @@ footer {
   background-color: #ffda00;
 }
 
+/* SNSリンクセクション */
+.social-links {
+  text-align: center;
+  padding: 2rem 1rem;
+  background-color: #fffef5;
+  border-top: 4px double #aaa;
+}
+
+.social-links .section-title {
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.sns-icons {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  align-items: center;
+}
+
+.sns-icons img {
+  width: 48px;
+  height: 48px;
+  transition: transform 0.2s;
+}
+
+.sns-icons img:hover {
+  transform: scale(1.1);
+}
+
