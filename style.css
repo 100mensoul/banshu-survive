@@ -322,3 +322,32 @@ footer {
 .insta-follow:hover {
   opacity: 0.8;
 }
+.hero-teaser {
+  position: relative;
+  background-image: url('images/shikkui-wall.jpg'); /* 漆喰の白壁テクスチャ */
+  background-size: cover;
+  background-position: center;
+  height: 60vh;
+  color: #111; /* 墨っぽい濃いグレー */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-teaser .overlay {
+  background-color: rgba(255, 255, 255, 0.6); /* 白の幕に変更、あえて明るさを加える */
+  width: 100%;
+  height: 100%;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-teaser .teaser-text {
+  text-align: center;
+  font-size: 1.2rem;
+  line-height: 1.8;
+  max-width: 800px;
+  font-family: 'Yuji Boku', serif;
+}
