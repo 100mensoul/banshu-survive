@@ -170,13 +170,19 @@ footer {
   white-space: nowrap;
 }
 
-/* 左→右に流れるアニメーション */
-@keyframes scroll-right {
+.scroll-content {
+  animation: scroll-left 45s linear infinite;
+  display: flex;
+  gap: 2rem;
+}
+
+/* アニメーション定義 */
+@keyframes scroll-left {
   0% {
-    transform: translateX(-100%);
+    transform: translateX(100%);
   }
   100% {
-    transform: translateX(100%);
+    transform: translateX(-100%);
   }
 }
 
