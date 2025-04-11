@@ -338,7 +338,7 @@ footer {
 
 .hero-teaser .teaser-text {
   padding: 2rem;
-  font-family: 'Igymyou Mincho', serif; /* 異形明朝を読み込んでいればここで反映 */
+  font-family:IgyouMincho3.ttf; /* 異形明朝を読み込んでいればここで反映 */
   font-size: 1.4rem;
   color: #555;
   line-height: 1.9;
