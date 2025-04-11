@@ -354,3 +354,66 @@ footer {
 
 }
 
+body {
+  background-color: #111;
+  color: #eee;
+  font-family: 'Yuji Boku', serif;
+  line-height: 1.8;
+  margin: 0;
+  padding: 0;
+}
+
+.interview-header {
+  text-align: center;
+  padding: 40px 20px 20px;
+  background-color: #1a1a1a;
+}
+
+.interview-header h1 {
+  font-size: 2em;
+  color: #ffeebb;
+}
+
+.interview-header .subtitle {
+  font-size: 1em;
+  color: #ccc;
+}
+
+.interview-visual img {
+  width: 100%;
+  display: block;
+  max-height: 600px;
+  object-fit: cover;
+  filter: brightness(90%) contrast(110%);
+}
+
+.interview-body {
+  padding: 30px 20px;
+  max-width: 800px;
+  margin: auto;
+  background-color: #1c1c1c;
+}
+
+.interview-body p {
+  margin-bottom: 1.2em;
+}
+
+.interview-body strong {
+  color: #ffd166;
+}
+
+.interview-footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 0.9em;
+  background-color: #1a1a1a;
+}
+
+.interview-footer a {
+  color: #999;
+  text-decoration: none;
+}
+
+.interview-footer a:hover {
+  color: #fff;
+}
