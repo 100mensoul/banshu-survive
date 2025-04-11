@@ -350,8 +350,7 @@ footer {
   line-height: 1.9;
   max-width: 800px;
   text-align: center;
-  backdrop-filter: blur(1px); /* 背景なじませてもOK */
-  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+
 }
 
 
