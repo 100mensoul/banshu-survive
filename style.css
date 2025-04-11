@@ -243,6 +243,16 @@ footer {
   background-color: #ffda00;
 }
 
+/* 縦書きの影響を打ち消す */
+.chat-room,
+.chat-room *,
+.social-links,
+.social-links *,
+.social-section,
+.social-section * {
+  writing-mode: horizontal-tb !important;
+}
+
 /* SNSリンクセクション */
 .social-links {
   text-align: center;
