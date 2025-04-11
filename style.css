@@ -36,13 +36,6 @@ body {
 }
 
 
-
-
-
-
-
-
-
 .section-title {
   text-align: center;
   font-size: 1.8rem;
@@ -56,9 +49,6 @@ body {
   font-size: 1rem;
   color: #555;
 }
-
-
-
 
 
 .nav-bar {
@@ -106,7 +96,7 @@ footer {
 
 /* NEWSセクション見出し */
 .section-title {
-  font-family: 'Yuji Boku', serif;
+  font-family:'Hiragino Kaku Gothic ProN',serif;
   font-size: 2.2rem;
   text-align: center;
   margin: 2rem 0 1rem;
