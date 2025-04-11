@@ -347,7 +347,7 @@ footer {
   padding: 2rem;
   font-family: 'IgyouMincho', serif; /* 異形明朝を読み込んでいればここで反映 */
   font-size: 1.0rem;
-  color: #555;
+  color: #fff;
   line-height: 1.9;
   max-width: 800px;
   text-align: center;
