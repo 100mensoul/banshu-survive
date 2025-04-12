@@ -1,1 +1,39 @@
+.hero {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  margin: 0;
+  padding: 0;
+  background: none;
+}
 
+.hero img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.hero-teaser {
+  position: relative;
+  background-image: url('images/shikkui-wall.png');
+  background-size: cover;
+  background-position: center;
+  height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.hero-teaser .teaser-text {
+  padding: 2rem;
+  font-family: 'IgyouMincho', serif;
+  font-size: 1.0rem;
+  color: #fff;
+  line-height: 1.9;
+  max-width: 800px;
+  text-align: center;
+}
