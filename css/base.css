@@ -15,7 +15,9 @@ body {
 }
 
 .nav-bar {
-  background-color: #ffe600;
+  background-color: #fff100;
+  color:#000
+  font-weight:bold;
   padding: 1rem;
   text-align: center;
   display: flex;
