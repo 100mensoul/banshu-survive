@@ -1,0 +1,8 @@
+.chat-room,
+.chat-room *,
+.social-links,
+.social-links *,
+.social-section,
+.social-section * {
+  writing-mode: horizontal-tb !important;
+}
