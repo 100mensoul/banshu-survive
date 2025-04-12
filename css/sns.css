@@ -1,1 +1,84 @@
+.social-links {
+  text-align: center;
+  padding: 2rem 1rem;
+  background-color: #fffef5;
+  border-top: 4px double #aaa;
+}
 
+.social-links .section-title {
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.sns-icons {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  align-items: center;
+}
+
+.sns-icons img {
+  width: 48px;
+  height: 48px;
+  transition: transform 0.2s;
+}
+
+.sns-icons img:hover {
+  transform: scale(1.1);
+}
+
+.social-section {
+  padding: 3rem 1rem;
+  background-color: #fffef5;
+  border-top: 4px double #aaa;
+}
+
+.sns-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.twitter-box {
+  flex: 1 1 300px;
+  min-width: 300px;
+  max-width: 500px;
+}
+
+.instagram-box {
+  flex: 1 1 300px;
+  min-width: 300px;
+  max-width: 500px;
+  text-align: center;
+}
+
+.insta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.insta-grid img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.insta-follow {
+  display: inline-block;
+  margin-top: 1rem;
+  background: linear-gradient(to right, #f9ce34, #ee2a7b, #6228d7);
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  border-radius: 30px;
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+.insta-follow:hover {
+  opacity: 0.8;
+}
