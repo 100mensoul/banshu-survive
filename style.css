@@ -94,6 +94,8 @@ footer {
 /* フォント：筆文字 */
 @import url('https://fonts.googleapis.com/css2?family=Yuji+Boku&display=swap');
 
+
+
 /* NEWSセクション見出し */
 .section-title {
   font-family:'Hiragino Kaku Gothic ProN',serif;
@@ -103,9 +105,11 @@ footer {
   color: #111;
   letter-spacing: 0.1em;
 }
+
+
+
 .section-title .en {
   font-size: 1rem;
-  margin-left: 0.5rem;
   color: #666;
 }
 
