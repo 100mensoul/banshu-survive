@@ -161,7 +161,7 @@ footer {
 }
 
 .scroll-content {
-  animation: scroll-left 45s linear infinite;
+  animation: scroll-right 45s linear infinite;
   display: flex;
   gap: 2rem;
 }
