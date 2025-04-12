@@ -38,7 +38,8 @@ body {
 
 .section-title {
   text-align: center;
-  font-size: 1.8rem;
+  display: inline-block;
+  font-size: 2.5rem;
   font-weight: bold;
   margin: 2rem 0 1rem;
   letter-spacing: 0.1em;
