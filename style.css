@@ -363,7 +363,7 @@ footer {
 
 }
 
-body {
+body.interveiw-page{
   background-color: #111;
   color: #eee;
   font-family: 'Yuji Boku', serif;
