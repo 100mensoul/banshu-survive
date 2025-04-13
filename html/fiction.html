@@ -1,1 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>真実はすべてフィクション</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      background-color: black;
+      color: white;
+      font-family: 'YuGothic', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      animation: noise 3s infinite;
+    }
+
+    .text {
+      text-align: center;
+      font-size: 1.5rem;
+      letter-spacing: 0.2em;
+      filter: blur(1px);
+    }
+
+    @keyframes noise {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-1px, 1px); }
+      40% { transform: translate(1px, -1px); }
+      60% { transform: translate(0.5px, 0.5px); }
+      80% { transform: translate(-0.5px, -0.5px); }
+      100% { transform: translate(0, 0); }
+    }
+  </style>
+  <script>
+    setTimeout(() => {
+      window.location.href = "index.html"; // 3秒後に元ページへ戻る
+    }, 3000);
+  </script>
+</head>
+<body>
+  <div class="text">
+    <p>真実</p>
+    <p>すべて</p>
+    <p>フィクション</p>
+  </div>
+</body>
+</html>
 
