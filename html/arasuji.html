@@ -7,76 +7,62 @@
   <link rel="stylesheet" href="../css/main.css"> 
   <link rel="stylesheet" href="../css/arasuji.css">
 
-  
- <style>
+
+  <style>
     body {
-      margin: 0;
-      background-color: #fff;
+      background-color: white;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       height: 100vh;
-      overflow: hidden;
     }
-    #logo {
+    .logo-wrapper {
+      position: relative;
       width: 300px;
-      cursor: pointer;
-      transition: transform 0.4s ease;
+      height: 300px;
     }
-    #logo:hover {
-      transform: scale(1.05);
-    }
-    #message {
+    .eye {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 1.5rem;
-      color: #000;
-      background: #fff;
-      padding: 1rem 2rem;
-      border: 1px solid #000;
-      display: none;
-    }
-    #hidden-link {
-      position: absolute;
-      bottom: 2rem;
-      right: 2rem;
       width: 100px;
       height: 100px;
-      background-image: url('embossed_logo.png'); /* シンプルな家紋バージョン */
-      background-size: contain;
-      background-repeat: no-repeat;
+      border: 3px solid black;
+      border-radius: 50%;
+      background-color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      font-weight: bold;
       cursor: pointer;
-      display: none;
+      transition: 0.3s;
+    }
+    .left-eye {
+      top: 100px;
+      left: 50px;
+    }
+    .right-eye {
+      top: 100px;
+      right: 50px;
     }
   </style>
 </head>
 <body>
-
-  <img id="logo" src="face_logo.png" alt="intro logo">
-  <div id="message">見えないものを見てください</div>
-  <div id="hidden-link" onclick="location.href='fiction.html'"></div>
+  <div class="logo-wrapper">
+    <div class="eye left-eye" onmouseenter="showText(this, '播')" onmouseleave="hideText(this)" onclick="goFiction()"></div>
+    <div class="eye right-eye" onmouseenter="showText(this, '州')" onmouseleave="hideText(this)" onclick="goFiction()"></div>
+  </div>
 
   <script>
-    const logo = document.getElementById('logo');
-    const message = document.getElementById('message');
-    const hiddenLink = document.getElementById('hidden-link');
-
-    logo.addEventListener('click', () => {
-      logo.style.display = 'none';
-      message.style.display = 'block';
-      setTimeout(() => {
-        message.style.display = 'none';
-        document.body.style.backgroundColor = '#eee'; // 漆喰的に明るく
-        hiddenLink.style.display = 'block';
-        document.body.style.backgroundImage = "url('shikkui_wall.png')";
-        document.body.style.backgroundSize = 'cover';
-      }, 3000);
-    });
+    function showText(element, text) {
+      element.innerText = text;
+    }
+    function hideText(element) {
+      element.innerText = "";
+    }
+    function goFiction() {
+      window.location.href = "fiction.html";
+    }
   </script>
-
-
-
 </body>
 </html>
+
