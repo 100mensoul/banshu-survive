@@ -1,7 +1,5 @@
 /* arasuji.css */
 
-
-
 .qr-zone {
   background-image: url('/banshu-survive/images/shikkui-wall_qr_mini.png');
   background-size: contain;
@@ -11,7 +9,6 @@
   position: relative;
 }
 
-
 .qr-link {
   position: absolute;
   bottom: 2rem;
@@ -20,3 +17,5 @@
   height: 140px;
   display: block;
 }
+
+
