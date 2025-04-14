@@ -1,4 +1,8 @@
 /* arasuji.css */
+body {
+  background-color: hotpink !important;
+}
+
 
 .qr-zone {
   background-image: url('../images/shikkui-wall_qr_mini.png');
