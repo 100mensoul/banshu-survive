@@ -5,7 +5,7 @@ body {
 
 
 .qr-zone {
-  background-image: url('../images/shikkui-wall_qr_mini.png');
+  background-image: url('/banshu-survive/images/shikkui-wall_qr_mini.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
