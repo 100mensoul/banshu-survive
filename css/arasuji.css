@@ -16,6 +16,13 @@
   width: 140px;
   height: 140px;
   display: block;
+  cursor: pointer;
 }
+
+.qr-link:hover {
+  outline: 2px dashed rgba(0,0,0,0.2);
+  outline-offset: 5px;
+}
+
 
 
