@@ -1,0 +1,18 @@
+/* arasuji.css */
+
+.qr-zone {
+  background-image: url('../images/shikkui-wall_qr_mini.png');
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  position: relative;
+}
+
+.qr-link {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  width: 140px;
+  height: 140px;
+  display: block;
+}
