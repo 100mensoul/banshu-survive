@@ -85,20 +85,24 @@
       opacity: 1;
     }
 
-    .crack-effect {
-      background-image: url('../images/crack.png');
-      background-size: contain;
-      background-repeat: no-repeat;
-      width: 300px;
-      height: 300px;
-      position: absolute;
-      top: 40%;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      animation: crackIn 1s ease forwards;
-      display: none;
-    }
+
+.crack-effect {
+  background-image: url('../images/crack.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 200px;
+  height: 200px;
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  display: none;
+  z-index: 10;
+  animation: crackIn 1.2s ease forwards;
+}
+
 
     @keyframes crackIn {
       from { opacity: 0; transform: translateX(-50%) scale(0.9); }
