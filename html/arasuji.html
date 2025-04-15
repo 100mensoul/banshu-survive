@@ -6,169 +6,66 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../css/arasuji.css">
   <style>
-    body, html {
+    body {
       margin: 0;
       padding: 0;
+      background-color: white;
+      overflow: hidden;
     }
 
     .intro-screen {
+      width: 100vw;
+      height: 100vh;
       background-image: url('../images/shikkui-wall.png');
       background-size: cover;
       background-position: center;
-      height: 100vh;
       position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      z-index: 1;
     }
 
-    .circle-wrapper {
-      display: flex;
-      gap: 80px;
-    }
-
-    .circle {
-      width: 120px;
-      height: 120px;
-      border: 2px solid #333;
-      border-radius: 50%;
-      position: relative;
-    }
-
-    .circle::after {
-      content: attr(data-label);
-      font-family: 'Yuji Boku', serif;
-      font-size: 2.5rem;
+    .crack-effect {
+      background-image: url('../images/crack.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      width: 300px;
+      height: 300px;
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      opacity: 0;
-      transition: all 0.3s ease;
-    }
-
-    .circle:hover::after {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-
-    .eye-link {
-      position: absolute;
-      top: calc(50% - 160px);
+      top: 40%;
       left: 50%;
       transform: translateX(-50%);
-      width: 80px;
-      height: 80px;
-      background: transparent;
-      cursor: url('https://emojicdn.elk.sh/%F0%9F%91%81') 16 16, auto;
-    }
-
-    .eye-link:hover {
-      outline: 2px dashed rgba(0, 0, 0, 0.2);
-      outline-offset: 5px;
-    }
-
-    .fade-in-text {
-      position: absolute;
-      top: 60%;
-      left: 50%;
-      transform: translateX(-50%);
-      text-align: center;
-      font-size: 1.4rem;
-      color: #111;
       opacity: 0;
-      transition: opacity 1.5s ease-in;
-      pointer-events: none;
+      display: none;
+      animation: crackIn 1s ease forwards;
     }
-
-    .fade-in-text.show {
-      opacity: 1;
-    }
-
-
-.crack-effect {
-  background-image: url('../images/crack.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  width: 200px;
-  height: 200px;
-  position: absolute;
-  top: 42%;
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  display: none;
-  z-index: 10;
-  animation: crackIn 1.2s ease forwards;
-}
-
 
     @keyframes crackIn {
-      from { opacity: 0; transform: translateX(-50%) scale(0.9); }
-      to { opacity: 1; transform: translateX(-50%) scale(1); }
-    }
-
-    @keyframes crumble {
       0% {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-        filter: none;
-      }
-      50% {
-        transform: scale(1.03) rotate(1deg) translateY(-2px);
-        filter: brightness(1.2);
+        opacity: 0;
+        transform: scale(0.8) translateX(-50%);
       }
       100% {
-        opacity: 0;
-        transform: scale(1.1) translateY(50px);
-        filter: blur(10px);
+        opacity: 1;
+        transform: scale(1) translateX(-50%);
       }
-    }
-
-    .shikkui-break {
-      animation: crumble 1.8s ease-in-out forwards;
     }
   </style>
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      const introScreen = document.querySelector('.intro-screen');
-      const introText = document.getElementById('intro-text');
-      const circleWrapper = document.querySelector('.circle-wrapper');
-      const crack = document.querySelector('.crack-effect');
-
-      if (sessionStorage.getItem('fromFiction') === 'yes' && introScreen) {
-        introScreen.classList.add('shikkui-break');
-        sessionStorage.removeItem('fromFiction');
-        if (circleWrapper) circleWrapper.style.display = 'none';
-        if (crack) crack.style.display = 'block';
-
-        setTimeout(() => {
-          introText.classList.add('show');
-        }, 1800);
-      }
-    });
-  </script>
 </head>
 <body>
-  <div class="intro-screen">
-    <!-- 二重円：初回のみ -->
-    <div class="circle-wrapper">
-      <div class="circle circle-left" data-label="播"></div>
-      <div class="circle circle-right" data-label="州"></div>
-    </div>
-
-    <!-- ヒビ演出：戻ってきたときのみ表示 -->
-    <div class="crack-effect"></div>
-
-    <!-- 隠しアイコン：👁 -->
-    <a href="fiction.html" class="eye-link" aria-label="真実はフィクション"></a>
-
-    <!-- フェードインテキスト -->
-    <div id="intro-text" class="fade-in-text">
-      <p>この物語は、ほんとうの話です。</p>
-      <p>でも、あなたが知っているものとは少し違う。</p>
-    </div>
+  <div class="intro-screen" id="introScreen">
+    <div class="crack-effect" id="crackEffect"></div>
   </div>
+
+  <script>
+    // fiction.htmlから戻ってきたかチェック
+    const fromFiction = sessionStorage.getItem('fromFiction');
+    if (fromFiction === 'yes') {
+      // クラックを表示
+      const crack = document.getElementById('crackEffect');
+      crack.style.display = 'block';
+
+      // 2秒後にintro-screenを消すなどのアクションがあるならここに追加
+      sessionStorage.removeItem('fromFiction');
+    }
+  </script>
 </body>
 </html>
