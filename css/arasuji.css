@@ -45,21 +45,23 @@ body {
 
 /* 仮ヒビ演出 */
 .crack-effect {
-  width: 100px;
-  height: 100px;
-  border: 3px dashed rgba(0,0,0,0.3);
-  border-radius: 50%;
-  animation: crackFlash 1s ease-in-out 0.3s forwards;
+  width: 160px;
+  height: 160px;
+  background-image: url('../images/crack.png'); /* ファイル名は任意でリネーム可能 */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   position: absolute;
-  top: 45%;
+  top: 43%; /* 位置調整：眉間あたり */
   left: 50%;
   transform: translateX(-50%);
+  animation: crackFlash 1.2s ease-in-out forwards;
   opacity: 0;
-  display: none;
+  z-index: 3;
 }
 
 @keyframes crackFlash {
-  0% { opacity: 0; transform: scale(0.8) rotate(0deg); }
-  50% { opacity: 1; transform: scale(1.05) rotate(5deg); }
-  100% { opacity: 0.7; transform: scale(1) rotate(0deg); }
+  0% { opacity: 0; transform: scale(0.8) rotate(-5deg); }
+  50% { opacity: 1; transform: scale(1.1) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
 }
