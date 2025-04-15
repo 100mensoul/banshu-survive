@@ -23,6 +23,52 @@
       z-index: 1;
     }
 
+    .circle-wrapper {
+      display: flex;
+      justify-content: center;
+      gap: 80px;
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .circle {
+      width: 120px;
+      height: 120px;
+      border: 2px solid #333;
+      border-radius: 50%;
+      position: relative;
+    }
+
+    .circle::after {
+      content: attr(data-label);
+      font-family: 'Yuji Boku', serif;
+      font-size: 2.5rem;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .circle:hover::after {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    .eye-link {
+      position: absolute;
+      top: calc(50% - 160px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 80px;
+      background: transparent;
+      cursor: url('https://emojicdn.elk.sh/%F0%9F%91%81') 16 16, auto;
+    }
+
     .crack-effect {
       background-image: url('../images/crack.png');
       background-size: contain;
@@ -52,6 +98,16 @@
 </head>
 <body>
   <div class="intro-screen" id="introScreen">
+    <!-- 二重円：初回のみ -->
+    <div class="circle-wrapper" id="circleWrapper">
+      <div class="circle" data-label="播"></div>
+      <div class="circle" data-label="州"></div>
+    </div>
+
+    <!-- 隠しアイコン：👁 -->
+    <a href="fiction.html" class="eye-link" aria-label="真実はフィクション"></a>
+
+    <!-- ヒビ演出：戻ってきたときのみ表示 -->
     <div class="crack-effect" id="crackEffect"></div>
   </div>
 
@@ -59,11 +115,10 @@
     // fiction.htmlから戻ってきたかチェック
     const fromFiction = sessionStorage.getItem('fromFiction');
     if (fromFiction === 'yes') {
-      // クラックを表示
       const crack = document.getElementById('crackEffect');
-      crack.style.display = 'block';
-
-      // 2秒後にintro-screenを消すなどのアクションがあるならここに追加
+      const circle = document.getElementById('circleWrapper');
+      if (circle) circle.style.display = 'none';
+      if (crack) crack.style.display = 'block';
       sessionStorage.removeItem('fromFiction');
     }
   </script>
