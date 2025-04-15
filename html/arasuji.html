@@ -5,6 +5,67 @@
   <title>あらすじ｜播州サバイブ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../css/arasuji.css">
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+    }
+
+    .intro-screen {
+      background-image: url('../images/shikkui-wall.png');
+      background-size: cover;
+      background-position: center;
+      height: 100vh;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .circle {
+      width: 120px;
+      height: 120px;
+      border: 2px solid #333;
+      border-radius: 50%;
+      margin: 0 40px;
+      position: relative;
+    }
+
+    .circle::after {
+      content: attr(data-label);
+      font-family: 'Yuji Boku', serif;
+      font-size: 2.5rem;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .circle:hover::after {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    .eye-link {
+      position: absolute;
+      bottom: 2rem;
+      right: 2rem;
+      width: 40px;
+      height: 40px;
+      background-image: url('https://emojicdn.elk.sh/%F0%9F%91%81');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      opacity: 0.2;
+      transition: opacity 0.3s ease;
+    }
+
+    .eye-link:hover {
+      opacity: 1;
+    }
+  </style>
 </head>
 <body>
   <div class="intro-screen">
@@ -15,7 +76,5 @@
     <!-- 隠しアイコン：👁 -->
     <a href="../fiction.html" class="eye-link" aria-label="真実はフィクション"></a>
   </div>
-
-  <!-- 以降に、ヒビ演出やあらすじ本文セクションが入る -->
 </body>
 </html>
