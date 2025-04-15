@@ -4,30 +4,18 @@
   <meta charset="UTF-8">
   <title>あらすじ｜播州サバイブ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="../css/main.css"> 
-  <link rel="stylesheet" href="../css/arasuji.css"> <!-- こっちに分離！ -->
+  <link rel="stylesheet" href="../css/arasuji.css">
 </head>
 <body>
-  <div class="qr-zone">
-    <div class="logo-wrapper">
-      <img src="/banshu-survive/images/face_logo.png" alt="顔ロゴ" class="face-logo">
-      <div class="eye left-eye" onmouseenter="showText(this, '播')" onmouseleave="hideText(this)" onclick="goFiction()"></div>
-      <div class="eye right-eye" onmouseenter="showText(this, '州')" onmouseleave="hideText(this)" onclick="goFiction()"></div>
-    </div>
+  <div class="intro-screen">
+    <!-- 二重円 -->
+    <div class="circle circle-left" data-label="播"></div>
+    <div class="circle circle-right" data-label="州"></div>
 
-    <a href="fiction.html" class="qr-link" aria-label="フィクションページへリンク"></a>
+    <!-- 隠しアイコン：👁 -->
+    <a href="../fiction.html" class="eye-link" aria-label="真実はフィクション"></a>
   </div>
 
-  <script>
-    function showText(element, text) {
-      element.innerText = text;
-    }
-    function hideText(element) {
-      element.innerText = "";
-    }
-    function goFiction() {
-      window.location.href = "fiction.html";
-    }
-  </script>
+  <!-- 以降に、ヒビ演出やあらすじ本文セクションが入る -->
 </body>
 </html>
