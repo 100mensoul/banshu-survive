@@ -36,7 +36,12 @@
   <script>
     setTimeout(() => {
       window.location.href = "arasuji.html"; // 元のページへ2秒後に戻る
-    }, 2000);
+    }, 1000);
+      
+      // fiction.htmlを訪れたときに記録
+      sessionStorage.setItem('fromFiction', 'yes');
+  </script>
+
   </script>
 </head>
 <body>
