@@ -34,19 +34,13 @@
     }
   </style>
   <script>
-    setTimeout(() => {
-      window.location.href = "arasuji.html"; // 元のページへ2秒後に戻る
-    }, 1000);
-      
-      // fiction.htmlを訪れたときに記録
-      sessionStorage.setItem('fromFiction', 'yes');
-
-    // 「戻ったら崩壊させる」印を記録
+    // fiction.htmlを訪れたときに記録
     sessionStorage.setItem('fromFiction', 'yes');
-  </script>
 
-  </script>
-
+    // 1秒後にarasuji.htmlへリダイレクト
+    setTimeout(() => {
+      window.location.href = "arasuji.html";
+    }, 1000);
   </script>
 </head>
 <body>
