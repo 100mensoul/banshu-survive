@@ -64,6 +64,17 @@
       outline-offset: 5px;
     }
   </style>
+  <script>
+  // fiction.htmlから戻ってきたかチェック
+  window.addEventListener('DOMContentLoaded', () => {
+    if (sessionStorage.getItem('fromFiction') === 'yes') {
+      document.querySelector('.intro-screen').classList.add('shikkui-break');
+      sessionStorage.removeItem('fromFiction'); // 一度きりの演出
+    }
+  });
+  </script>
+
+  
 </head>
 <body>
   <div class="intro-screen">
