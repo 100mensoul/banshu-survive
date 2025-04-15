@@ -20,11 +20,6 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      <div id="intro-text" class="fade-in-text">
-      <p>この物語は、ほんとうの話です。</p>
-      <p>でも、あなたが知っているものとは少し違う。</p>
-      </div>
-
     }
 
     .circle {
@@ -55,47 +50,71 @@
 
     .eye-link {
       position: absolute;
-      top: calc(50% - 160px); /* さらに上へ */
+      top: calc(50% - 160px);
       left: 50%;
       transform: translateX(-50%);
       width: 80px;
       height: 80px;
       background: transparent;
-      cursor: url('https://emojicdn.elk.sh/%F0%9F%91%81') 16 16, auto; /* 目のマークに修正 */
+      cursor: url('https://emojicdn.elk.sh/%F0%9F%91%81') 16 16, auto;
     }
 
     .eye-link:hover {
       outline: 2px dashed rgba(0, 0, 0, 0.2);
       outline-offset: 5px;
     }
+
+    .fade-in-text {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 1.4rem;
+      color: #111;
+      opacity: 0;
+      transition: opacity 1.5s ease-in;
+      pointer-events: none;
+    }
+
+    .fade-in-text.show {
+      opacity: 1;
+    }
+
+    @keyframes crumble {
+      0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: none;
+      }
+      50% {
+        transform: scale(1.03) rotate(1deg) translateY(-2px);
+        filter: brightness(1.2);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1.1) translateY(50px);
+        filter: blur(10px);
+      }
+    }
+
+    .shikkui-break {
+      animation: crumble 1.8s ease-in-out forwards;
+    }
   </style>
   <script>
-  // fiction.htmlから戻ってきたかチェック
-  window.addEventListener('DOMContentLoaded', () => {
-    if (sessionStorage.getItem('fromFiction') === 'yes') {
-      document.querySelector('.intro-screen').classList.add('shikkui-break');
-      sessionStorage.removeItem('fromFiction'); // 一度きりの演出
-    }
-  });
-
-
-    // fiction.html から戻ってきたことを検出
     window.addEventListener('DOMContentLoaded', () => {
-    const introScreen = document.querySelector('.intro-screen');
-    if (sessionStorage.getItem('fromFiction') === 'yes' && introScreen) {
-      introScreen.classList.add('shikkui-break');
-      sessionStorage.removeItem('fromFiction'); // 一度きりの発動
-    }
+      const introScreen = document.querySelector('.intro-screen');
+      const introText = document.getElementById('intro-text');
+      if (sessionStorage.getItem('fromFiction') === 'yes' && introScreen) {
+        introScreen.classList.add('shikkui-break');
+        sessionStorage.removeItem('fromFiction');
+        setTimeout(() => {
+          introText.classList.add('show');
+        }, 1800);
+      }
     });
-  
-    const introText = document.getElementById('intro-text');
-setTimeout(() => {
-  introText.classList.add('show');
-}, 1800);
-
-</script>
-
-  
+  </script>
 </head>
 <body>
   <div class="intro-screen">
@@ -105,6 +124,12 @@ setTimeout(() => {
 
     <!-- 隠しアイコン：👁 -->
     <a href="fiction.html" class="eye-link" aria-label="真実はフィクション"></a>
+
+    <!-- フェードインテキスト -->
+    <div id="intro-text" class="fade-in-text">
+      <p>この物語は、ほんとうの話です。</p>
+      <p>でも、あなたが知っているものとは少し違う。</p>
+    </div>
   </div>
 </body>
 </html>
