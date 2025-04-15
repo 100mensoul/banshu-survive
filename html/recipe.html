@@ -3,7 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <title>播州レシピ｜播州サバイブ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      background-color: #fffdf7;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    header {
+      background-color: #f0e5d8;
+      padding: 2rem 1rem;
+      text-align: center;
+      border-bottom: 2px solid #ccc;
+    }
+
+    header h1 {
+      font-size: 2.4rem;
+      margin-bottom: 0.5rem;
+    }
+
+    header .subtitle {
+      font-size: 1.2rem;
+      color: #777;
+    }
+
+    main {
+      padding: 2rem 1rem;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    section {
+      margin-bottom: 3rem;
+    }
+
+    h2, h3 {
+      color: #a0522d;
+    }
+
+    .recipe-card {
+      background: #fffaf0;
+      border: 1px solid #e0d8cc;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .recipe-card ul {
+      padding-left: 1.5rem;
+    }
+
+    .recipe-card a {
+      display: inline-block;
+      margin-top: 1rem;
+      color: #8b4513;
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -14,7 +74,10 @@
   <main>
     <section class="intro">
       <h2>播州料理とは？</h2>
-      <p>播州の風土が育んだ、土地の記憶と暮らしの味...</p>
+      <p>
+        播州の風土が育んだ、土地の記憶と暮らしの味。<br>
+        川と山と海の恵みが出会うこの地で、素朴で奥深い料理が生まれました。
+      </p>
     </section>
 
     <section class="recipe-card">
@@ -25,11 +88,11 @@
         <li>さば昆布</li>
         <li>青のり、ゆず胡椒、ごま etc...</li>
       </ul>
-      <p>→ <a href="recipe_001.html">レシピを詳しく読む</a></p>
+      <a href="recipe_001.html">レシピを詳しく読む</a>
     </section>
 
-    <!-- 今後の追加レシピのリスト化を想定 -->
+    <!-- 今後の追加レシピはここに追加していく -->
+
   </main>
 </body>
 </html>
-
