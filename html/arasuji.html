@@ -50,19 +50,18 @@
 
     .eye-link {
       position: absolute;
-      top: calc(50% - 60px);
+      top: calc(50% - 160px); /* さらに上へ */
       left: 50%;
       transform: translateX(-50%);
-      width: 60px;
-      height: 60px;
+      width: 80px;
+      height: 80px;
       background: transparent;
-      cursor: pointer;
+      cursor: url('https://emojicdn.elk.sh/%F0%9F%91%81') 16 16, auto; /* 目のマークに修正 */
     }
 
     .eye-link:hover {
       outline: 2px dashed rgba(0, 0, 0, 0.2);
       outline-offset: 5px;
-      cursor: url('https://emojicdn.elk.sh/%F0%9F%91%81'), auto;
     }
   </style>
 </head>
