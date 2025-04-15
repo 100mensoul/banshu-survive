@@ -43,25 +43,31 @@ body {
   opacity: 1;
 }
 
-/* 仮ヒビ演出 */
+/* 仮ヒビ演出：画像ベースに差し替え */
 .crack-effect {
-  width: 160px;
-  height: 160px;
-  background-image: url('../images/crack.png'); /* ファイル名は任意でリネーム可能 */
+  background-image: url('../images/crack.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
+  width: 200px;
+  height: 200px;
   position: absolute;
-  top: 43%; /* 位置調整：眉間あたり */
+  top: 42%;
   left: 50%;
   transform: translateX(-50%);
-  animation: crackFlash 1.2s ease-in-out forwards;
   opacity: 0;
-  z-index: 3;
+  display: none;
+  z-index: 10;
+  animation: crackIn 1.2s ease forwards;
 }
 
-@keyframes crackFlash {
-  0% { opacity: 0; transform: scale(0.8) rotate(-5deg); }
-  50% { opacity: 1; transform: scale(1.1) rotate(2deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+@keyframes crackIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
 }
