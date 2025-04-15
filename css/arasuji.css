@@ -5,23 +5,7 @@ body {
 }
 
 
-.qr-link {
-  position: absolute;
-  width: 140px;
-  height: 140px;
-  bottom: 30px;
-  right: 30px;
-  background-image: url('/banshu-survive/images/embossed_logo.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  cursor: pointer;
-}
 
-.qr-link:hover {
-  outline: 2px dashed rgba(0,0,0,0.2);
-  outline-offset: 5px;
-}
 
 @keyframes crumble {
   0% {
