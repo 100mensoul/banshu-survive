@@ -72,7 +72,17 @@
       sessionStorage.removeItem('fromFiction'); // 一度きりの演出
     }
   });
-  </script>
+
+
+    // fiction.html から戻ってきたことを検出
+    window.addEventListener('DOMContentLoaded', () => {
+    const introScreen = document.querySelector('.intro-screen');
+    if (sessionStorage.getItem('fromFiction') === 'yes' && introScreen) {
+      introScreen.classList.add('shikkui-break');
+      sessionStorage.removeItem('fromFiction'); // 一度きりの発動
+    }
+    });
+</script>
 
   
 </head>
