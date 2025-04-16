@@ -63,3 +63,28 @@ footer {
   margin-top: 0.5rem;
 }
 
+.dialogue {
+  background-image: url('images/bg-table-discussion.jpg'); /* ここは実際の画像名に置換 */
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  padding: 4rem 2rem;
+  color: #fff;
+  position: relative;
+}
+
+.dialogue::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4); /* 読みやすくするための半透明黒オーバーレイ */
+  z-index: 0;
+}
+
+.dialogue > * {
+  position: relative;
+  z-index: 1;
+}
+
