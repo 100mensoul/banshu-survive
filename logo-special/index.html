@@ -11,7 +11,6 @@
     }
 
     .hero {
-      position: relative;
       width: 100%;
       max-width: 100%;
     }
@@ -20,85 +19,6 @@
       width: 100%;
       height: auto;
       display: block;
-    }
-
-    .hero-text {
-      position: absolute;
-      top: 4%;
-      left: 3%;
-      color: white;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
-    }
-
-    .hero-title {
-      font-size: 1.8rem;
-      font-weight: bold;
-      color: #FFA500;
-      margin-bottom: 0.3em;
-    }
-
-    .hero-tag {
-      display: inline-block;
-      background: #8B5E3C;
-      color: white;
-      font-size: 0.9rem;
-      padding: 0.2em 0.6em;
-      transform: rotate(-6deg);
-      margin-left: 1rem;
-      box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-
-    .hero-copy {
-      font-size: 1rem;
-      line-height: 1.4;
-      color: #f0f0f0;
-      margin-bottom: 1em;
-    }
-
-    .hero-caption {
-      background: #FFD700;
-      color: #000;
-      font-weight: bold;
-      padding: 0.5em 1em;
-      display: inline-block;
-      font-size: 0.95rem;
-      border-radius: 5px;
-      box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-    }
-
-    .scroll-down {
-      position: absolute;
-      bottom: 3%;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 2rem;
-      animation: bounce 2s infinite;
-      color: #fff;
-      text-shadow: 1px 1px 2px #000;
-    }
-
-    @keyframes bounce {
-      0%, 100% { transform: translate(-50%, 0); }
-      50% { transform: translate(-50%, 10px); }
-    }
-
-    .gallery-link {
-      position: absolute;
-      bottom: 8%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #fff;
-      color: #000;
-      padding: 0.7em 1.2em;
-      font-weight: bold;
-      text-decoration: none;
-      border-radius: 8px;
-      box-shadow: 1px 1px 4px rgba(0,0,0,0.3);
-      font-size: 1rem;
-    }
-
-    .gallery-link:hover {
-      background: #ffec80;
     }
 
     .gallery-grid {
@@ -113,94 +33,85 @@
 <body>
   <div class="hero">
     <img src="images/top-banner-horizontal.png" alt="トップバナー画像">
-    <div class="hero-text">
-      <div class="hero-title">播州サバイブ <span class="hero-tag">制作室</span></div>
-      <div class="hero-copy">
-        この形に未来を託す<br>
-        ロゴ公開が迫る中、制作チームの現場をのぞいてみた！
-      </div>
-      <div class="hero-caption">
-        緊急対談｜脚本家・百面惣 × 家紋デザイナー・河合紋次郎 播州の匠をめぐって
-      </div>
-    </div>
-    <a href="#gallery" class="gallery-link">公開！構想中のロゴ案はコチラ</a>
-    <div class="scroll-down">↓</div>
   </div>
 
-<main>
+  <!-- スクロール誘導とギャラリーへのリンク -->
+<div style="text-align: center; margin-top: -3em;">
+  <a href="#gallery" style="text-decoration: none; font-size: 2rem; color: white;">
+    ↓ ロゴ案はこちら
+  </a>
+</div>
+
+
+  <main>
     <section class="intro">
       <h2>ロゴは語る</h2>
       <p>百面惣と河合紋次郎。ひとりは言葉で、もうひとりはかたちで、播州の魂に迫る。</p>
     </section>
 
     <section class="dialogue">
-  <h2>百面惣が語る「5つの要素」</h2>
-  <article>
-    <h3>1. 播と州が手を取り合う瞬間</h3>
-    <p>「播」の字と「州」の字は、どこか敵対していた。けれど、この物語では、それが融合し、握手するような瞬間を見せたい。</p>
-  </article>
+      <h2>百面惣が語る「5つの要素」</h2>
+      <article>
+        <h3>1. 播と州が手を取り合う瞬間</h3>
+        <p>「播」の字と「州」の字は、どこか敵対していた。けれど、この物語では、それが融合し、握手するような瞬間を見せたい。</p>
+      </article>
 
-  <article>
-    <h3>2. シャチホコと稲穂の共存</h3>
-    <p>シャチホコは権威の象徴。でも稲穂は庶民の暮らし。播州という土地の両側面を、ひとつの形にしたかった。</p>
-  </article>
+      <article>
+        <h3>2. シャチホコと稲穂の共存</h3>
+        <p>シャチホコは権威の象徴。でも稲穂は庶民の暮らし。播州という土地の両側面を、ひとつの形にしたかった。</p>
+      </article>
 
-  <article>
-    <h3>3. 封建とナチュールの融和</h3>
-    <p>旧来の秩序と、新しい生命力。その両方が共存する「土地のうねり」を、ロゴに込めたいと思った。</p>
-  </article>
+      <article>
+        <h3>3. 封建とナチュールの融和</h3>
+        <p>旧来の秩序と、新しい生命力。その両方が共存する「土地のうねり」を、ロゴに込めたいと思った。</p>
+      </article>
 
-  <article>
-    <h3>4. ひび割れた漆喰から生まれる真実</h3>
-    <p>表面は美しく塗り固められている。でも、その下には、叫びや希望がある。ヒビはその象徴。</p>
-  </article>
+      <article>
+        <h3>4. ひび割れた漆喰から生まれる真実</h3>
+        <p>表面は美しく塗り固められている。でも、その下には、叫びや希望がある。ヒビはその象徴。</p>
+      </article>
 
-  <article>
-    <h3>5. 物語が現実になる紋章</h3>
-    <p>ロゴはただの飾りじゃない。物語が「現実化」する一歩手前で、人の心を動かす符号であってほしい。</p>
-  </article>
-</section>
+      <article>
+        <h3>5. 物語が現実になる紋章</h3>
+        <p>ロゴはただの飾りじゃない。物語が「現実化」する一歩手前で、人の心を動かす符号であってほしい。</p>
+      </article>
+    </section>
 
+    <section class="design">
+      <h2>河合紋次郎の家紋論</h2>
 
+      <article>
+        <h3>● 円は「永続」を象徴する</h3>
+        <p>家紋の世界では、円の中に物語を閉じ込めるのが基本。今回の二重円には、内と外の関係が重ねられている。</p>
+      </article>
 
+      <article>
+        <h3>● 等比と余白が語る「粋」</h3>
+        <p>余白の取り方で、どこまでが言葉にならない「気配」になるか。視覚ではなく感覚に訴えるものにしたかった。</p>
+      </article>
 
-<section class="design">
-  <h2>河合紋次郎の家紋論</h2>
+      <article>
+        <h3>● 回転しても崩れない構造</h3>
+        <p>家紋は着物にも提灯にも刻まれる。上下左右がなくても成立する造形が、どこまで可能かを追求した。</p>
+      </article>
+    </section>
 
-  <article>
-    <h3>● 円は「永続」を象徴する</h3>
-    <p>家紋の世界では、円の中に物語を閉じ込めるのが基本。今回の二重円には、内と外の関係が重ねられている。</p>
-  </article>
-
-  <article>
-    <h3>● 等比と余白が語る「粋」</h3>
-    <p>余白の取り方で、どこまでが言葉にならない「気配」になるか。視覚ではなく感覚に訴えるものにしたかった。</p>
-  </article>
-
-  <article>
-    <h3>● 回転しても崩れない構造</h3>
-    <p>家紋は着物にも提灯にも刻まれる。上下左右がなくても成立する造形が、どこまで可能かを追求した。</p>
-  </article>
-</section>
-
-    
-
-    <section class="gallery">
+    <section class="gallery" id="gallery">
       <h2>ロゴ案ギャラリー</h2>
-    <div class="gallery-grid">
-    <figure>
-      <img src="images/logo1.png" alt="ロゴ案1">
-      <figcaption>Ver.1｜漆喰割れ型</figcaption>
-    </figure>
-    <figure>
-      <img src="images/logo2.png" alt="ロゴ案2">
-      <figcaption>Ver.2｜二重円型</figcaption>
-    </figure>
-    <figure>
-      <img src="images/logo3.png" alt="ロゴ案3">
-      <figcaption>Ver.3｜文字組型</figcaption>
-    </figure>
-  </div>
+      <div class="gallery-grid">
+        <figure>
+          <img src="images/logo1.png" alt="ロゴ案1">
+          <figcaption>Ver.1｜漆喰割れ型</figcaption>
+        </figure>
+        <figure>
+          <img src="images/logo2.png" alt="ロゴ案2">
+          <figcaption>Ver.2｜二重円型</figcaption>
+        </figure>
+        <figure>
+          <img src="images/logo3.png" alt="ロゴ案3">
+          <figcaption>Ver.3｜文字組型</figcaption>
+        </figure>
+      </div>
     </section>
   </main>
 
@@ -209,8 +120,5 @@
   </footer>
 
   <script src="countdown.js"></script>
-</body>
-</html>
-  
 </body>
 </html>
