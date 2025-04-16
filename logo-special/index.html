@@ -2,18 +2,104 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>ロゴ特設｜播州サバイブ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <title>トップバナー</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+    }
+
+    .hero {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .hero img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .hero-text {
+      position: absolute;
+      top: 8%;
+      left: 5%;
+      color: white;
+      text-shadow: 2px 2px 4px #000;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #FFA500; /* オレンジ */
+    }
+
+    .hero-subtitle {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-top: 0.3em;
+    }
+
+    .hero-copy {
+      margin-top: 1.5em;
+      font-size: 1.5rem;
+      line-height: 1.4;
+    }
+
+    .hero-caption {
+      background: yellow;
+      color: #000;
+      font-weight: bold;
+      padding: 0.5em 1em;
+      margin-top: 1.5em;
+      display: inline-block;
+      font-size: 1rem;
+    }
+
+    @media screen and (max-width: 768px) {
+      .hero-text {
+        top: 4%;
+        left: 4%;
+      }
+
+      .hero-title {
+        font-size: 1.6rem;
+      }
+
+      .hero-subtitle {
+        font-size: 1.3rem;
+      }
+
+      .hero-copy {
+        font-size: 1rem;
+      }
+
+      .hero-caption {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
 </head>
 <body>
-  <header class="hero">
-    <div class="hero-overlay">
-      <h1>ロゴ完成まで、あと <span id="daysLeft">9</span> 日！</h1>
-      <p>この形に、播州の未来を託す。</p>
+  <div class="hero">
+    <img src="top-banner-horizontal.png" alt="トップバナー画像">
+    <div class="hero-text">
+      <div class="hero-title">播州サバイブ</div>
+      <div class="hero-subtitle">制作の現場より</div>
+      <div class="hero-copy">
+        この形に未来を託す<br>
+        ロゴ公開が迫る中、制作チームの現場をのぞいてみた！
+      </div>
+      <div class="hero-caption">
+        緊急対談｜脚本家・百面惣 × 家紋デザイナー・河合紋次郎　播州の匠をめぐって
+      </div>
     </div>
-  </header>
+  </div>
 
+
+  
   <main>
     <section class="intro">
       <h2>ロゴは語る</h2>
