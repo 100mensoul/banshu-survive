@@ -69,29 +69,29 @@
       cursor: url('https://emojicdn.elk.sh/%F0%9F%91%81') 16 16, auto;
     }
 
-    .crack-effect {
-      background-image: url('../images/crack.png');
-      background-size: contain;
-      background-repeat: no-repeat;
-      width: 300px;
-      height: 300px;
+    .crack-svg {
       position: absolute;
-      top: 40%;
+      top: 30%;
       left: 50%;
       transform: translateX(-50%);
-      opacity: 0;
+      width: 300px;
+      height: 400px;
+      z-index: 5;
       display: none;
-      animation: crackIn 1s ease forwards;
     }
 
-    @keyframes crackIn {
-      0% {
-        opacity: 0;
-        transform: scale(0.8) translateX(-50%);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1) translateX(-50%);
+    .crack-svg path {
+      stroke: black;
+      stroke-width: 2;
+      fill: none;
+      stroke-dasharray: 900;
+      stroke-dashoffset: 900;
+      animation: drawCrack 1.2s ease-out forwards;
+    }
+
+    @keyframes drawCrack {
+      to {
+        stroke-dashoffset: 0;
       }
     }
   </style>
@@ -107,39 +107,24 @@
     <!-- 隠しアイコン：👁 -->
     <a href="fiction.html" class="eye-link" aria-label="真実はフィクション"></a>
 
-    <!-- クラック画像演出 -->
-    <div class="crack-effect" id="crackEffect"></div>
-
     <!-- クラックSVGアニメーション -->
-    <div class="crack-svg" id="crackSVG" style="display: none;">
-      <svg viewBox="0 0 400 400" width="300" height="300" style="position: absolute; top: 35%; left: 50%; transform: translateX(-50%); z-index: 5;">
+    <div class="crack-svg" id="crackSVG">
+      <svg viewBox="0 0 400 400" width="100%" height="100%">
         <path d="M200,0 
                  C210,40 190,80 200,120 
                  C210,160 190,200 200,240 
-                 C210,280 190,320 200,360"
-              fill="transparent"
-              stroke="black"
-              stroke-width="2"
-              stroke-dasharray="900"
-              stroke-dashoffset="900">
-          <animate attributeName="stroke-dashoffset"
-                   from="900" to="0"
-                   dur="1.2s"
-                   fill="freeze" />
-        </path>
+                 C210,280 190,320 200,360" />
       </svg>
     </div>
   </div>
 
   <script>
     const fromFiction = sessionStorage.getItem('fromFiction');
-    const crack = document.getElementById('crackEffect');
     const crackSVG = document.getElementById('crackSVG');
     const circle = document.getElementById('circleWrapper');
 
     if (fromFiction === 'yes') {
       if (circle) circle.style.display = 'none';
-      if (crack) crack.style.display = 'block';
       if (crackSVG) crackSVG.style.display = 'block';
       sessionStorage.removeItem('fromFiction');
     }
