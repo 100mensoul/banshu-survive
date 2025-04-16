@@ -1,0 +1,45 @@
+body {
+  font-family: 'Hiragino Kaku Gothic ProN', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #fffef9;
+  color: #222;
+  line-height: 1.7;
+}
+
+.hero {
+  background-image: url('images/shikkui-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.hero-overlay {
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2rem;
+  border-radius: 10px;
+}
+
+main {
+  padding: 2rem;
+}
+
+h1, h2 {
+  font-family: 'Yuji Boku', serif;
+}
+
+section {
+  margin-bottom: 3rem;
+}
+
+footer {
+  background: #eee;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.9rem;
+}
