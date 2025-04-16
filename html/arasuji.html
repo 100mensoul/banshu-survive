@@ -107,41 +107,42 @@
     <!-- 隠しアイコン：👁 -->
     <a href="fiction.html" class="eye-link" aria-label="真実はフィクション"></a>
 
-    <!-- ヒビ演出：戻ってきたときのみ表示 -->
+    <!-- クラック画像演出 -->
     <div class="crack-effect" id="crackEffect"></div>
+
+    <!-- クラックSVGアニメーション -->
+    <div class="crack-svg" id="crackSVG" style="display: none;">
+      <svg viewBox="0 0 400 400" width="300" height="300" style="position: absolute; top: 35%; left: 50%; transform: translateX(-50%); z-index: 5;">
+        <path d="M200,0 
+                 C210,40 190,80 200,120 
+                 C210,160 190,200 200,240 
+                 C210,280 190,320 200,360"
+              fill="transparent"
+              stroke="black"
+              stroke-width="2"
+              stroke-dasharray="900"
+              stroke-dashoffset="900">
+          <animate attributeName="stroke-dashoffset"
+                   from="900" to="0"
+                   dur="1.2s"
+                   fill="freeze" />
+        </path>
+      </svg>
+    </div>
   </div>
 
   <script>
-    // fiction.htmlから戻ってきたかチェック
     const fromFiction = sessionStorage.getItem('fromFiction');
+    const crack = document.getElementById('crackEffect');
+    const crackSVG = document.getElementById('crackSVG');
+    const circle = document.getElementById('circleWrapper');
+
     if (fromFiction === 'yes') {
-      const crack = document.getElementById('crackEffect');
-      const circle = document.getElementById('circleWrapper');
       if (circle) circle.style.display = 'none';
       if (crack) crack.style.display = 'block';
+      if (crackSVG) crackSVG.style.display = 'block';
       sessionStorage.removeItem('fromFiction');
     }
   </script>
-  
-  
-  <svg viewBox="0 0 400 400" width="400" height="400">
-  <path d="M200,0 
-           C210,40 190,80 200,120 
-           C210,160 190,200 200,240 
-           C210,280 190,320 200,360"
-        fill="transparent"
-        stroke="black"
-        stroke-width="2"
-        stroke-dasharray="900"
-        stroke-dashoffset="900">
-    <animate attributeName="stroke-dashoffset"
-             from="900" to="0"
-             dur="1.2s"
-             fill="freeze" />
-  </path>
-</svg>
-  
-  
-  
 </body>
 </html>
