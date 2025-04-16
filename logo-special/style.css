@@ -43,3 +43,23 @@ footer {
   padding: 1rem;
   font-size: 0.9rem;
 }
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.gallery-grid img {
+  width: 100%;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.gallery-grid figcaption {
+  text-align: center;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
