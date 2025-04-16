@@ -1,52 +1,67 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>あらすじ｜播州サバイブ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="../css/main.css">
-  <link rel="stylesheet" href="../css/arasuji.css">
-</head>
-<body>
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'YuGothic', 'Hiragino Kaku Gothic ProN', sans-serif;
+  background-color: #fff;
+  color: #222;
+  line-height: 1.8;
+}
 
-  <!-- 1. ヒーロー画像 -->
-  <div class="hero-image">
-    <img src="../images/hero_arasuji.jpg" alt="播州サバイブ メインビジュアル">
-  </div>
+/* 1. ヒーロー画像 */
+.hero-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 
-  <!-- 2. タイトル -->
-  <h1 class="page-title">あらすじ</h1>
+/* 2. タイトル */
+.page-title {
+  text-align: center;
+  font-size: 2.8rem;
+  margin-top: 1.5rem;
+  font-weight: bold;
+}
 
-  <!-- 3. メニューバー（仮で最低限）-->
-  <nav class="menu-bar">
-    <a href="../index.html">トップ</a>
-    <a href="cast.html">登場人物</a>
-    <a href="map.html">地図</a>
-    <a href="diary.html">姫ゴト日記</a>
-  </nav>
+/* 3. メニュー */
+.menu-bar {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  background-color: #eee;
+  font-size: 1rem;
+}
+.menu-bar a {
+  text-decoration: none;
+  color: #333;
+}
+.menu-bar a:hover {
+  text-decoration: underline;
+}
 
-  <!-- 4. サブタイトル -->
-  <h2 class="subtitle">この物語が始まる場所</h2>
+/* 4. サブタイトル */
+.subtitle {
+  text-align: center;
+  font-size: 1.5rem;
+  color: #666;
+  margin-top: 1rem;
+}
 
-  <!-- 5. キャッチコピー -->
-  <p class="catchcopy">「すべての“今”が、かつての“物語”だった。」</p>
+/* 5. キャッチコピー */
+.catchcopy {
+  text-align: center;
+  font-size: 1.2rem;
+  font-style: italic;
+  color: #444;
+  margin: 1rem 2rem;
+}
 
-  <!-- 6. 本文 -->
-  <section class="main-text">
-    <p>
-      播州の地に生きる人々の声をすくい上げるようにして生まれたこの物語。
-      それはフィクションでありながら、現実よりも真実に近い。
-    </p>
-    <p>
-      語り手は外様（とざま）である「平尾」。<br>
-      主人公は不思議な魅力を放つ「R」。<br>
-      町おこしという名の再構築が進むなか、彼女たちの日々は記録され、
-      いずれ「歴史」となるかもしれない。
-    </p>
-    <p>
-      あなたが今、目にするすべての風景に、物語の種が眠っている。
-    </p>
-  </section>
-
-</body>
-</html>
+/* 6. 本文 */
+.main-text {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+.main-text p {
+  margin-bottom: 1.5rem;
+}
