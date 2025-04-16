@@ -13,12 +13,50 @@
     .hero {
       width: 100%;
       max-width: 100%;
+      position: relative;
     }
 
     .hero img {
       width: 100%;
       height: auto;
       display: block;
+    }
+
+    .scroll-down {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 2rem;
+      color: white;
+      text-shadow: 2px 2px 4px #000;
+      animation: bounce 1.5s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateX(-50%) translateY(0);
+      }
+      50% {
+        transform: translateX(-50%) translateY(10px);
+      }
+    }
+
+    .jump-link {
+      display: block;
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 1.2rem;
+    }
+
+    .jump-link a {
+      color: #333;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .jump-link a:hover {
+      text-decoration: underline;
     }
 
     .gallery-grid {
@@ -33,15 +71,12 @@
 <body>
   <div class="hero">
     <img src="images/top-banner-horizontal.png" alt="トップバナー画像">
+    <div class="scroll-down">↓</div>
   </div>
 
-  <!-- スクロール誘導とギャラリーへのリンク -->
-<div style="text-align: center; margin-top: -3em;">
-  <a href="#gallery" style="text-decoration: none; font-size: 2rem; color: white;">
-    ↓ ロゴ案はこちら
-  </a>
-</div>
-
+  <div class="jump-link">
+    <a href="#gallery">公開中のロゴ案はこちら</a>
+  </div>
 
   <main>
     <section class="intro">
