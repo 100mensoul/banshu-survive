@@ -49,17 +49,19 @@ body {
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  width: 200px;
-  height: 200px;
+  width: 100vw;
+  height: 100vh;
   position: absolute;
-  top: 42%;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 0;
+  left: 0;
   opacity: 0;
+  animation: crackIn 1s ease forwards;
   display: none;
-  z-index: 10;
-  animation: crackIn 1.2s ease forwards;
+  z-index: 3;
 }
+
+
+
 
 @keyframes crackIn {
   0% {
