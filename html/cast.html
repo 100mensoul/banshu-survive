@@ -17,4 +17,71 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@himesoku_hirao">
   <link rel="icon" type="image/png" href="https://100mensoul.github.io/banshu-survive/images/apple-touch-icon-144.png" sizes="196x196">
+  <link rel="stylesheet" href="../css/chart.css">
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background-color: #f7f7f7;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .chart-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+    .person {
+      background-color: white;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      padding: 1rem;
+      width: 200px;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .relation-line {
+      position: absolute;
+      width: 2px;
+      background-color: #666;
+      z-index: -1;
+    }
+    .name {
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+    .role {
+      font-size: 0.9em;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>登場人物 相関図</h1>
+  <div class="chart-container">
+    <div class="person">
+      <div class="name">平尾</div>
+      <div class="role">語り手／外部観察者</div>
+    </div>
+    <div class="person">
+      <div class="name">R</div>
+      <div class="role">主人公／土地を継ぐ者</div>
+    </div>
+    <div class="person">
+      <div class="name">柳楽</div>
+      <div class="role">夢見る建築士</div>
+    </div>
+    <div class="person">
+      <div class="name">優夏</div>
+      <div class="role">生粋のヒメジン</div>
+    </div>
+    <!-- 他のキャラクターも追加していける -->
+  </div>
+</body>
+</html>
 
