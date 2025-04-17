@@ -57,6 +57,21 @@
       transform: translateY(-5px);
       box-shadow: 0 6px 12px rgba(0,0,0,0.2);
     }
+    .person:hover::after {
+      content: attr(data-relation);
+      position: absolute;
+      bottom: -1.8em;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #333;
+      color: #fff;
+      padding: 0.2em 0.5em;
+      font-size: 0.8em;
+      border-radius: 4px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 2;
+    }
     .face {
       width: 100%;
       height: auto;
@@ -80,7 +95,6 @@
       text-decoration: none;
       color: inherit;
     }
-    /* カラー分類 */
    .type-narrator {
       background-color: #fdf4e3;
       border-color: #f2c879;
@@ -93,7 +107,6 @@
       background-color: #f3e5f5;
       border-color: #ba68c8;
     }
-    /* SVG線 */
     svg.connector {
       position: absolute;
       top: 0;
@@ -123,7 +136,7 @@
 
     <!-- 人物ブロック -->  
     <div class="row">        
-      <div class="person type-narrator">
+      <div class="person type-narrator data-relation="Rを見守る"">
         <a href="../cast/hirao.html">
           <img src="../images/hirao_face.png" alt="平尾" class="face">
           <div class="name">平尾</div>
@@ -135,7 +148,7 @@
   <div class="arrow"></div>
     
   <div class="row">
-    <div class="person type-main">
+    <div class="person type-main data-relation="姫路へ戻ってきた"">
       <a href="../cast/r.html">
         <img src="../images/R_face.png" alt="R" class="face">
         <div class="name">R</div>
@@ -145,14 +158,14 @@
   </div>  
 
   <div class="row">
-    <div class="person type-side">
+    <div class="person type-side data-relation="毎日、畑へ"">
       <a href="../cast/masami.html">
         <img src="../images/masami.png" alt="昌己" class="face">
         <div class="name">昌己</div>
         <div class="role">Rの父</div>
       </a>
     </div>
-    <div class="person type-side">
+    <div class="person type-side data-relation="花が大好き"">
       <a href="../cast/jun.html">
         <img src="../images/jun.png" alt="純" class="face">
         <div class="name">純</div>
@@ -162,14 +175,14 @@
   </div>
   
   <div class="row">  
-    <div class="person type-side">
+    <div class="person type-side data-relation="老舗の駄菓子屋の娘"">
       <a href="../cast/yuka.html">
         <img src="../images/優夏_face.png" alt="優夏" class="face">
         <div class="name">優夏</div>
         <div class="role">姫路の太陽（柳楽の妻）</div>
       </a>   
     </div>
-    <div class="person type-side">
+    <div class="person type-side data-relation="酒場で文化談義"">
       <a href="../cast/yanagira.html">
         <img src="../images/柳楽_face.png" alt="柳楽" class="face">
         <div class="name">柳楽</div>
@@ -179,21 +192,21 @@
   </div>
     
   <div class="row"> 
-    <div class="person type-side">
+    <div class="person type-side data-relation="淡路を開拓中"">
       <a href="../cast/atsushi.html">
         <img src="../images/atsushi.png" alt="淳士" class="face">
         <div class="name">淳士</div>
         <div class="role">醸造家DJ（瑛美の夫）</div>
       </a>
       </div>
-    <div class="person type-side">
+    <div class="person type-side" data-relation="Rと運命を感じる">
       <a href="../cast/eimi.html">
         <img src="../images/eimi.png" alt="瑛美" class="face">
         <div class="name">瑛美</div>
         <div class="role">醸造家DJ（淳士の妻）</div>
       </a>
     </div>
-    <div class="person type-side">
+    <div class="person type-side" data-relation="プラハから帰還">
       <a href="../cast/niikura.html">
         <img src="../images/niikura.png" alt="新倉一" class="face">
         <div class="name">新倉一</div>
