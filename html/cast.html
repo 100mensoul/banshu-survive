@@ -40,8 +40,6 @@
       gap: 1.5rem;
       justify-content: center;
       flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: center;
     }
     .person {
       background-color: white;
@@ -69,12 +67,6 @@
     .face:hover {
       transform: scale(1.05);
     }
-    .relation-line {
-      position: absolute;
-      width: 2px;
-      background-color: #666;
-      z-index: -1;
-    }
     .name {
       font-weight: bold;
       font-size: 1.2em;
@@ -83,59 +75,126 @@
       font-size: 0.9em;
       color: #666;
     }
+    .person a {
+      text-decoration: none;
+      color: inherit;
+    }
+    /* カラー分類 */
+   .type-narrator {
+      background-color: #fdf4e3;
+      border-color: #f2c879;
+    }
+    .type-main {
+      background-color: #e3f2fd;
+      border-color: #64b5f6;
+    }
+    .type-side {
+      background-color: #f3e5f5;
+      border-color: #ba68c8;
+    }
+    /* 関係線の矢印風 */
+    .arrow {
+      width: 60px;
+      height: 20px;
+      border-top: 2px solid #999;
+      border-right: 2px solid #999;
+      transform: rotate(45deg);
+      margin: 0 auto;
+    }
   </style>
 </head>
-<body>
+<body>   
   <h1>登場人物 相関図</h1>
   <div class="chart-container">
-    <div class="person">
-      <div class="name">平尾</div>
-      <div class="role">語り手／外部観察者</div>
-       <img src="../images/hirao_face.png" alt="hirao" class="face">
+    <div class="row">        
+      <div class="person type-narrator">
+        <a href="../cast/hirao.html">
+          <img src="../images/hirao_face.png" alt="平尾" class="face">
+          <div class="name">平尾</div>
+          <div class="role">語り手／外部観察者</div>
+        </a>
     </div>
-    <div class="person">
-      <div class="name">R</div>
-      <div class="role">主人公／土地を継ぐ者</div>
-      <img src="../images/R_face.png" alt="R" class="face">
+  <div>
+
+  <div class="arrow"></div>
+    
+  <div class="row">
+    <div class="person type-main">
+      <a href="../cast/r.html">
+        <img src="../images/R_face.png" alt="R" class="face">
+        <div class="name">R</div>
+        <div class="role">主人公／土地を継ぐ者</div>
+      </a>
     </div>
-    <div class="person">
-      <div class="name">柳楽</div>
-      <div class="role">夢見る建築士</div>
-       <img src="../images/yagira_face.png" alt="yagira" class="face">
+  </div>  
+
+  <div class="row">
+    <div class="person type-side">
+      <a href="../cast/masami.html">
+        <img src="../images/masami.png" alt="昌己" class="face">
+        <div class="name">昌己</div>
+        <div class="role">Rの父</div>
+      </a>
     </div>
-    <div class="person">
-      <div class="name">優夏</div>
-      <div class="role">生粋のヒメジン</div>
-       <img src="../images/yuuka_face.png" alt="yuuka" class="face">
+    <div class="person type-side">
+      <a href="../cast/jun.html">
+        <img src="../images/jun.png" alt="純" class="face">
+        <div class="name">純</div>
+        <div class="role">Rの母</div>
+      </a>
     </div>
-      <div class="person">
-      <div class="name">淳士</div>
-      <div class="role">淡路を開拓！</div>
-        <img src="../images/atsushi_face.png" alt="atsushi" class="face">
+  </div>
+  
+  <div class="row">  
+    <div class="person type-side">
+      <a href="../cast/yuka.html">
+        <img src="../images/優夏_face.png" alt="優夏" class="face">
+        <div class="name">優夏</div>
+        <div class="role">姫路の太陽（柳楽の妻）</div>
+      </a>   
     </div>
-      <div class="person">
-      <div class="name">瑛美</div>
-      <div class="role">DJ醸造家</div>
-        <img src="../images/eimi_face.png" alt="eimi" class="face">
+    <div class="person type-side">
+      <a href="../cast/yanagira.html">
+        <img src="../images/柳楽_face.png" alt="柳楽" class="face">
+        <div class="name">柳楽</div>
+        <div class="role">夢見る建築士（優夏の夫）</div>
+      </a>
     </div>
-      <div class="person">
-      <div class="name">新倉</div>
-      <div class="role">多動な教師</div>
-        <img src="../images/niikura_face.png" alt="niikura" class="face">
+  </div>
+    
+  <div class="row"> 
+    <div class="person type-side">
+      <a href="../cast/atsushi.html">
+        <img src="../images/atsushi.png" alt="淳士" class="face">
+        <div class="name">淳士</div>
+        <div class="role">醸造家DJ（瑛美の夫）</div>
+      </a>
+      </div>
+    <div class="person type-side">
+      <a href="../cast/eimi.html">
+        <img src="../images/eimi.png" alt="瑛美" class="face">
+        <div class="name">瑛美</div>
+        <div class="role">醸造家DJ（淳士の妻）</div>
+      </a>
     </div>
-      <div class="person">
-      <div class="name">アキーノ</div>
-      <div class="role">愛の楽団長</div>
-        <img src="../images/akiino_face.png" alt="akiino" class="face">
+    <div class="person type-side">
+      <a href="../cast/niikura.html">
+        <img src="../images/niikura.png" alt="新倉一" class="face">
+        <div class="name">新倉一</div>
+        <div class="role">多動の教師</div>
+      </a>
     </div>
-      <div class="person">
-      <div class="name">???</div>
-      <div class="role">???</div>
-        <img src="../images/?_face.png" alt="???" class="face">
+    <div class="person type-side">
+      <a href="../cast/akiino.html">
+        <img src="../images/akiino.png" alt="アキーノ" class="face">
+        <div class="name">アキーノ</div>
+        <div class="role">愛の楽団長</div>
+      </a>
     </div>
+  </div>
 
     <!-- 他のキャラクターも追加していける -->
-  </div>
+</div>
 </body>
 </html>
 
