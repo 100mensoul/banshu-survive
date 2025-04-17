@@ -44,12 +44,22 @@
       text-align: center;
       position: relative;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .person:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
     }
     .face {
       width: 100%;
       height: auto;
       border-radius: 8px;
       margin-bottom: 0.5rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease;
+    }
+    .face:hover {
+      transform: scale(1.05);
     }
     .relation-line {
       position: absolute;
