@@ -1,0 +1,63 @@
+body {
+  margin: 0;
+  font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  background: #f7fff4;
+  color: #333;
+}
+.container {
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+h1 {
+  text-align: center;
+  color: #88a03b;
+}
+form {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+input, textarea, button {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+button {
+  background: #fbe64f;
+  color: #333;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+#diaryList {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.card {
+  background: #ffffff;
+  border-left: 8px solid #c2eabd;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.card img {
+  max-width: 100%;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+.card .tags {
+  color: #8a6dad;
+  font-size: 0.85rem;
+}
+.card time {
+  font-size: 0.8rem;
+  color: #777;
+}
