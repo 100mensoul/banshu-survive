@@ -8,7 +8,7 @@
 </head>
 <body>
   <main class="container">
-    <h1>播州ドライブ｜ダイアリー</h1>
+    <h1>ヒメゴト日記|ダイアリー</h1>
 
     <form id="diaryForm">
       <input type="text" id="titleInput" placeholder="タイトル" required />
@@ -20,6 +20,18 @@
 
     <div id="diaryList"></div>
   </main>
+
+  <!-- 編集モーダル -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <h2>投稿の編集</h2>
+      <input type="text" id="editTitle" />
+      <textarea id="editContent" rows="4"></textarea>
+      <input type="text" id="editTags" placeholder="タグ（カンマ区切り）" />
+      <button id="saveEdit">保存</button>
+      <button id="cancelEdit">キャンセル</button>
+    </div>
+  </div>
 
   <script type="module" src="diary.js"></script>
 </body>
