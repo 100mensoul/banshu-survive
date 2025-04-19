@@ -1,26 +1,117 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>播州ダイアリー</title>
-  <link rel="stylesheet" href="diary.css" />
-</head>
-<body>
-  <main class="container">
-    <h1>播州ドライブ｜ダイアリー</h1>
+body {
+  margin: 0;
+  font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  background: #f7fff4;
+  color: #333;
+}
 
-    <form id="diaryForm">
-      <input type="text" id="titleInput" placeholder="タイトル" required />
-      <textarea id="contentInput" placeholder="本文を入力..." rows="4" required></textarea>
-      <input type="text" id="tagInput" placeholder="タグ（カンマ区切り）" />
-      <input type="file" id="imageInput" accept="image/*" />
-      <button type="submit">投稿</button>
-    </form>
+.container {
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 1rem;
+}
 
-    <div id="diaryList"></div>
-  </main>
+h1 {
+  text-align: center;
+  color: #88a03b;
+}
 
-  <script type="module" src="diary.js"></script>
-</body>
-</html>
+form {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+input, textarea, button {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  background: #fbe64f;
+  color: #333;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+#diaryList {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.card {
+  background: #ffffff;
+  border-left: 8px solid #c2eabd;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.card img {
+  max-width: 100%;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.card .tags {
+  color: #8a6dad;
+  font-size: 0.85rem;
+}
+
+.card time {
+  font-size: 0.8rem;
+  color: #777;
+}
+
+.card .actions {
+  margin-top: 0.5rem;
+  text-align: right;
+}
+
+.card .actions button {
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+  background: #ddd;
+  border: none;
+  padding: 0.3rem 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* モーダル */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 10;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.4);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.modal-content input,
+.modal-content textarea {
+  width: 100%;
+  margin-bottom: 1rem;
+}
