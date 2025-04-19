@@ -1,9 +1,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
+import {
+  getFirestore, collection, addDoc, query, orderBy,
+  onSnapshot, serverTimestamp, doc, updateDoc, deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import {
+  getStorage, ref, uploadBytes, getDownloadURL, deleteObject
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCtDPnYex-K...", // あなたのキーで置き換えてね
+  apiKey: "AIzaSyCtDPnYex-K...", // ここは完全なAPIキーに差し替えてね
   authDomain: "u2memo-36f61.firebaseapp.com",
   projectId: "u2memo-36f61",
   storageBucket: "u2memo-36f61.appspot.com",
@@ -18,9 +23,34 @@ const storage = getStorage(app);
 const form = document.getElementById("diaryForm");
 const list = document.getElementById("diaryList");
 
+let currentEditId = null;
+
+const modal = document.getElementById("editModal");
+const editTitle = document.getElementById("editTitle");
+const editContent = document.getElementById("editContent");
+const editTags = document.getElementById("editTags");
+const saveEdit = document.getElementById("saveEdit");
+const cancelEdit = document.getElementById("cancelEdit");
+
+cancelEdit.onclick = () => {
+  modal.style.display = "none";
+  currentEditId = null;
+};
+
+saveEdit.onclick = async () => {
+  if (!currentEditId) return;
+  const docRef = doc(db, "diaryEntries", currentEditId);
+  await updateDoc(docRef, {
+    title: editTitle.value,
+    content: editContent.value,
+    tags: editTags.value.split(",").map(t => t.trim()).filter(Boolean)
+  });
+  modal.style.display = "none";
+  currentEditId = null;
+};
+
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-
   const title = document.getElementById("titleInput").value;
   const content = document.getElementById("contentInput").value;
   const tags = document.getElementById("tagInput").value.split(",").map(t => t.trim()).filter(Boolean);
@@ -47,8 +77,8 @@ form.addEventListener("submit", async (e) => {
 const q = query(collection(db, "diaryEntries"), orderBy("createdAt", "desc"));
 onSnapshot(q, (snapshot) => {
   list.innerHTML = "";
-  snapshot.forEach((doc) => {
-    const data = doc.data();
+  snapshot.forEach((docSnap) => {
+    const data = docSnap.data();
     const div = document.createElement("div");
     div.className = "card";
 
@@ -58,7 +88,34 @@ onSnapshot(q, (snapshot) => {
       <p>${data.content}</p>
       <div class="tags">${data.tags.map(tag => `#${tag}`).join(" ")}</div>
       <time>${data.createdAt?.toDate().toLocaleString() ?? ""}</time>
+      <div class="actions">
+        <button class="editBtn" data-id="${docSnap.id}" data-title="${data.title}" data-content="${data.content}" data-tags="${data.tags.join(',')}">編集</button>
+        <button class="deleteBtn" data-id="${docSnap.id}" data-image="${data.imageUrl || ''}">削除</button>
+      </div>
     `;
+
+    div.querySelector(".editBtn").onclick = (e) => {
+      currentEditId = e.target.dataset.id;
+      editTitle.value = e.target.dataset.title;
+      editContent.value = e.target.dataset.content;
+      editTags.value = e.target.dataset.tags;
+      modal.style.display = "flex";
+    };
+
+    div.querySelector(".deleteBtn").onclick = async (e) => {
+      const id = e.target.dataset.id;
+      const imageUrl = e.target.dataset.image;
+      if (confirm("この投稿を削除しますか？")) {
+        await deleteDoc(doc(db, "diaryEntries", id));
+        if (imageUrl) {
+          const path = new URL(imageUrl).pathname.split("/o/")[1].split("?")[0];
+          const decodedPath = decodeURIComponent(path);
+          const imageRef = ref(storage, decodedPath);
+          await deleteObject(imageRef);
+        }
+      }
+    };
+
     list.appendChild(div);
   });
 });
