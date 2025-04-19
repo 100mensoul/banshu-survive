@@ -7,8 +7,9 @@ import {
   getStorage, ref, uploadBytes, getDownloadURL, deleteObject
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-storage.js";
 
+// Firebase設定
 const firebaseConfig = {
-  apiKey: "AIzaSyCtDPnYex-K...", // ここは完全なAPIキーに差し替えてね
+  apiKey: "あなたのAPIキー",
   authDomain: "u2memo-36f61.firebaseapp.com",
   projectId: "u2memo-36f61",
   storageBucket: "u2memo-36f61.appspot.com",
@@ -20,11 +21,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
+// 要素取得
 const form = document.getElementById("diaryForm");
 const list = document.getElementById("diaryList");
-
-let currentEditId = null;
-
 const modal = document.getElementById("editModal");
 const editTitle = document.getElementById("editTitle");
 const editContent = document.getElementById("editContent");
@@ -32,11 +31,15 @@ const editTags = document.getElementById("editTags");
 const saveEdit = document.getElementById("saveEdit");
 const cancelEdit = document.getElementById("cancelEdit");
 
+let currentEditId = null;
+
+// 編集モーダル閉じる
 cancelEdit.onclick = () => {
   modal.style.display = "none";
   currentEditId = null;
 };
 
+// 編集保存
 saveEdit.onclick = async () => {
   if (!currentEditId) return;
   const docRef = doc(db, "diaryEntries", currentEditId);
@@ -49,6 +52,7 @@ saveEdit.onclick = async () => {
   currentEditId = null;
 };
 
+// 投稿
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = document.getElementById("titleInput").value;
@@ -74,6 +78,7 @@ form.addEventListener("submit", async (e) => {
   form.reset();
 });
 
+// 表示＆編集削除
 const q = query(collection(db, "diaryEntries"), orderBy("createdAt", "desc"));
 onSnapshot(q, (snapshot) => {
   list.innerHTML = "";
@@ -115,19 +120,7 @@ onSnapshot(q, (snapshot) => {
         }
       }
     };
-    
-try {
-  const fileRef = ref(storage, `images/${file.name}`);
-  console.log("アップロード先:", fileRef);
 
-  const snapshot = await uploadBytes(fileRef, file);
-  console.log("アップロード成功:", snapshot);
-
-  const url = await getDownloadURL(fileRef);
-  console.log("ダウンロードURL:", url);
-} catch (error) {
-  console.error("アップロード失敗:", error);
-}
     list.appendChild(div);
   });
 });
