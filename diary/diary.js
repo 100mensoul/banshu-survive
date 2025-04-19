@@ -115,7 +115,19 @@ onSnapshot(q, (snapshot) => {
         }
       }
     };
+    
+try {
+  const fileRef = ref(storage, `images/${file.name}`);
+  console.log("アップロード先:", fileRef);
 
+  const snapshot = await uploadBytes(fileRef, file);
+  console.log("アップロード成功:", snapshot);
+
+  const url = await getDownloadURL(fileRef);
+  console.log("ダウンロードURL:", url);
+} catch (error) {
+  console.error("アップロード失敗:", error);
+}
     list.appendChild(div);
   });
 });
