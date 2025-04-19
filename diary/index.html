@@ -3,36 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>播州ダイアリー</title>
-  <link rel="stylesheet" href="diary.css" />
+  <title>ヒメゴト大日記｜ダイアリー</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <main class="container">
-    <h1>ヒメゴト日記|ダイアリー</h1>
+  <h1>ヒメゴト日記｜ダイアリー</h1>
 
-    <form id="diaryForm">
-      <input type="text" id="titleInput" placeholder="タイトル" required />
-      <textarea id="contentInput" placeholder="本文を入力..." rows="4" required></textarea>
-      <input type="text" id="tagInput" placeholder="タグ（カンマ区切り）" />
-      <input type="file" id="imageInput" accept="image/*" />
-      <button type="submit">投稿</button>
-    </form>
+  <form id="diaryForm">
+    <input type="text" id="titleInput" placeholder="タイトル" required />
+    <textarea id="contentInput" placeholder="本文を入力…" required></textarea>
+    <input type="text" id="tagInput" placeholder="タグ（カンマ区切り）" />
+    <input type="file" id="imageInput" accept="image/*" />
+    <button type="submit">投稿</button>
+  </form>
 
-    <div id="diaryList"></div>
-  </main>
+  <div id="diaryList"></div>
 
-  <!-- 編集モーダル -->
   <div id="editModal" class="modal">
     <div class="modal-content">
       <h2>投稿の編集</h2>
       <input type="text" id="editTitle" />
-      <textarea id="editContent" rows="4"></textarea>
+      <textarea id="editContent"></textarea>
       <input type="text" id="editTags" placeholder="タグ（カンマ区切り）" />
       <button id="saveEdit">保存</button>
       <button id="cancelEdit">キャンセル</button>
     </div>
   </div>
 
-  <script type="module" src="diary.js"></script>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
