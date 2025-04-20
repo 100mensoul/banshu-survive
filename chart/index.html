@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>キャラクター管理｜播州サバイブ</title>
+  <link rel="stylesheet" href="css/chart-editor.css" />
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/chart-editor.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>キャラクター追加・編集ページ</h1>
+  </header>
+
+  <section class="form-section">
+    <form id="addCharacterForm">
+      <input type="text" id="name" placeholder="名前" required />
+      <textarea id="description" placeholder="紹介文" required></textarea>
+      <select id="group">
+        <option value="main">主要キャラ</option>
+        <option value="new">新登場</option>
+        <option value="neo">NEOバンシュウ族</option>
+      </select>
+      <button type="submit">追加する</button>
+    </form>
+  </section>
+
+  <section id="characterList" class="character-list">
+    <h2>登録済みキャラクター</h2>
+  </section>
+</body>
+</html>
