@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>年代別作品タイムライン｜播州サバイブ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/timeline.css">
+  <style>
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', sans-serif;
+      margin: 0;
+      padding: 2rem 1rem;
+      background: radial-gradient(circle at top, #e5f4ff, #fefeff);
+      color: #222;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4rem;
+      max-width: 700px;
+      margin: auto;
+    }
+
+    .entry {
+      position: relative;
+      background: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      text-align: center;
+      transition: transform 0.3s ease;
+      cursor: pointer;
+    }
+
+    .entry:hover {
+      transform: scale(1.02);
+    }
+
+    .entry img {
+      height: 80px;
+      margin-bottom: 1rem;
+    }
+
+    .entry-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .entry-description {
+      display: none;
+      font-size: 0.95rem;
+      color: #555;
+      margin-top: 1rem;
+    }
+
+    .entry:hover .entry-description {
+      display: block;
+    }
+
+  </style>
+</head>
+<body>
+  <h1>作品タイムライン</h1>
+
+  <section class="timeline">
+
+    <div class="entry">
+      <img src="images/genyon1.png" alt="GENYON the WORLD">
+      <div class="entry-title">GENYON the WORLD</div>
+      <div class="entry-description">世界の裏に隠された意志と対話するSF的起点。</div>
+    </div>
+
+    <div class="entry">
+      <img src="images/genyon2.png" alt="ゲニョンの襲来!!">
+      <div class="entry-title">ゲニョンの襲来!!</div>
+      <div class="entry-description">子どもたちが異界と遭遇する、混線青春SF。</div>
+    </div>
+
+    <div class="entry">
+      <img src="images/group.png" alt="河合紋次郎 他">
+      <div class="entry-title">河合紋次郎／パラダイス蝉／さくら組のソータ君</div>
+      <div class="entry-description">社会のはざまで生きる個人とコミュニティを描いた3部作。</div>
+    </div>
+
+    <div class="entry">
+      <img src="images/door.png" alt="ドア閉まってもいいですか">
+      <div class="entry-title">ドア閉まってもいいですか</div>
+      <div class="entry-description">小さな不安が連鎖する、密室ドラマ的心理劇。</div>
+    </div>
+
+    <div class="entry">
+      <img src="images/ezomaru.png" alt="忍者エゾ丸">
+      <div class="entry-title">忍者エゾ丸</div>
+      <div class="entry-description">風を操る謎の忍者。北海道が舞台の歴史改変アクション。</div>
+    </div>
+
+    <div class="entry">
+      <img src="images/momojiro.png" alt="ももじろう">
+      <div class="entry-title">ももじろう</div>
+      <div class="entry-description">ダチョウと旅する少年の、魂の転生と記憶の物語。</div>
+    </div>
+
+  </section>
+
+</body>
+</html>
