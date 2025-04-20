@@ -21,7 +21,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// 要素取得
 const form = document.getElementById("diaryForm");
 const list = document.getElementById("diaryList");
 const modal = document.getElementById("editModal");
@@ -33,7 +32,7 @@ const cancelEdit = document.getElementById("cancelEdit");
 
 let currentEditId = null;
 
-// 編集モーダル閉じる
+// 編集モーダルを閉じる
 cancelEdit.onclick = () => {
   modal.style.display = "none";
   currentEditId = null;
@@ -52,7 +51,7 @@ saveEdit.onclick = async () => {
   currentEditId = null;
 };
 
-// 投稿
+// 投稿処理
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = document.getElementById("titleInput").value;
@@ -61,10 +60,18 @@ form.addEventListener("submit", async (e) => {
   const file = document.getElementById("imageInput").files[0];
 
   let imageUrl = "";
+
   if (file) {
-    const fileRef = ref(storage, `diary/${Date.now()}_${file.name}`);
-    await uploadBytes(fileRef, file);
-    imageUrl = await getDownloadURL(fileRef);
+    try {
+      const fileRef = ref(storage, `diary/${Date.now()}_${file.name}`);
+      console.log("アップロード先:", fileRef);
+      const snapshot = await uploadBytes(fileRef, file);
+      console.log("アップロード成功:", snapshot);
+      imageUrl = await getDownloadURL(fileRef);
+      console.log("画像URL:", imageUrl);
+    } catch (error) {
+      console.error("アップロードエラー:", error);
+    }
   }
 
   await addDoc(collection(db, "diaryEntries"), {
@@ -78,7 +85,7 @@ form.addEventListener("submit", async (e) => {
   form.reset();
 });
 
-// 表示＆編集削除
+// 表示・編集・削除処理
 const q = query(collection(db, "diaryEntries"), orderBy("createdAt", "desc"));
 onSnapshot(q, (snapshot) => {
   list.innerHTML = "";
