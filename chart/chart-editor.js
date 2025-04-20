@@ -6,9 +6,11 @@ import {
   remove
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// DOM要素を取得
+// DOM取得
 const form = document.getElementById("addCharacterForm");
 const list = document.getElementById("characterList");
+
+// DBの参照先
 const charRef = ref(db, "characters");
 
 // キャラクター追加処理
@@ -25,7 +27,7 @@ form.addEventListener("submit", (e) => {
   }
 });
 
-// キャラクター表示処理（リアルタイムに更新）
+// データ読み込み＆表示（リアルタイム更新）
 onValue(charRef, (snapshot) => {
   list.innerHTML = "<h2>登録済みキャラクター</h2>";
 
@@ -48,7 +50,7 @@ onValue(charRef, (snapshot) => {
     list.appendChild(div);
   });
 
-  // 削除ボタンのイベントバインド
+  // 削除ボタンのイベント設定
   document.querySelectorAll(".delete-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-key");
