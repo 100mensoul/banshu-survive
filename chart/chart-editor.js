@@ -6,10 +6,12 @@ import {
   remove
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
+// DOM要素を取得
 const form = document.getElementById("addCharacterForm");
 const list = document.getElementById("characterList");
 const charRef = ref(db, "characters");
 
+// キャラクター追加処理
 form.addEventListener("submit", (e) => {
   e.preventDefault();
 
@@ -23,23 +25,35 @@ form.addEventListener("submit", (e) => {
   }
 });
 
+// キャラクター表示処理（リアルタイムに更新）
 onValue(charRef, (snapshot) => {
   list.innerHTML = "<h2>登録済みキャラクター</h2>";
+
+  if (!snapshot.exists()) {
+    list.innerHTML += "<p>まだキャラクターが登録されていません。</p>";
+    return;
+  }
+
   snapshot.forEach((child) => {
+    const key = child.key;
     const { name, description, group } = child.val();
+
     const div = document.createElement("div");
     div.className = "character-card";
     div.innerHTML = `
       <h3>${name} <span class="group">[${group}]</span></h3>
       <p>${description}</p>
-      <button onclick="deleteCharacter('${child.key}')">削除</button>
+      <button data-key="${key}" class="delete-btn">削除</button>
     `;
     list.appendChild(div);
   });
-});
 
-// グローバルに削除関数を登録
-window.deleteCharacter = (key) => {
-  const target = ref(db, "characters/" + key);
-  remove(target);
-};
+  // 削除ボタンのイベントバインド
+  document.querySelectorAll(".delete-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-key");
+      const target = ref(db, "characters/" + key);
+      remove(target);
+    });
+  });
+});
