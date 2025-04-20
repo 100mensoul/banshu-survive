@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>播州とカレー 詩集｜播州ナチュール</title>
+  <style>
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #fefef0;
+    }
+    .leaf-container {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      margin: 2rem auto;
+    }
+    .leaf-bg {
+      width: 100%;
+      display: block;
+      border-radius: 12px;
+    }
+    .circle-btn {
+      position: absolute;
+      background: transparent;
+      border: none;
+      font-size: 1rem;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+    #poem-box {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #ccc;
+      padding: 1rem 1.5rem;
+      max-width: 90%;
+      width: 500px;
+      display: none;
+      z-index: 10;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    #poem-box button {
+      float: right;
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<div class="leaf-container">
+  <img src="../images/leaf-title.jpg" alt="播州ナチュール 詩集" class="leaf-bg">
+  <button class="circle-btn" style="top:20%; left:60%;" data-topic="感動曲線">感動曲線</button>
+  <button class="circle-btn" style="top:40%; left:65%;" data-topic="無言">無言</button>
+  <button class="circle-btn" style="top:10%; left:45%;" data-topic="脳内物質">脳内物質</button>
+  <button class="circle-btn" style="top:45%; left:30%;" data-topic="花は団子">花は団子</button>
+  <button class="circle-btn" style="top:50%; left:75%;" data-topic="祈りとしての食">祈りとしての食</button>
+  <button class="circle-btn" style="top:60%; left:40%;" data-topic="5×5">5×5</button>
+  <button class="circle-btn" style="top:30%; left:20%;" data-topic="興奮く癒し">興奮く癒し</button>
+  <button class="circle-btn" style="top:25%; left:70%;" data-topic="ルーは主役にあらず">ルーは主役にあらず</button>
+</div>
+
+<div id="poem-box">
+  <p id="poem-text"></p>
+  <button onclick="closePoem()">×</button>
+</div>
+
+<script>
+const poems = {
+  "感動曲線": "皿の上で完成する。普通は一口目が美味しいが、感動曲線はむしろ尻上がりに。",
+  "無言": "無言になる。手で食べると、五感をフルに稼働して話す余裕がない。",
+  "脳内物質": "感動が続くと、深いところが満たされ、セロトニンのようなものが出る。",
+  "花は団子": "花は旨い。「花より団子」ではなく、花と見ればパクリ。",
+  "祈りとしての食": "食べ物を提供してくれた大地や時間、神様への祈りにある。",
+  "5×5": "ライスの他に5品あれば、5×5の相乗効果になる。",
+  "興奮く癒し": "スパイスといえば刺激と思われがちだが、深い癒しに包まれていた。",
+  "ルーは主役にあらず": "ルーは主役にあらず。個性と個性をつなぎ合わせる、出汁のような存在。"
+};
+
+document.querySelectorAll('.circle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const topic = btn.getAttribute('data-topic');
+    document.getElementById('poem-text').innerText = poems[topic] || "（詩が未設定です）";
+    document.getElementById('poem-box').style.display = 'block';
+  });
+});
+
+function closePoem() {
+  document.getElementById('poem-box').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
