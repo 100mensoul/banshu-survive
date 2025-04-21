@@ -1,10 +1,24 @@
 // /list/firebase-config.js
 
+// Firebaseモジュール読み込み
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded, set, child, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+import {
+  getDatabase,
+  ref,
+  push,
+  onChildAdded,
+  set,
+  child,
+  remove
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
-// あなたのFirebaseプロジェクト情報
+// 🔽 あなたのFirebaseプロジェクト設定
 const firebaseConfig = {
   apiKey: "AIzaSyCtDPnYex-KL2hbHAQe5fYSPv9rz9xTa9A",
   authDomain: "u2memo-36f61.firebaseapp.com",
@@ -18,13 +32,12 @@ const firebaseConfig = {
 // Firebase初期化
 const app = initializeApp(firebaseConfig);
 
-// Realtime DatabaseとStorageを取得
+// データベースとストレージの参照を取得
 const db = getDatabase(app);
+const storage = getStorage(app);
 const projectsRef = ref(db, "projects");
 
-const storage = getStorage(app);
-
-// エクスポートして他のファイルで使えるようにする
+// 🔁 必要なものを export（これが重要！）
 export {
   db,
   projectsRef,
