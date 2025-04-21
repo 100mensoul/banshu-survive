@@ -81,7 +81,6 @@
     <input type="text" name="operator" placeholder="運営団体" />
     <input type="url" name="url" placeholder="公式サイトURL" />
     <input type="url" name="mapUrl" placeholder="GoogleマップURL" />
-    <input type="file" name="thumbnail" accept="image/*" />
     <textarea name="highlights" rows="3" placeholder="ここがすごい！ 特徴など"></textarea>
     <button type="submit">追加</button>
   </form>
@@ -97,11 +96,7 @@
       onChildAdded,
       set,
       child,
-      remove,
-      storage,
-      storageRef,
-      uploadBytes,
-      getDownloadURL
+      remove
     } from './firebase-config.js';
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -113,14 +108,6 @@
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        let imageUrl = "";
-        const file = form.thumbnail.files[0];
-        if (file) {
-          const fileRef = storageRef(storage, `thumbnails/${Date.now()}_${file.name}`);
-          await uploadBytes(fileRef, file);
-          imageUrl = await getDownloadURL(fileRef);
-        }
-
         const data = {
           name: form.name.value,
           location: form.location.value,
@@ -130,7 +117,6 @@
           url: form.url.value,
           mapUrl: form.mapUrl.value,
           highlights: form.highlights.value,
-          imageUrl: imageUrl,
           createdAt: Date.now()
         };
         await push(projectsRef, data);
@@ -165,7 +151,6 @@
         card.className = "card";
         card.dataset.tags = data.tags || "";
         card.innerHTML = `
-          ${data.imageUrl ? `<img src="${data.imageUrl}" style="width:100%;border-radius:8px;">` : ""}
           <h2 contenteditable="true">${data.name}</h2>
           <p><strong>所在地：</strong><span contenteditable="true">${data.location}</span></p>
           <p class="tags"><strong>タグ：</strong><span contenteditable="true">${data.tags}</span></p>
@@ -187,7 +172,6 @@
             url: data.url,
             mapUrl: data.mapUrl,
             highlights: card.querySelector(".highlight").textContent,
-            imageUrl: data.imageUrl,
             createdAt: data.createdAt
           };
           await set(child(projectsRef, key), updated);
