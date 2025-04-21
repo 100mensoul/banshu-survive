@@ -13,19 +13,33 @@
     <h1>キャラクター追加・編集ページ</h1>
   </header>
 
+  <!-- カテゴリ切替ボタン -->
+  <div class="category-filter">
+    <button data-filter="all">すべて</button>
+    <button data-filter="main">主要キャラ</button>
+    <button data-filter="neo">NEOバンシュウ族</button>
+    <button data-filter="banshu">播州人</button>
+    <button data-filter="tokyo">東京人</button>
+  </div>
+
+  <!-- 入力フォーム -->
   <section class="form-section">
     <form id="addCharacterForm">
       <input type="text" id="name" placeholder="名前" required />
       <textarea id="description" placeholder="紹介文" required></textarea>
       <select id="group">
         <option value="main">主要キャラ</option>
-        <option value="new">新登場</option>
         <option value="neo">NEOバンシュウ族</option>
+        <option value="banshu">播州人</option>
+        <option value="tokyo">東京人</option>
       </select>
+      <input type="text" id="writer" placeholder="記入者（例：平尾、絵本）" required />
+      <input type="url" id="url" placeholder="関連URL（任意）" />
       <button type="submit">追加する</button>
     </form>
   </section>
 
+  <!-- 一覧表示 -->
   <section id="characterList" class="character-list">
     <h2>登録済みキャラクター</h2>
   </section>
