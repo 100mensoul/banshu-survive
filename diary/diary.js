@@ -21,6 +21,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
+// 要素取得
 const form = document.getElementById("diaryForm");
 const list = document.getElementById("diaryList");
 const modal = document.getElementById("editModal");
@@ -32,7 +33,7 @@ const cancelEdit = document.getElementById("cancelEdit");
 
 let currentEditId = null;
 
-// モーダル閉じる
+// 編集モーダル閉じる
 cancelEdit.onclick = () => {
   modal.style.display = "none";
   currentEditId = null;
@@ -60,38 +61,46 @@ form.addEventListener("submit", async (e) => {
   const tags = document.getElementById("tagInput").value.split(",").map(t => t.trim()).filter(Boolean);
   const file = document.getElementById("imageInput").files[0];
 
-  let imageUrl = "";
-
-  try {
-    if (file) {
-      const encodedFileName = encodeURIComponent(file.name); // ← ここが重要！
+  if (file) {
+    try {
+      const encodedFileName = encodeURIComponent(file.name);
       const fileRef = ref(storage, `diary/${Date.now()}_${encodedFileName}`);
       console.log("アップロード先:", fileRef.fullPath);
 
       const snapshot = await uploadBytes(fileRef, file);
       console.log("アップロード成功:", snapshot);
 
-      imageUrl = await getDownloadURL(fileRef);
+      const imageUrl = await getDownloadURL(fileRef);
       console.log("画像URL:", imageUrl);
-    }
 
+      await addDoc(collection(db, "diaryEntries"), {
+        title,
+        content,
+        tags,
+        imageUrl,
+        createdAt: serverTimestamp()
+      });
+
+      alert("画像付き投稿が完了しました！");
+    } catch (error) {
+      console.error("画像アップロードエラー:", error);
+      alert("画像アップロードに失敗しました：" + error.message);
+    }
+  } else {
     await addDoc(collection(db, "diaryEntries"), {
       title,
       content,
       tags,
-      imageUrl,
+      imageUrl: "",
       createdAt: serverTimestamp()
     });
-
-    form.reset();
-    alert("投稿が完了しました！");
-  } catch (error) {
-    console.error("アップロードまたは投稿でエラー:", error);
-    alert("画像アップロードエラー：" + error.message);
+    alert("テキスト投稿が完了しました！");
   }
+
+  form.reset();
 });
 
-// 表示・編集・削除処理
+// 投稿一覧の表示と編集・削除
 const q = query(collection(db, "diaryEntries"), orderBy("createdAt", "desc"));
 onSnapshot(q, (snapshot) => {
   list.innerHTML = "";
