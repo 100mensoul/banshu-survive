@@ -32,7 +32,7 @@ const cancelEdit = document.getElementById("cancelEdit");
 
 let currentEditId = null;
 
-// 編集モーダルを閉じる
+// モーダル閉じる
 cancelEdit.onclick = () => {
   modal.style.display = "none";
   currentEditId = null;
@@ -54,6 +54,7 @@ saveEdit.onclick = async () => {
 // 投稿処理
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
+
   const title = document.getElementById("titleInput").value;
   const content = document.getElementById("contentInput").value;
   const tags = document.getElementById("tagInput").value.split(",").map(t => t.trim()).filter(Boolean);
@@ -61,28 +62,33 @@ form.addEventListener("submit", async (e) => {
 
   let imageUrl = "";
 
-  if (file) {
-    try {
-      const fileRef = ref(storage, `diary/${Date.now()}_${file.name}`);
-      console.log("アップロード先:", fileRef);
+  try {
+    if (file) {
+      const encodedFileName = encodeURIComponent(file.name); // ← ここが重要！
+      const fileRef = ref(storage, `diary/${Date.now()}_${encodedFileName}`);
+      console.log("アップロード先:", fileRef.fullPath);
+
       const snapshot = await uploadBytes(fileRef, file);
       console.log("アップロード成功:", snapshot);
+
       imageUrl = await getDownloadURL(fileRef);
       console.log("画像URL:", imageUrl);
-    } catch (error) {
-      console.error("アップロードエラー:", error);
     }
+
+    await addDoc(collection(db, "diaryEntries"), {
+      title,
+      content,
+      tags,
+      imageUrl,
+      createdAt: serverTimestamp()
+    });
+
+    form.reset();
+    alert("投稿が完了しました！");
+  } catch (error) {
+    console.error("アップロードまたは投稿でエラー:", error);
+    alert("画像アップロードエラー：" + error.message);
   }
-
-  await addDoc(collection(db, "diaryEntries"), {
-    title,
-    content,
-    tags,
-    imageUrl,
-    createdAt: serverTimestamp()
-  });
-
-  form.reset();
 });
 
 // 表示・編集・削除処理
