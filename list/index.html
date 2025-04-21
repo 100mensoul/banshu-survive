@@ -2,18 +2,34 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>まちづくりモデル事例一覧｜播州サバイブ</title>
+  <title>まちづくりモデル一覧｜播州サバイブ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script type="module" src="./firebase-config.js"></script>
   <script type="module">
-    import { projectsRef, push, onChildAdded } from './firebase-config.js';
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded, remove, set, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+    import { projectsRef, db } from './firebase-config.js';
+
+    const storage = getStorage();
 
     document.addEventListener('DOMContentLoaded', () => {
       const form = document.getElementById('form');
       const list = document.getElementById('projectList');
+      const tagFilters = document.getElementById('tagFilters');
+      const allTags = new Set();
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        let imageUrl = "";
+        const file = form.thumbnail.files[0];
+        if (file) {
+          const fileRef = storageRef(storage, `thumbnails/${Date.now()}_${file.name}`);
+          await uploadBytes(fileRef, file);
+          imageUrl = await getDownloadURL(fileRef);
+        }
+
         const data = {
           name: form.name.value,
           location: form.location.value,
@@ -21,7 +37,9 @@
           architect: form.architect.value,
           operator: form.operator.value,
           url: form.url.value,
+          mapUrl: form.mapUrl.value,
           highlights: form.highlights.value,
+          imageUrl: imageUrl,
           createdAt: Date.now()
         };
         await push(projectsRef, data);
@@ -30,69 +48,134 @@
 
       onChildAdded(projectsRef, (snapshot) => {
         const data = snapshot.val();
+        const key = snapshot.key;
+
+        if (data.tags) {
+          data.tags.split(',').forEach(tag => allTags.add(tag.trim()));
+        }
+
+        renderCard(data, key);
+
+        tagFilters.innerHTML = "";
+        allTags.forEach(tag => {
+          const btn = document.createElement("button");
+          btn.textContent = tag;
+          btn.onclick = () => {
+            document.querySelectorAll(".card").forEach(card => {
+              card.style.display = card.dataset.tags.includes(tag) ? "block" : "none";
+            });
+          };
+          tagFilters.appendChild(btn);
+        });
+      });
+
+      function renderCard(data, key) {
         const card = document.createElement("div");
         card.className = "card";
+        card.dataset.tags = data.tags || "";
         card.innerHTML = `
-          <h2>${data.name}</h2>
-          <p><strong>所在地：</strong>${data.location}</p>
-          <p class="tags"><strong>タグ：</strong>${data.tags}</p>
-          <p><strong>設計：</strong>${data.architect}</p>
-          <p><strong>運営：</strong>${data.operator}</p>
+          ${data.imageUrl ? `<img src="${data.imageUrl}" style="width:100%;border-radius:8px;">` : ""}
+          <h2 contenteditable="true">${data.name}</h2>
+          <p><strong>所在地：</strong><span contenteditable="true">${data.location}</span></p>
+          <p class="tags"><strong>タグ：</strong><span contenteditable="true">${data.tags}</span></p>
+          <p><strong>設計：</strong><span contenteditable="true">${data.architect}</span></p>
+          <p><strong>運営：</strong><span contenteditable="true">${data.operator}</span></p>
           <p class="url"><a href="${data.url}" target="_blank">${data.url}</a></p>
-          <p class="highlight">${data.highlights}</p>
+          <p><a href="${data.mapUrl}" target="_blank">地図で見る</a></p>
+          <p class="highlight" contenteditable="true">${data.highlights}</p>
+          <button class="edit-btn">保存</button>
+          <button class="delete-btn">削除</button>
         `;
+        card.querySelector(".edit-btn").onclick = async () => {
+          const updated = {
+            name: card.querySelector("h2").textContent,
+            location: card.querySelector("span:nth-of-type(1)").textContent,
+            tags: card.querySelector("span:nth-of-type(2)").textContent,
+            architect: card.querySelector("span:nth-of-type(3)").textContent,
+            operator: card.querySelector("span:nth-of-type(4)").textContent,
+            url: data.url,
+            mapUrl: data.mapUrl,
+            highlights: card.querySelector(".highlight").textContent,
+            imageUrl: data.imageUrl,
+            createdAt: data.createdAt
+          };
+          await set(child(projectsRef, key), updated);
+          alert("更新しました");
+        };
+
+        card.querySelector(".delete-btn").onclick = async () => {
+          if (confirm("削除してもよいですか？")) {
+            await remove(child(projectsRef, key));
+            card.remove();
+          }
+        };
+
         list.prepend(card);
-      });
+      }
     });
   </script>
   <style>
     body {
       font-family: "Hiragino Kaku Gothic ProN", sans-serif;
       margin: 1rem;
-      background: #f9f9f2;
+      background: #fefef0;
       color: #333;
     }
-    h1 { text-align: center; margin-bottom: 2rem; }
+    h1 { text-align: center; }
     form {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
       max-width: 600px;
-      margin: auto;
+      margin: 1rem auto;
+    }
+    input, textarea, button {
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 6px;
     }
     input, textarea {
-      padding: 0.5rem;
       border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 1rem;
     }
     button {
       background: #4caf50;
       color: white;
       border: none;
-      padding: 0.6rem 1rem;
-      border-radius: 4px;
-      font-size: 1rem;
       cursor: pointer;
     }
     .card {
       background: white;
       border: 1px solid #ddd;
-      padding: 1rem;
       border-radius: 8px;
+      padding: 1rem;
       margin: 1rem auto;
       max-width: 600px;
-      box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
     }
     .card h2 { margin-top: 0; }
-    .url { font-size: 0.9rem; color: #0066cc; }
-    .tags { font-size: 0.9rem; color: #888; }
+    .tags, .url { font-size: 0.9rem; color: #666; }
     .highlight {
-      background: #ffffcc;
+      background: #fff9c4;
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
-      display: inline-block;
       margin-top: 0.5rem;
+    }
+    #tagFilters {
+      text-align: center;
+      margin: 1rem auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      max-width: 640px;
+    }
+    #tagFilters button {
+      background: #ccc;
+      color: #333;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -103,14 +186,17 @@
   <form id="form">
     <input type="text" name="name" placeholder="施設名・プロジェクト名" required />
     <input type="text" name="location" placeholder="所在地（例：長野県信濃町）" required />
-    <input type="text" name="tags" placeholder="タグ（カンマ区切り）例：道の駅,複合施設" />
-    <input type="text" name="architect" placeholder="設計事務所（例：○○設計）" />
-    <input type="text" name="operator" placeholder="運営団体（例：○○協会）" />
+    <input type="text" name="tags" placeholder="タグ（例：道の駅,複合施設）" />
+    <input type="text" name="architect" placeholder="設計事務所" />
+    <input type="text" name="operator" placeholder="運営団体" />
     <input type="url" name="url" placeholder="公式サイトURL" />
-    <textarea name="highlights" rows="3" placeholder="ここがすごい！ 特徴や参考にしたいポイント"></textarea>
+    <input type="url" name="mapUrl" placeholder="GoogleマップURL" />
+    <input type="file" name="thumbnail" accept="image/*" />
+    <textarea name="highlights" rows="3" placeholder="ここがすごい！ 特徴など"></textarea>
     <button type="submit">追加</button>
   </form>
 
+  <div id="tagFilters"></div>
   <div id="projectList"></div>
 
 </body>
