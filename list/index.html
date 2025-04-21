@@ -1,9 +1,50 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>事例モデル一覧｜播州サバイブ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>まちづくりモデル事例一覧｜播州サバイブ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module" src="./firebase-config.js"></script>
+  <script type="module">
+    import { projectsRef, push, onChildAdded } from './firebase-config.js';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('form');
+      const list = document.getElementById('projectList');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+          name: form.name.value,
+          location: form.location.value,
+          tags: form.tags.value,
+          architect: form.architect.value,
+          operator: form.operator.value,
+          url: form.url.value,
+          highlights: form.highlights.value,
+          createdAt: Date.now()
+        };
+        await push(projectsRef, data);
+        form.reset();
+      });
+
+      onChildAdded(projectsRef, (snapshot) => {
+        const data = snapshot.val();
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <h2>${data.name}</h2>
+          <p><strong>所在地：</strong>${data.location}</p>
+          <p class="tags"><strong>タグ：</strong>${data.tags}</p>
+          <p><strong>設計：</strong>${data.architect}</p>
+          <p><strong>運営：</strong>${data.operator}</p>
+          <p class="url"><a href="${data.url}" target="_blank">${data.url}</a></p>
+          <p class="highlight">${data.highlights}</p>
+        `;
+        list.prepend(card);
+      });
+    });
+  </script>
   <style>
     body {
       font-family: "Hiragino Kaku Gothic ProN", sans-serif;
@@ -11,27 +52,20 @@
       background: #f9f9f2;
       color: #333;
     }
-
-    h1 {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .form {
+    h1 { text-align: center; margin-bottom: 2rem; }
+    form {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
       max-width: 600px;
       margin: auto;
     }
-
     input, textarea {
       padding: 0.5rem;
       border: 1px solid #ccc;
       border-radius: 4px;
       font-size: 1rem;
     }
-
     button {
       background: #4caf50;
       color: white;
@@ -41,7 +75,6 @@
       font-size: 1rem;
       cursor: pointer;
     }
-
     .card {
       background: white;
       border: 1px solid #ddd;
@@ -51,21 +84,9 @@
       max-width: 600px;
       box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
     }
-
-    .card h2 {
-      margin-top: 0;
-    }
-
-    .url {
-      font-size: 0.9rem;
-      color: #0066cc;
-    }
-
-    .tags {
-      font-size: 0.9rem;
-      color: #888;
-    }
-
+    .card h2 { margin-top: 0; }
+    .url { font-size: 0.9rem; color: #0066cc; }
+    .tags { font-size: 0.9rem; color: #888; }
     .highlight {
       background: #ffffcc;
       padding: 0.25rem 0.5rem;
@@ -79,52 +100,18 @@
 
   <h1>まちづくりモデル事例の登録</h1>
 
-  <div class="form">
-    <input type="text" id="name" placeholder="施設名・プロジェクト名">
-    <input type="text" id="location" placeholder="所在地（例：長野県信濃町）">
-    <input type="text" id="tags" placeholder="タグ（カンマ区切り）例：道の駅,複合施設">
-    <input type="text" id="architect" placeholder="設計事務所（例：○○設計）">
-    <input type="text" id="operator" placeholder="運営団体（例：○○協会）">
-    <input type="url" id="url" placeholder="公式サイトURL">
-    <textarea id="highlights" rows="3" placeholder="ここがすごい！ 特徴や参考にしたいポイント"></textarea>
-    <button onclick="addProject()">追加</button>
-  </div>
+  <form id="form">
+    <input type="text" name="name" placeholder="施設名・プロジェクト名" required />
+    <input type="text" name="location" placeholder="所在地（例：長野県信濃町）" required />
+    <input type="text" name="tags" placeholder="タグ（カンマ区切り）例：道の駅,複合施設" />
+    <input type="text" name="architect" placeholder="設計事務所（例：○○設計）" />
+    <input type="text" name="operator" placeholder="運営団体（例：○○協会）" />
+    <input type="url" name="url" placeholder="公式サイトURL" />
+    <textarea name="highlights" rows="3" placeholder="ここがすごい！ 特徴や参考にしたいポイント"></textarea>
+    <button type="submit">追加</button>
+  </form>
 
   <div id="projectList"></div>
-
-  <script>
-    function addProject() {
-      const name = document.getElementById("name").value;
-      const location = document.getElementById("location").value;
-      const tags = document.getElementById("tags").value;
-      const architect = document.getElementById("architect").value;
-      const operator = document.getElementById("operator").value;
-      const url = document.getElementById("url").value;
-      const highlights = document.getElementById("highlights").value;
-
-      if (!name || !location) {
-        alert("施設名と所在地は必須です");
-        return;
-      }
-
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <h2>${name}</h2>
-        <p><strong>所在地：</strong>${location}</p>
-        <p class="tags"><strong>タグ：</strong>${tags}</p>
-        <p><strong>設計：</strong>${architect}</p>
-        <p><strong>運営：</strong>${operator}</p>
-        <p class="url"><a href="${url}" target="_blank">${url}</a></p>
-        <p class="highlight">${highlights}</p>
-      `;
-
-      document.getElementById("projectList").appendChild(card);
-
-      // 入力欄をクリア
-      document.querySelectorAll(".form input, .form textarea").forEach(e => e.value = "");
-    }
-  </script>
 
 </body>
 </html>
