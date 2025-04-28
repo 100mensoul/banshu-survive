@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登場人物管理（test-0428）</title>
+  <style>
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      background: #fff;
+      padding: 2rem 1rem;
+      max-width: 800px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    input, textarea, select, button {
+      width: 100%;
+      font-size: 1rem;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .btn {
+      width: auto;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: #fafafa;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h1>登場人物管理（test-0428版）</h1>
+
+<!-- 登録フォーム -->
+<form id="person-form">
+  <input type="text" id="realName" placeholder="実名（非公開）" required>
+  <input type="text" id="roleName" placeholder="役名（公開）" required>
+  <input type="text" id="position" placeholder="肩書き・役割">
+  <input type="text" id="affiliation" placeholder="所属">
+  <textarea id="relations" placeholder="関係性（例：池島さん：12年前からの友人\n枝美ちゃん：運命的な出会い）" rows="4"></textarea>
+  <input type="text" id="tags" placeholder="タグ（カンマ区切り）">
+  <textarea id="comment" placeholder="一言コメント" rows="2"></textarea>
+  <label><input type="checkbox" id="isPublic"> 公開する</label><br><br>
+  <button type="submit" class="btn">登録</button>
+</form>
+
+<hr>
+
+<!-- 登録データ一覧 -->
+<div id="person-list"></div>
+
+<script>
+  const form = document.getElementById('person-form');
+  const personList = document.getElementById('person-list');
+
+  // 既存データ読み込み
+  let people = JSON.parse(localStorage.getItem('people') || '[]');
+  displayPeople();
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const newPerson = {
+      realName: document.getElementById('realName').value,
+      roleName: document.getElementById('roleName').value,
+      position: document.getElementById('position').value,
+      affiliation: document.getElementById('affiliation').value,
+      relations: document.getElementById('relations').value.split('\n').filter(line => line.trim() !== ''),
+      tags: document.getElementById('tags').value.split(',').map(tag => tag.trim()),
+      comment: document.getElementById('comment').value,
+      isPublic: document.getElementById('isPublic').checked
+    };
+    people.push(newPerson);
+    localStorage.setItem('people', JSON.stringify(people));
+    form.reset();
+    displayPeople();
+  });
+
+  function displayPeople() {
+    personList.innerHTML = '';
+    people.forEach((person, index) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <strong>実名：</strong> ${person.realName}<br>
+        <strong>役名：</strong> ${person.roleName}<br>
+        <strong>肩書き・役割：</strong> ${person.position}<br>
+        <strong>所属：</strong> ${person.affiliation}<br>
+        <strong>関係性：</strong><br>
+        ${person.relations.map(r => `・${r}`).join('<br>')}<br>
+        <strong>タグ：</strong> ${person.tags.join(', ')}<br>
+        <strong>コメント：</strong> ${person.comment}<br>
+        <strong>公開：</strong> ${person.isPublic ? '公開' : '非公開'}<br>
+        <button onclick="deletePerson(${index})" class="btn" style="background:#f44336;">削除</button>
+      `;
+      personList.appendChild(card);
+    });
+  }
+
+  function deletePerson(index) {
+    if (confirm('このデータを削除しますか？')) {
+      people.splice(index, 1);
+      localStorage.setItem('people', JSON.stringify(people));
+      displayPeople();
+    }
+  }
+</script>
+
+</body>
+</html>
