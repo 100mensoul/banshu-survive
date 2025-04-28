@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>テストマップ0428大量配置｜播州サバイブ</title>
+  <title>テストマップ0428 ver2｜播州サバイブ</title>
   <link rel="stylesheet" href="../css/main.css"> <!-- 必要なら削除OK -->
   <style>
-    /* 地図エリア */
     .map-wrapper {
       position: relative;
       text-align: center;
@@ -17,7 +16,6 @@
       max-width: 900px;
       height: auto;
     }
-    /* ピン */
     .pin {
       position: absolute;
       width: 14px;
@@ -28,7 +26,6 @@
       cursor: pointer;
       transform: translate(-50%, -50%);
     }
-    /* モーダル */
     .modal {
       display: none;
       position: fixed;
@@ -92,7 +89,7 @@
 <body>
 
 <header class="section-title">
-  <h2>テストマップ0428大量配置 <span class="en">TEST MAP</span></h2>
+  <h2>テストマップ0428 ver2 <span class="en">TEST MAP</span></h2>
 </header>
 
 <main class="content">
@@ -100,106 +97,19 @@
   <div class="map-wrapper">
     <img src="../images/map-sample.png" alt="播州サバイブ地図">
 
-    <!-- ここからピン8個 -->
-    <div class="pin" style="left: 36%; top: 40%;" onclick="openModal('modal1')"></div> <!-- サンヨウクロス -->
-    <div class="pin" style="left: 50%; top: 32%;" onclick="openModal('modal2')"></div> <!-- アパートツインズ -->
-    <div class="pin" style="left: 46%; top: 48%;" onclick="openModal('modal3')"></div> <!-- グリーンモンスター -->
-    <div class="pin" style="left: 53%; top: 49%;" onclick="openModal('modal4')"></div> <!-- ホームガーデン -->
-    <div class="pin" style="left: 45%; top: 59%;" onclick="openModal('modal5')"></div> <!-- フェイスオブハナダ -->
-    <div class="pin" style="left: 54%; top: 53%;" onclick="openModal('modal6')"></div> <!-- コネクトポイント -->
-    <div class="pin" style="left: 67%; top: 52%;" onclick="openModal('modal7')"></div> <!-- フォークノード -->
-    <div class="pin" style="left: 57%; top: 65%;" onclick="openModal('modal8')"></div> <!-- プリンセスロビー仮 -->
+    <!-- ピン配置 -->
+    <div class="pin" style="left: 36%; top: 40%;" onclick="openModal('modal1')"></div> <!-- サンヨウクロス（そのまま） -->
+    <div class="pin" style="left: 55%; top: 32%;" onclick="openModal('modal2')"></div> <!-- アパートツインズ -->
+    <div class="pin" style="left: 51%; top: 48%;" onclick="openModal('modal3')"></div> <!-- グリーンモンスター -->
+    <div class="pin" style="left: 58%; top: 49%;" onclick="openModal('modal4')"></div> <!-- ホームガーデン -->
+    <div class="pin" style="left: 50%; top: 59%;" onclick="openModal('modal5')"></div> <!-- フェイスオブハナダ -->
+    <div class="pin" style="left: 59%; top: 53%;" onclick="openModal('modal6')"></div> <!-- コネクトポイント -->
+    <div class="pin" style="left: 72%; top: 52%;" onclick="openModal('modal7')"></div> <!-- フォークノード -->
+    <div class="pin" style="left: 62%; top: 65%;" onclick="openModal('modal8')"></div> <!-- プリンセスロビー仮 -->
   </div>
 
-  <!-- ここからモーダル8個 -->
-  <!-- 1 -->
-  <div id="modal1" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('modal1')">✖️</span>
-      <img src="../images/sample-thumbnail.jpg" alt="サンヨウクロス" class="thumbnail">
-      <div class="modal-header">サンヨウクロス</div>
-      <div class="modal-body">
-        <p>仮説明：サンヨウクロス。</p>
-      </div>
-    </div>
-  </div>
-  <!-- 2 -->
-  <div id="modal2" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('modal2')">✖️</span>
-      <img src="../images/sample-thumbnail.jpg" alt="アパートツインズ" class="thumbnail">
-      <div class="modal-header">アパートツインズ</div>
-      <div class="modal-body">
-        <p>仮説明：アパートツインズ。</p>
-      </div>
-    </div>
-  </div>
-  <!-- 3 -->
-  <div id="modal3" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('modal3')">✖️</span>
-      <img src="../images/sample-thumbnail.jpg" alt="グリーンモンスター" class="thumbnail">
-      <div class="modal-header">グリーンモンスター</div>
-      <div class="modal-body">
-        <p>仮説明：グリーンモンスター。</p>
-      </div>
-    </div>
-  </div>
-  <!-- 4 -->
-  <div id="modal4" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('modal4')">✖️</span>
-      <img src="../images/sample-thumbnail.jpg" alt="ホームガーデン" class="thumbnail">
-      <div class="modal-header">ホームガーデン</div>
-      <div class="modal-body">
-        <p>仮説明：ホームガーデン。</p>
-      </div>
-    </div>
-  </div>
-  <!-- 5 -->
-  <div id="modal5" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('modal5')">✖️</span>
-      <img src="../images/sample-thumbnail.jpg" alt="フェイスオブハナダ" class="thumbnail">
-      <div class="modal-header">フェイスオブハナダ</div>
-      <div class="modal-body">
-        <p>仮説明：フェイスオブハナダ。</p>
-      </div>
-    </div>
-  </div>
-  <!-- 6 -->
-  <div id="modal6" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('modal6')">✖️</span>
-      <img src="../images/sample-thumbnail.jpg" alt="コネクトポイント" class="thumbnail">
-      <div class="modal-header">コネクトポイント</div>
-      <div class="modal-body">
-        <p>仮説明：コネクトポイント。</p>
-      </div>
-    </div>
-  </div>
-  <!-- 7 -->
-  <div id="modal7" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('modal7')">✖️</span>
-      <img src="../images/sample-thumbnail.jpg" alt="フォークノード" class="thumbnail">
-      <div class="modal-header">フォークノード</div>
-      <div class="modal-body">
-        <p>仮説明：フォークノード。</p>
-      </div>
-    </div>
-  </div>
-  <!-- 8 -->
-  <div id="modal8" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('modal8')">✖️</span>
-      <img src="../images/sample-thumbnail.jpg" alt="プリンセスロビー仮" class="thumbnail">
-      <div class="modal-header">プリンセスロビー仮</div>
-      <div class="modal-body">
-        <p>仮説明：プリンセスロビー仮。</p>
-      </div>
-    </div>
-  </div>
+  <!-- モーダル8個（省略。前と同じ内容でOK） -->
+  <!-- ここはさっきのコードと同じなので省略するけど、必要なら全部もう一回展開するよ！ -->
 
 </main>
 
@@ -211,7 +121,6 @@
 function openModal(id) {
   document.getElementById(id).style.display = 'block';
 }
-
 function closeModal(id) {
   document.getElementById(id).style.display = 'none';
 }
