@@ -3,29 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>登場人物管理（test-0428本仕様v2）</title>
+  <title>登場人物管理（test-0428本仕様v3）</title>
   <style>
     body {
       font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
-      background: #f9fbf9;
+      background: #f0f8f0; /* 元の背景色を維持 */
       padding: 2rem 1rem;
       max-width: 800px;
       margin: auto;
       line-height: 1.6;
-      font-size: 1.05rem;
+      font-size: 1rem;
     }
     h1 {
-      font-size: 1.7rem;
+      font-size: 1.5rem;
       margin-bottom: 1rem;
       text-align: center;
-      color: #2e7d32;
+      color: #388e3c;
     }
     input, textarea, select, button {
       width: 100%;
-      font-size: 1.05rem;
-      padding: 0.6rem;
+      font-size: 1rem;
+      padding: 0.5rem;
       margin-bottom: 1rem;
-      border: 1px solid #bbb;
+      border: 1px solid #ccc;
       border-radius: 6px;
     }
     .btn {
@@ -41,19 +41,20 @@
       background: #81c784;
     }
     .card {
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 1.2rem;
-      margin-bottom: 1.5rem;
-      background: #fff;
+      border: 2px solid #bbb; /* 枠線強化 */
+      border-radius: 8px;
+      padding: 1.5rem; /* 余白を拡大 */
+      margin-bottom: 2rem;
+      background: #fff; /* カードだけ白く */
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* さりげない影を追加 */
     }
     .tag {
       display: inline-block;
-      background: #e0f7fa;
-      color: #006064;
+      background: #e0f2f1;
+      color: #00695c;
       padding: 0.3rem 0.7rem;
-      border-radius: 14px;
-      font-size: 0.9rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
       margin: 0.2rem;
     }
     summary {
@@ -65,7 +66,7 @@
 </head>
 <body>
 
-<h1>登場人物管理（test-0428本仕様v2）</h1>
+<h1>登場人物管理（test-0428本仕様v3）</h1>
 
 <!-- 登録フォーム -->
 <form id="person-form">
@@ -84,9 +85,12 @@
   <button type="button" id="add-relation" class="btn add-relation-btn">関係性を追加</button>
 
   <br><label><strong>固定タグ</strong></label><br>
-  <label><input type="radio" name="fixedTag" value="播州人"> 播州人</label>
-  <label><input type="radio" name="fixedTag" value="NBT"> NBT</label>
-  <label><input type="radio" name="fixedTag" value="外様"> 外様</label><br><br>
+  <select id="fixedTag">
+    <option value="">選択してください</option>
+    <option value="播州人">播州人</option>
+    <option value="NBT">NBT</option>
+    <option value="外様">外様</option>
+  </select>
 
   <input type="text" id="tags" placeholder="自由タグ（カンマ区切り）">
   <textarea id="comment" placeholder="一言コメント" rows="2"></textarea>
@@ -106,7 +110,6 @@
   const relationsContainer = document.getElementById('relations-container');
   const addRelationBtn = document.getElementById('add-relation');
 
-  // 既存データ読み込み
   let people = JSON.parse(localStorage.getItem('people') || '[]');
   displayPeople();
 
@@ -115,4 +118,81 @@
     entry.className = 'relation-entry';
     entry.innerHTML = `
       <input type="text" placeholder="相手名" class="relation-name">
-      <input type
+      <input type="text" placeholder="エピソード" class="relation-detail">
+    `;
+    relationsContainer.appendChild(entry);
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const relationNames = document.querySelectorAll('.relation-name');
+    const relationDetails = document.querySelectorAll('.relation-detail');
+    const relations = [];
+    for (let i = 0; i < relationNames.length; i++) {
+      if (relationNames[i].value.trim() && relationDetails[i].value.trim()) {
+        relations.push({
+          name: relationNames[i].value.trim(),
+          detail: relationDetails[i].value.trim()
+        });
+      }
+    }
+
+    const newPerson = {
+      realName: document.getElementById('realName').value,
+      roleName: document.getElementById('roleName').value,
+      position: document.getElementById('position').value,
+      affiliation: document.getElementById('affiliation').value,
+      relations: relations,
+      fixedTag: document.getElementById('fixedTag').value,
+      freeTags: document.getElementById('tags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+      comment: document.getElementById('comment').value,
+      isPublic: document.getElementById('isPublic').checked
+    };
+    people.push(newPerson);
+    localStorage.setItem('people', JSON.stringify(people));
+    form.reset();
+    relationsContainer.innerHTML = `
+      <label><strong>関係性リスト</strong></label><br>
+      <div class="relation-entry">
+        <input type="text" placeholder="相手名" class="relation-name">
+        <input type="text" placeholder="エピソード" class="relation-detail">
+      </div>
+    `;
+    displayPeople();
+  });
+
+  function displayPeople() {
+    personList.innerHTML = '';
+    people.forEach((person, index) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <strong>実名：</strong> ${person.realName}<br>
+        <strong>役名：</strong> ${person.roleName}<br>
+        <strong>肩書き・役割：</strong> ${person.position}<br>
+        <strong>所属：</strong> ${person.affiliation}<br>
+        <strong>コメント：</strong> ${person.comment}<br>
+        <strong>固定タグ：</strong> ${person.fixedTag ? `<span class="tag">${person.fixedTag}</span>` : '未選択'}<br>
+        <strong>自由タグ：</strong> ${person.freeTags.map(tag => `<span class="tag">${tag}</span>`).join('')}<br>
+        <details>
+          <summary>関係性を見る</summary>
+          ${person.relations.map(r => `<div>・${r.name}：${r.detail}</div>`).join('')}
+        </details>
+        <strong>公開：</strong> ${person.isPublic ? '公開' : '非公開'}<br>
+        <button onclick="deletePerson(${index})" class="btn" style="background:#f44336;">削除</button>
+      `;
+      personList.appendChild(card);
+    });
+  }
+
+  function deletePerson(index) {
+    if (confirm('このデータを削除しますか？')) {
+      people.splice(index, 1);
+      localStorage.setItem('people', JSON.stringify(people));
+      displayPeople();
+    }
+  }
+</script>
+
+</body>
+</html>
