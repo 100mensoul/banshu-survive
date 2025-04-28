@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>テストマップ0428｜播州サバイブ</title>
+  <link rel="stylesheet" href="../css/main.css"> <!-- 必要なら削除OK -->
+  <style>
+    /* 地図エリア */
+    .map-wrapper {
+      position: relative;
+      text-align: center;
+      margin-top: 2rem;
+    }
+
+    .map-wrapper img {
+      width: 100%;
+      max-width: 900px;
+      height: auto;
+    }
+
+    /* ピン */
+    .pin {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: #88c999; /* 若葉色 */
+      border-radius: 50%;
+      border: 2px solid #fff;
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+    }
+
+    /* モーダル */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+      background-color: #fefef5;
+      margin: 10% auto;
+      padding: 1rem;
+      border: 2px solid #88c999;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 8px;
+      position: relative;
+    }
+
+    .close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .modal-header {
+      background-color: #a8dab5;
+      padding: 0.8rem;
+      font-size: 1.2rem;
+      text-align: center;
+      color: #fff;
+      border-radius: 6px 6px 0 0;
+    }
+
+    .modal-body {
+      padding: 1rem;
+      text-align: left;
+    }
+
+    .map-link, .photo-link {
+      display: inline-block;
+      margin: 0.5rem 0;
+      padding: 0.5rem 1rem;
+      background-color: #88c999;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .thumbnail {
+      width: 100%;
+      height: auto;
+      margin-top: 1rem;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<header class="section-title">
+  <h2>テストマップ0428 <span class="en">TEST MAP</span></h2>
+</header>
+
+<main class="content">
+
+  <div class="map-wrapper">
+    <img src="../images/map-sample.png" alt="播州サバイブ地図">
+
+    <!-- 仮ピン（例：サンヨウクロス） -->
+    <div class="pin" style="left: 30%; top: 40%;" onclick="openModal()"></div>
+  </div>
+
+  <!-- モーダルウィンドウ -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">✖️</span>
+      <div class="modal-header">
+        ヒメジンネーム：サンヨウクロス
+      </div>
+      <div class="modal-body">
+        <p><strong>現在の呼称：</strong>サムエ跡地</p>
+        <p><strong>住所：</strong>兵庫県姫路市花田町小川○丁目</p>
+        <p><a href="https://maps.app.goo.gl/Zw6QyG3qNnCVr5CVA" target="_blank" class="map-link">▶ Googleマップで見る</a></p>
+        <p><strong>説明：</strong>かつて栄えた商業施設跡地。現在は更地になっている。</p>
+        <p><a href="https://photos.app.goo.gl/XXXXXX" target="_blank" class="photo-link">▶ 写真を見る</a></p>
+        <img src="../images/sample-thumbnail.jpg" alt="サンヨウクロス写真" class="thumbnail">
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p><a href="../index.html">← トップページへ戻る</a></p>
+</footer>
+
+<script>
+function openModal() {
+  document.getElementById('modal').style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
