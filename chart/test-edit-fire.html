@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登場人物管理（Firebase保存版v5）</title>
+  <style>
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      background: #f0f8f0;
+      padding: 2rem 1rem;
+      max-width: 800px;
+      margin: auto;
+      line-height: 1.6;
+      font-size: 1rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      color: #388e3c;
+    }
+    input, textarea, select, button {
+      width: 100%;
+      font-size: 1rem;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .btn {
+      width: auto;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+    .add-relation-btn {
+      background: #81c784;
+    }
+    .card {
+      border: 2px solid #bbb;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .tag {
+      display: inline-block;
+      background: #e0f2f1;
+      color: #00695c;
+      padding: 0.3rem 0.7rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      margin: 0.2rem;
+    }
+    summary {
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<h1>登場人物管理（Firebase保存版v5）</h1>
+
+<!-- 登録フォーム -->
+<form id="person-form">
+  <input type="text" id="realName" placeholder="実名（非公開）" required>
+  <input type="text" id="roleName" placeholder="役名（公開）" required>
+  <input type="text" id="position" placeholder="肩書き・役割">
+  <input type="text" id="affiliation" placeholder="所属">
+
+  <div id="relations-container">
+    <label><strong>関係性リスト</strong></label><br>
+    <div class="relation-entry">
+      <input type="text" placeholder="相手名" class="relation-name">
+      <input type="text" placeholder="エピソード" class="relation-detail">
+    </div>
+  </div>
+  <button type="button" id="add-relation" class="btn add-relation-btn">関係性を追加</button>
+
+  <br><label><strong>固定タグ</strong></label><br>
+  <select id="fixedTag">
+    <option value="">選択してください</option>
+    <option value="播州人">播州人</option>
+    <option value="NBT">NBT</option>
+    <option value="外様">外様</option>
+  </select>
+
+  <input type="text" id="tags" placeholder="自由タグ（カンマ区切り）">
+  <textarea id="comment" placeholder="一言コメント" rows="2"></textarea>
+  <label><input type="checkbox" id="isPublic"> 公開する</label><br><br>
+  
+  <button type="submit" class="btn" id="submit-btn">登録する</button>
+</form>
+
+<hr>
+
+<!-- 登録データ一覧 -->
+<div id="person-list"></div>
+
+<!-- Firebase設定 -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCtDPnYex-KL2hbHAQe5fYSPv9rz9xTa9A",
+    authDomain: "u2memo-36f61.firebaseapp.com",
+    databaseURL: "https://u2memo-36f61-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "u2memo-36f61",
+    storageBucket: "u2memo-36f61.firebasestorage.app",
+    messagingSenderId: "14274931072",
+    appId: "1:14274931072:web:5d9c9026905fdc0b383965"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const charactersRef = db.ref("characters");
+
+  const form = document.getElementById('person-form');
+  const personList = document.getElementById('person-list');
+  const relationsContainer = document.getElementById('relations-container');
+  const addRelationBtn = document.getElementById('add-relation');
+  const submitBtn = document.getElementById('submit-btn');
+
+  let editKey = null;
+
+  loadPeople();
+
+  addRelationBtn.addEventListener('click', () => {
+    const entry = document.createElement('div');
+    entry.className = 'relation-entry';
+    entry.innerHTML = `
+      <input type="text" placeholder="相手名" class="relation-name">
+      <input type="text" placeholder="エピソード" class="relation-detail">
+    `;
+    relationsContainer.appendChild(entry);
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const relationNames = document.querySelectorAll('.relation-name');
+    const relationDetails = document.querySelectorAll('.relation-detail');
+    const relations = [];
+    for (let i = 0; i < relationNames.length; i++) {
+      if (relationNames[i].value.trim() && relationDetails[i].value.trim()) {
+        relations.push({
+          name: relationNames[i].value.trim(),
+          detail: relationDetails[i].value.trim()
+        });
+      }
+    }
+
+    const personData = {
+      realName: document.getElementById('realName').value,
+      roleName: document.getElementById('roleName').value,
+      position: document.getElementById('position').value,
+      affiliation: document.getElementById('affiliation').value,
+      relations: relations,
+      fixedTag: document.getElementById('fixedTag').value,
+      freeTags: document.getElementById('tags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+      comment: document.getElementById('comment').value,
+      isPublic: document.getElementById('isPublic').checked
+    };
+
+    if (editKey) {
+      charactersRef.child(editKey).set(personData);
+      editKey = null;
+      submitBtn.textContent = '登録する';
+    } else {
+      charactersRef.push(personData);
+    }
+
+    form.reset();
+    relationsContainer.innerHTML = `
+      <label><strong>関係性リスト</strong></label><br>
+      <div class="relation-entry">
+        <input type="text" placeholder="相手名" class="relation-name">
+        <input type="text" placeholder="エピソード" class="relation-detail">
+      </div>
+    `;
+    loadPeople();
+  });
+
+  function loadPeople() {
+    personList.innerHTML = '';
+    charactersRef.once('value', (snapshot) => {
+      snapshot.forEach((childSnapshot) => {
+        const person = childSnapshot.val();
+        const key = childSnapshot.key;
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <strong>実名：</strong> ${person.realName}<br>
+          <strong>役名：</strong> ${person.roleName}<br>
+          <strong>肩書き・役割：</strong> ${person.position}<br>
+          <strong>所属：</strong> ${person.affiliation}<br>
+          <strong>コメント：</strong> ${person.comment}<br>
+          <strong>固定タグ：</strong> ${person.fixedTag ? `<span class="tag">${person.fixedTag}</span>` : '未選択'}<br>
+          <strong>自由タグ：</strong> ${person.freeTags.map(tag => `<span class="tag">${tag}</span>`).join('')}<br>
+          <details>
+            <summary>関係性を見る</summary>
+            ${person.relations.map(r => `<div>・${r.name}：${r.detail}</div>`).join('')}
+          </details>
+          <strong>公開：</strong> ${person.isPublic ? '公開' : '非公開'}<br>
+          <button onclick="editPerson('${key}')" class="btn" style="background:#1976d2;">編集</button>
+          <button onclick="deletePerson('${key}')" class="btn" style="background:#f44336;">削除</button>
+        `;
+        personList.appendChild(card);
+      });
+    });
+  }
+
+  function editPerson(key) {
+    charactersRef.child(key).once('value', (snapshot) => {
+      const person = snapshot.val();
+      document.getElementById('realName').value = person.realName;
+      document.getElementById('roleName').value = person.roleName;
+      document.getElementById('position').value = person.position;
+      document.getElementById('affiliation').value = person.affiliation;
+      document.getElementById('fixedTag').value = person.fixedTag;
+      document.getElementById('tags').value = person.freeTags.join(', ');
+      document.getElementById('comment').value = person.comment;
+      document.getElementById('isPublic').checked = person.isPublic;
+
+      relationsContainer.innerHTML = `<label><strong>関係性リスト</strong></label><br>`;
+      person.relations.forEach(r => {
+        const entry = document.createElement('div');
+        entry.className = 'relation-entry';
+        entry.innerHTML = `
+          <input type="text" value="${r.name}" placeholder="相手名" class="relation-name">
+          <input type="text" value="${r.detail}" placeholder="エピソード" class="relation-detail">
+        `;
+        relationsContainer.appendChild(entry);
+      });
+
+      editKey = key;
+      submitBtn.textContent = '更新する';
+      window.scrollTo(0, 0);
+    });
+  }
+
+  function deletePerson(key) {
+    if (confirm('このデータを削除しますか？')) {
+      charactersRef.child(key).remove();
+      loadPeople();
+    }
+  }
+</script>
+
+</body>
+</html>
