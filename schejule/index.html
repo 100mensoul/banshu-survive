@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ヒメゴト｜スケジュール管理</title>
+  <style>
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      background-color: #fafafa;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+
+    .header {
+      text-align: center;
+      background: #ffe680;
+      padding: 1rem;
+    }
+
+    .main {
+      padding: 1rem;
+    }
+
+    h1, h2, h3 {
+      margin: 0.5rem 0;
+    }
+
+    .event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .event-card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .event-card p {
+      margin: 0.3rem 0;
+    }
+
+    .btn-group {
+      margin-top: 0.5rem;
+    }
+
+    .edit-btn, .delete-btn {
+      margin-right: 0.5rem;
+      padding: 0.3rem 0.8rem;
+      font-size: 0.85rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .edit-btn {
+      background-color: #6fa8dc;
+      color: white;
+    }
+
+    .delete-btn {
+      background-color: #e06666;
+      color: white;
+    }
+
+    .add-btn, .save-btn, .cancel-btn {
+      display: block;
+      margin: 1rem auto;
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #88c999;
+      color: white;
+      cursor: pointer;
+    }
+
+    .cancel-btn {
+      background-color: #ccc;
+    }
+
+    .form-area {
+      background: #fff;
+      border: 1px solid #aaa;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+
+    @media screen and (max-width: 600px) {
+      .event-list {
+        gap: 0.8rem;
+      }
+
+      .edit-btn, .delete-btn {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>📅 ヒメゴト</h1>
+    <p>予定をつなぎ、日々を編む</p>
+  </header>
+
+  <main class="main">
+    <section class="upcoming-section">
+      <h2>【近日予定】</h2>
+      <div id="upcoming-list" class="event-list"></div>
+    </section>
+
+    <section class="future-section">
+      <h2>【未来予定】</h2>
+      <div id="future-list" class="event-list"></div>
+    </section>
+
+    <button id="add-event-btn" class="add-btn">＋ 新しい予定を追加</button>
+
+    <div id="event-form" class="form-area" style="display: none;">
+      <h3>予定追加・編集</h3>
+      <input type="text" id="event-title" placeholder="タイトル" />
+      <input type="datetime-local" id="event-date" />
+      <input type="text" id="event-place" placeholder="場所" />
+      <input type="text" id="event-tag" placeholder="タグ（任意）" />
+      <textarea id="event-memo" placeholder="メモ（任意）"></textarea>
+      <button id="save-event" class="save-btn">保存</button>
+      <button id="cancel-event" class="cancel-btn">キャンセル</button>
+    </div>
+  </main>
+
+  <script>
+    let events = JSON.parse(localStorage.getItem('himegotoEvents')) || [];
+
+    const upcomingList = document.getElementById('upcoming-list');
+    const futureList = document.getElementById('future-list');
+    const addEventBtn = document.getElementById('add-event-btn');
+    const eventForm = document.getElementById('event-form');
+    const saveEventBtn = document.getElementById('save-event');
+    const cancelEventBtn = document.getElementById('cancel-event');
+
+    let editingEventId = null;
+
+    addEventBtn.addEventListener('click', () => {
+      eventForm.style.display = 'block';
+      editingEventId = null;
+      clearForm();
+    });
+
+    cancelEventBtn.addEventListener('click', () => {
+      eventForm.style.display = 'none';
+    });
+
+    saveEventBtn.addEventListener('click', () => {
+      const title = document.getElementById('event-title').value;
+      const date = document.getElementById('event-date').value;
+      const place = document.getElementById('event-place').value;
+      const tag = document.getElementById('event-tag').value;
+      const memo = document.getElementById('event-memo').value;
+
+      if (!title || !date) {
+        alert('タイトルと日付は必須です。');
+        return;
+      }
+
+      if (editingEventId) {
+        const index = events.findIndex(ev => ev.id === editingEventId);
+        if (index !== -1) {
+          events[index] = { id: editingEventId, title, date, place, tag, memo };
+        }
+      } else {
+        const newEvent = {
+          id: Date.now(),
+          title,
+          date,
+          place,
+          tag,
+          memo
+        };
+        events.push(newEvent);
+      }
+
+      localStorage.setItem('himegotoEvents', JSON.stringify(events));
+
+      eventForm.style.display = 'none';
+      clearForm();
+      renderEvents();
+    });
+
+    function clearForm() {
+      document.getElementById('event-title').value = '';
+      document.getElementById('event-date').value = '';
+      document.getElementById('event-place').value = '';
+      document.getElementById('event-tag').value = '';
+      document.getElementById('event-memo').value = '';
+    }
+
+    function renderEvents() {
+      upcomingList.innerHTML = '';
+      futureList.innerHTML = '';
+
+      const now = new Date();
+
+      events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      events.forEach(event => {
+        const card = document.createElement('div');
+        card.className = 'event-card';
+        card.innerHTML = `
+          <p><strong>${event.title}</strong>（${formatDate(event.date)}）</p>
+          <p>場所：${event.place || '---'}</p>
+          <p>タグ：${event.tag || '---'}</p>
+          <p>${event.memo || ''}</p>
+          <div class="btn-group">
+            <button class="edit-btn" data-id="${event.id}">編集</button>
+            <button class="delete-btn" data-id="${event.id}">削除</button>
+          </div>
+        `;
+
+        const eventDate = new Date(event.date);
+
+        if (eventDate < now) {
+          upcomingList.appendChild(card);
+        } else {
+          futureList.appendChild(card);
+        }
+      });
+
+      attachButtonEvents();
+    }
+
+    function attachButtonEvents() {
+      const editButtons = document.querySelectorAll('.edit-btn');
+      const deleteButtons = document.querySelectorAll('.delete-btn');
+
+      editButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = Number(e.target.dataset.id);
+          startEditing(id);
+        });
+      });
+
+      deleteButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = Number(e.target.dataset.id);
+          deleteEvent(id);
+        });
+      });
+    }
+
+    function startEditing(id) {
+      const event = events.find(ev => ev.id === id);
+      if (event) {
+        document.getElementById('event-title').value = event.title;
+        document.getElementById('event-date').value = event.date;
+        document.getElementById('event-place').value = event.place;
+        document.getElementById('event-tag').value = event.tag;
+        document.getElementById('event-memo').value = event.memo;
+
+        eventForm.style.display = 'block';
+        editingEventId = id;
+      }
+    }
+
+    function deleteEvent(id) {
+      if (confirm('この予定を本当に削除しますか？')) {
+        events = events.filter(ev => ev.id !== id);
+        localStorage.setItem('himegotoEvents', JSON.stringify(events));
+        renderEvents();
+      }
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+
+    renderEvents();
+  </script>
+</body>
+</html>
