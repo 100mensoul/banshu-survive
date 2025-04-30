@@ -189,7 +189,7 @@
 
   function loadPeople() {
     personList.innerHTML = '';
-    charactersRef.once('value', (snapshot) => {
+    charactersRef.on('value', (snapshot) => {
       snapshot.forEach((childSnapshot) => {
         const person = childSnapshot.val();
         const key = childSnapshot.key;
