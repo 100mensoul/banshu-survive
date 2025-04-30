@@ -201,11 +201,11 @@
           <strong>所属：</strong> ${person.affiliation}<br>
           <strong>コメント：</strong> ${person.comment}<br>
           <strong>固定タグ：</strong> ${person.fixedTag ? `<span class="tag">${person.fixedTag}</span>` : '未選択'}<br>
-          <strong>自由タグ：</strong> ${person.freeTags.map(tag => `<span class="tag">${tag}</span>`).join('')}<br>
-          <details>
+          <strong>自由タグ：</strong> ${(person.freeTags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}<br>
+            <details>
             <summary>関係性を見る</summary>
-            ${person.relations.map(r => `<div>・${r.name}：${r.detail}</div>`).join('')}
-          </details>
+             ${(person.relations || []).map(r => `<div>・${r.name}：${r.detail}</div>`).join('')}
+　　　　　　　　</details>
           <strong>公開：</strong> ${person.isPublic ? '公開' : '非公開'}<br>
           <button onclick="editPerson('${key}')" class="btn" style="background:#1976d2;">編集</button>
           <button onclick="deletePerson('${key}')" class="btn" style="background:#f44336;">削除</button>
