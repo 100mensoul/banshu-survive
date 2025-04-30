@@ -119,11 +119,10 @@
   };
 
   firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();const form = document.getElementById('person-form');
-  const charactersRef = db.ref("testcharacters");
+　const db = firebase.database();
+　const charactersRef = db.ref("testcharacters");
+　const form = document.getElementById('person-form');
 
-  const form = document.
-  const personList = document.getElementById('person-list');
   const relationsContainer = document.getElementById('relations-container');
   const addRelationBtn = document.getElementById('add-relation');
   const submitBtn = document.getElementById('submit-btn');
