@@ -120,9 +120,10 @@
 
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
-  const charactersRef = db.ref("characters");
+  const charactersRef = db.ref("testcharacters");
 
-  const form = document.getElementById('person-form');
+  const form = document.// 元のままだと → const charactersRef = db.ref("characters");
+const charactersRef = db.ref("characters_dev"); // または "testCharacters" など別名に変更('person-form');
   const personList = document.getElementById('person-list');
   const relationsContainer = document.getElementById('relations-container');
   const addRelationBtn = document.getElementById('add-relation');
