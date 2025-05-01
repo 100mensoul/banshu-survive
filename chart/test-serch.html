@@ -102,6 +102,9 @@
 /* ---------- Firebase ---------- */
 const firebaseConfig={apiKey:"AIzaSyCtDPnYex-KL2hbHAQe5fYSPv9rz9xTa9A",authDomain:"u2memo-36f61.firebaseapp.com",databaseURL:"https://u2memo-36f61-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"u2memo-36f61",storageBucket:"u2memo-36f61.appspot.com",messagingSenderId:"14274931072",appId:"1:14274931072:web:5d9c9026905fdc0b383965"};
 firebase.initializeApp(firebaseConfig);
+  /* ★★★ ここを追加 ★★★ */
+  // Safari の long-polling バグ回避：WebSocket を強制
+  firebase.database().INTERNAL.forceWebSockets();
 const db=firebase.database();
 const charactersRef=db.ref("testcharacters");
 
