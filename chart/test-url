@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>登場人物管理（Firebase保存版v7）</title>
+  <title>登場人物管理（Firebase保存版v7 修正版）</title>
   <style>
     body {
       font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
@@ -66,9 +66,8 @@
 </head>
 <body>
 
-<h1>登場人物管理（Firebase保存版v7）</h1>
+<h1>登場人物管理（Firebase保存版v7 修正版）</h1>
 
-<!-- 登録フォーム -->
 <form id="person-form">
   <input type="text" id="realName" placeholder="実名（非公開）" required>
   <input type="text" id="roleName" placeholder="役名（公開）" required>
@@ -117,10 +116,8 @@
 
 <hr>
 
-<!-- 登録データ一覧 -->
 <div id="person-list"></div>
 
-<!-- Firebase設定 -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <script>
@@ -154,10 +151,7 @@
   addRelationBtn.addEventListener('click', () => {
     const entry = document.createElement('div');
     entry.className = 'relation-entry';
-    entry.innerHTML = `
-      <input type="text" placeholder="相手名" class="relation-name">
-      <input type="text" placeholder="エピソード" class="relation-detail">
-    `;
+    entry.innerHTML = `<input type="text" placeholder="相手名" class="relation-name"><input type="text" placeholder="エピソード" class="relation-detail">`;
     relationsContainer.appendChild(entry);
   });
 
@@ -182,10 +176,7 @@
     const relations = [];
     for (let i = 0; i < relationNames.length; i++) {
       if (relationNames[i].value.trim() && relationDetails[i].value.trim()) {
-        relations.push({
-          name: relationNames[i].value.trim(),
-          detail: relationDetails[i].value.trim()
-        });
+        relations.push({ name: relationNames[i].value.trim(), detail: relationDetails[i].value.trim() });
       }
     }
     const urls = Array.from(document.querySelectorAll('.url-input')).map(input => input.value.trim()).filter(v => v);
@@ -232,17 +223,12 @@
           <strong>役名：</strong> ${person.roleName}<br>
           <strong>肩書き・役割：</strong> ${person.position}<br>
           <strong>所属：</strong> ${person.affiliation}<br>
-          <strong>URLリスト：</strong><br>
-          ${(person.urls || []).map(url => `<a href="${url}" target="_blank">${url}</a>`).join('<br>')}<br>
-          <strong>サイト情報：</strong><br>
-          ${(person.sites || []).map(site => `<div>${site}</div>`).join('<br>')}<br>
+          <strong>URLリスト：</strong><br>${(person.urls || []).map(url => `<a href="${url}" target="_blank">${url}</a>`).join('<br>')}<br>
+          <strong>サイト情報：</strong><br>${(person.sites || []).map(site => `<div>${site}</div>`).join('<br>')}<br>
           <strong>コメント：</strong> ${person.comment}<br>
           <strong>固定タグ：</strong> ${person.fixedTag ? `<span class="tag">${person.fixedTag}</span>` : '未選択'}<br>
           <strong>自由タグ：</strong> ${(person.freeTags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}<br>
-          <details>
-            <summary>関係性を見る</summary>
-            ${(person.relations || []).map(r => `<div>・${r.name}：${r.detail}</div>`).join('')}
-          </details>
+          <details><summary>関係性を見る</summary>${(person.relations || []).map(r => `<div>・${r.name}：${r.detail}</div>`).join('')}</details>
           <strong>公開：</strong> ${person.isPublic ? '公開' : '非公開'}<br>
           <button onclick="editPerson('${key}')" class="btn" style="background:#1976d2;">編集</button>
           <button onclick="deletePerson('${key}')" class="btn" style="background:#f44336;">削除</button>
@@ -264,7 +250,7 @@
       document.getElementById('comment').value = person.comment;
       document.getElementById('isPublic').checked = person.isPublic;
 
-      urlsContainer.innerHTML = `<div class="url-entry"><input type="url" placeholder="URL" class="url-input"></div>`;
+      urlsContainer.innerHTML = ``;
       (person.urls || []).forEach(url => {
         const entry = document.createElement('div');
         entry.className = 'url-entry';
@@ -272,7 +258,7 @@
         urlsContainer.appendChild(entry);
       });
 
-      sitesContainer.innerHTML = `<div class="site-entry"><input type="text" placeholder="サイト情報" class="site-input"></div>`;
+      sitesContainer.innerHTML = ``;
       (person.sites || []).forEach(site => {
         const entry = document.createElement('div');
         entry.className = 'site-entry';
@@ -296,7 +282,7 @@
 
   function deletePerson(key) {
     if (confirm('このデータを削除しますか？')) {
-      charactersRef.child(key).remove();
+      charactersRef.child(key).remove().then(() => loadPeople());
     }
   }
 </script>
