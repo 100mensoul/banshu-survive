@@ -18,7 +18,7 @@
 </head>
 <body>
 
-<h1>登場人物管理（Firebase保存版v7）</h1>
+<h1>登場人物管理（Firebase保存版v7-URLブロック削除）</h1>
 
 <form id="person-form">
   <input type="text" id="realName" placeholder="実名（非公開）" required>
