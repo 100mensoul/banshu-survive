@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>登場人物管理（Firebase v7 + 色分け／タグ補完版）</title>
+<style>
+  /* --- 基本レイアウト --- */
+  body{font-family:'Hiragino Kaku Gothic ProN',Meiryo,sans-serif;background:#f0f8f0;padding:2rem 1rem;max-width:800px;margin:auto;line-height:1.6;font-size:1rem;}
+  h1{font-size:1.5rem;margin-bottom:1rem;text-align:center;color:#388e3c;}
+  input,textarea,select,button{width:100%;font-size:1rem;padding:0.5rem;margin-bottom:1rem;border:1px solid #ccc;border-radius:6px;}
+  .btn{width:auto;background:#4CAF50;color:#fff;border:none;padding:0.5rem 1rem;cursor:pointer;margin-bottom:1rem;}
+  .add-relation-btn{background:#81c784;}
+  /* --- カード --- */
+  .card{border:2px solid #bbb;border-radius:8px;padding:1.5rem;margin-bottom:2rem;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,0.05);}
+  /* --- 固定タグ別の背景色 --- */
+  .tag-banshu{background:#fff9c4!important;}   /* 柔らかい黄色 */
+  .tag-nbt   {background:#e8f5e9!important;}   /* 若葉の緑    */
+  .tag-tosama{background:#f3e5f5!important;}   /* うす紫      */
+  /* --- タグバッジ --- */
+  .tag{display:inline-block;background:#e0f2f1;color:#00695c;padding:0.3rem 0.7rem;border-radius:12px;font-size:0.85rem;margin:0.2rem;}
+  label{display:block;font-weight:bold;margin-top:1rem;}
+  summary{font-weight:bold;cursor:pointer;margin-top:0.5rem;}
+</style>
+</head>
+<body>
+
+<h1>登場人物管理（Firebase保存版v7）</h1>
+
+<form id="person-form">
+  <input type="text" id="realName"     placeholder="実名（非公開）" required>
+  <input type="text" id="roleName"     placeholder="役名（公開）"   required>
+  <input type="text" id="position"     placeholder="肩書き・役割">
+  <input type="text" id="affiliation"  placeholder="所属">
+
+  <!-- サイト情報（URL+説明） -->
+  <label><strong>サイト情報リスト</strong></label>
+  <div id="siteInfos-container">
+    <div class="siteInfo-entry">
+      <input type="url"  placeholder="URL" class="siteInfo-url">
+      <input type="text" placeholder="サイト情報（公式HP, Instagram等）" class="siteInfo-desc">
+    </div>
+  </div>
+  <button type="button" id="add-siteInfo" class="btn add-relation-btn">サイト情報を追加</button>
+
+  <!-- 関係性 -->
+  <div id="relations-container">
+    <label><strong>関係性リスト</strong></label>
+    <div class="relation-entry">
+      <input type="text" placeholder="相手名"   class="relation-name">
+      <input type="text" placeholder="エピソード" class="relation-detail">
+    </div>
+  </div>
+  <button type="button" id="add-relation" class="btn add-relation-btn">関係性を追加</button>
+
+  <!-- 固定タグ -->
+  <label><strong>固定タグ</strong></label>
+  <select id="fixedTag">
+    <option value="">選択してください</option>
+    <option value="播州人">播州人</option>
+    <option value="NBT">NBT</option>
+    <option value="外様">外様</option>
+  </select>
+
+  <!-- 自由タグ（datalist で補完） -->
+  <input type="text" id="tags" list="tagSuggestions" placeholder="自由タグ（カンマ区切り）">
+  <datalist id="tagSuggestions"></datalist>
+
+  <textarea id="comment" placeholder="一言コメント" rows="2"></textarea>
+  <label><input type="checkbox" id="isPublic"> 公開する</label><br>
+
+  <button type="submit" class="btn" id="submit-btn">登録する</button>
+</form>
+
+<hr>
+
+<div id="person-list"></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script>
+/* ---------- Firebase ---------- */
+const firebaseConfig={apiKey:"AIzaSyCtDPnYex-KL2hbHAQe5fYSPv9rz9xTa9A",authDomain:"u2memo-36f61.firebaseapp.com",databaseURL:"https://u2memo-36f61-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"u2memo-36f61",storageBucket:"u2memo-36f61.appspot.com",messagingSenderId:"14274931072",appId:"1:14274931072:web:5d9c9026905fdc0b383965"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+const charactersRef=db.ref("testcharacters");
+
+/* ---------- DOM ---------- */
+const form=document.getElementById('person-form');
+const personList=document.getElementById('person-list');
+const relationsContainer=document.getElementById('relations-container');
+const sitesContainer=document.getElementById('siteInfos-container');
+const addRelationBtn=document.getElementById('add-relation');
+const addSiteBtn=document.getElementById('add-siteInfo');
+const submitBtn=document.getElementById('submit-btn');
+const tagDatalist=document.getElementById('tagSuggestions');
+let editKey=null;
+
+/* ---------- 動的行追加 ---------- */
+addRelationBtn.addEventListener('click',()=>{
+  const e=document.createElement('div');
+  e.className='relation-entry';
+  e.innerHTML=`<input type="text" placeholder="相手名" class="relation-name"><input type="text" placeholder="エピソード" class="relation-detail">`;
+  relationsContainer.appendChild(e);
+});
+addSiteBtn.addEventListener('click',()=>{
+  const e=document.createElement('div');
+  e.className='siteInfo-entry';
+  e.innerHTML=`<input type="url" placeholder="URL" class="siteInfo-url"><input type="text" placeholder="サイト情報（公式HP, Instagram等）" class="siteInfo-desc">`;
+  sitesContainer.appendChild(e);
+});
+
+/* ---------- 送信 ---------- */
+form.addEventListener('submit',ev=>{
+  ev.preventDefault();
+  const relations=[...document.querySelectorAll('.relation-entry')].map(r=>({name:r.querySelector('.relation-name').value.trim(),detail:r.querySelector('.relation-detail').value.trim()})).filter(r=>r.name||r.detail);
+  const sites=[...document.querySelectorAll('.siteInfo-entry')].map(s=>({url:s.querySelector('.siteInfo-url').value.trim(),desc:s.querySelector('.siteInfo-desc').value.trim()})).filter(s=>s.url||s.desc);
+  const personData={
+    realName:document.getElementById('realName').value,
+    roleName:document.getElementById('roleName').value,
+    position:document.getElementById('position').value,
+    affiliation:document.getElementById('affiliation').value,
+    relations,sites,
+    fixedTag:document.getElementById('fixedTag').value,
+    freeTags:document.getElementById('tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    comment:document.getElementById('comment').value,
+    isPublic:document.getElementById('isPublic').checked,
+    updatedAt:Date.now()
+  };
+  if(editKey){charactersRef.child(editKey).set(personData);editKey=null;submitBtn.textContent='登録する';}
+  else{charactersRef.push(personData);}
+  resetForm();
+});
+
+/* ---------- 一覧 ---------- */
+const pastel=['#ffe0b2','#b3e5fc','#d1c4e9','#c8e6c9','#ffcdd2','#f0f4c3','#b2dfdb'];/*自由タグ用色パレット*/
+const fixedColors={ '播州人':'#fff9c4', 'NBT':'#e8f5e9', '外様':'#f3e5f5' };
+
+charactersRef.on('value',snap=>{
+  personList.innerHTML='';
+  const tagSet=new Set();            /* 自由タグ候補集め */
+
+  snap.forEach(c=>{
+    const p=c.val(),key=c.key;
+    /* --- サイト情報：説明→URL の順 --- */
+    const siteHtml=(p.sites||[]).map(s=>`<div>${s.desc?`${s.desc}：`:''}${s.url?`<a href="${s.url}" target="_blank">${s.url}</a>`:''}</div>`).join('');
+
+    /* --- 固定タグ色をカード背景に反映 --- */
+    const card=document.createElement('div');
+    card.className='card';
+    if(fixedColors[p.fixedTag]) card.style.background=fixedColors[p.fixedTag];
+
+    /* --- 本文 --- */
+    card.innerHTML=`
+      <strong>実名：</strong>${p.realName}<br>
+      <strong>役名：</strong>${p.roleName}<br>
+      <strong>肩書き・役割：</strong>${p.position}<br>
+      <strong>所属：</strong>${p.affiliation}<br>
+
+      <details><summary>サイト情報を見る</summary>${siteHtml}</details>
+
+      <strong>コメント：</strong>${p.comment}<br>
+      <strong>固定タグ：</strong>${p.fixedTag?`<span class="tag">${p.fixedTag}</span>`:'未選択'}<br>
+      <strong>自由タグ：</strong>${(p.freeTags||[]).map(t=>{
+        const col=pastel[Math.floor(Math.random()*pastel.length)];
+        tagSet.add(t);
+        return `<span class="tag" style="background:${col};">${t}</span>`;
+      }).join('')}<br>
+
+      <details><summary>関係性を見る</summary>${(p.relations||[]).map(r=>`・${r.name}：${r.detail}<br>`).join('')}</details>
+
+      <strong>公開：</strong>${p.isPublic?'公開':'非公開'}<br><br>
+      <button onclick="editPerson('${key}')" class="btn" style="background:#1976d2;">編集</button>
+      <button onclick="deletePerson('${key}')" class="btn" style="background:#f44336;">削除</button>`;
+    personList.appendChild(card);
+  });
+
+  /* --- datalist に自由タグ候補を注入 --- */
+  tagDatalist.innerHTML=[...tagSet].map(t=>`<option value="${t}">`).join('');
+});
+
+/* ---------- 編集 ---------- */
+function editPerson(key){
+  charactersRef.child(key).once('value',s=>{
+    const p=s.val();
+    document.getElementById('realName').value=p.realName;
+    document.getElementById('roleName').value=p.roleName;
+    document.getElementById('position').value=p.position;
+    document.getElementById('affiliation').value=p.affiliation;
+    document.getElementById('fixedTag').value=p.fixedTag;
+    document.getElementById('tags').value=(p.freeTags||[]).join(', ');
+    document.getElementById('comment').value=p.comment;
+    document.getElementById('isPublic').checked=p.isPublic;
+
+    /* サイト */
+    sitesContainer.innerHTML='';
+    (p.sites||[{url:'',desc:''}]).forEach(s=>{
+      const e=document.createElement('div');
+      e.className='siteInfo-entry';
+      e.innerHTML=`<input type="url" value="${s.url}" class="siteInfo-url"><input type="text" value="${s.desc}" class="siteInfo-desc">`;
+      sitesContainer.appendChild(e);
+    });
+
+    /* 関係 */
+    relationsContainer.innerHTML='<label><strong>関係性リスト</strong></label>';
+    (p.relations||[{name:'',detail:''}]).forEach(r=>{
+      const e=document.createElement('div');
+      e.className='relation-entry';
+      e.innerHTML=`<input type="text" value="${r.name}" class="relation-name"><input type="text" value="${r.detail}" class="relation-detail">`;
+      relationsContainer.appendChild(e);
+    });
+
+    editKey=key;
+    submitBtn.textContent='更新する';
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+}
+
+/* ---------- 削除 ---------- */
+function deletePerson(key){ if(confirm('このデータを削除しますか？')) charactersRef.child(key).remove(); }
+
+/* ---------- リセット ---------- */
+function resetForm(){
+  form.reset();
+  sitesContainer.innerHTML=`<div class="siteInfo-entry"><input type="url" placeholder="URL" class="siteInfo-url"><input type="text" placeholder="サイト情報（公式HP, Instagram等）" class="siteInfo-desc"></div>`;
+  relationsContainer.innerHTML=`<label><strong>関係性リスト</strong></label><div class="relation-entry"><input type="text" placeholder="相手名" class="relation-name"><input type="text" placeholder="エピソード" class="relation-detail"></div>`;
+}
+</script>
+
+</body>
+</html>
