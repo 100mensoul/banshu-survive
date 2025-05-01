@@ -66,7 +66,7 @@
 </head>
 <body>
 
-<h1>登場人物管理（URLFirebase保存版v7）</h1>
+<h1>登場人物管理（Firebase保存版v7）</h1>
 
 <!-- 登録フォーム -->
 <form id="person-form">
