@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>登場人物管理（Firebase保存版v6）</title>
+  <title>登場人物管理（Firebase保存版v8）</title>
   <style>
     body {
       font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
@@ -75,6 +75,15 @@
   <input type="text" id="position" placeholder="肩書き・役割">
   <input type="text" id="affiliation" placeholder="所属">
 
+  <label><strong>サイト情報リスト</strong></label><br>
+  <div id="siteInfos-container">
+    <div class="siteInfo-entry">
+      <input type="url" placeholder="URL" class="siteInfo-url">
+      <input type="text" placeholder="サイト情報（公式HP, Instagram等）" class="siteInfo-desc">
+    </div>
+  </div>
+  <button type="button" id="add-siteInfo" class="btn add-relation-btn">サイト情報を追加</button>
+
   <div id="relations-container">
     <label><strong>関係性リスト</strong></label><br>
     <div class="relation-entry">
@@ -124,7 +133,9 @@
   const form = document.getElementById('person-form');
   const personList = document.getElementById('person-list');
   const relationsContainer = document.getElementById('relations-container');
+  const siteInfosContainer = document.getElementById('siteInfos-container');
   const addRelationBtn = document.getElementById('add-relation');
+  const addSiteInfoBtn = document.getElementById('add-siteInfo');
   const submitBtn = document.getElementById('submit-btn');
 
   let editKey = null;
@@ -134,11 +145,17 @@
   addRelationBtn.addEventListener('click', () => {
     const entry = document.createElement('div');
     entry.className = 'relation-entry';
-    entry.innerHTML = `
-      <input type="text" placeholder="相手名" class="relation-name">
-      <input type="text" placeholder="エピソード" class="relation-detail">
-    `;
+    entry.innerHTML = `<input type="text" placeholder="相手名" class="relation-name">
+                       <input type="text" placeholder="エピソード" class="relation-detail">`;
     relationsContainer.appendChild(entry);
+  });
+
+  addSiteInfoBtn.addEventListener('click', () => {
+    const entry = document.createElement('div');
+    entry.className = 'siteInfo-entry';
+    entry.innerHTML = `<input type="url" placeholder="URL" class="siteInfo-url">
+                       <input type="text" placeholder="サイト情報" class="siteInfo-desc">`;
+    siteInfosContainer.appendChild(entry);
   });
 
   form.addEventListener('submit', (e) => {
@@ -148,10 +165,15 @@
     const relations = [];
     for (let i = 0; i < relationNames.length; i++) {
       if (relationNames[i].value.trim() && relationDetails[i].value.trim()) {
-        relations.push({
-          name: relationNames[i].value.trim(),
-          detail: relationDetails[i].value.trim()
-        });
+        relations.push({ name: relationNames[i].value.trim(), detail: relationDetails[i].value.trim() });
+      }
+    }
+    const siteUrls = document.querySelectorAll('.siteInfo-url');
+    const siteDescs = document.querySelectorAll('.siteInfo-desc');
+    const siteInfos = [];
+    for (let i = 0; i < siteUrls.length; i++) {
+      if (siteUrls[i].value.trim() || siteDescs[i].value.trim()) {
+        siteInfos.push({ url: siteUrls[i].value.trim(), desc: siteDescs[i].value.trim() });
       }
     }
 
@@ -161,6 +183,7 @@
       position: document.getElementById('position').value,
       affiliation: document.getElementById('affiliation').value,
       relations: relations,
+      siteInfos: siteInfos,
       fixedTag: document.getElementById('fixedTag').value,
       freeTags: document.getElementById('tags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
       comment: document.getElementById('comment').value,
@@ -176,13 +199,8 @@
     }
 
     form.reset();
-    relationsContainer.innerHTML = `
-      <label><strong>関係性リスト</strong></label><br>
-      <div class="relation-entry">
-        <input type="text" placeholder="相手名" class="relation-name">
-        <input type="text" placeholder="エピソード" class="relation-detail">
-      </div>
-    `;
+    siteInfosContainer.innerHTML = `<div class="siteInfo-entry"><input type="url" placeholder="URL" class="siteInfo-url"><input type="text" placeholder="サイト情報" class="siteInfo-desc"></div>`;
+    relationsContainer.innerHTML = `<label><strong>関係性リスト</strong></label><br><div class="relation-entry"><input type="text" placeholder="相手名" class="relation-name"><input type="text" placeholder="エピソード" class="relation-detail"></div>`;
   });
 
   function loadPeople() {
@@ -198,17 +216,15 @@
           <strong>役名：</strong> ${person.roleName}<br>
           <strong>肩書き・役割：</strong> ${person.position}<br>
           <strong>所属：</strong> ${person.affiliation}<br>
+          <strong>サイト情報リスト：</strong><br>
+          ${(person.siteInfos || []).map(s => `<a href="${s.url}" target="_blank">${s.url}</a> - ${s.desc}`).join('<br>')}<br>
           <strong>コメント：</strong> ${person.comment}<br>
           <strong>固定タグ：</strong> ${person.fixedTag ? `<span class="tag">${person.fixedTag}</span>` : '未選択'}<br>
           <strong>自由タグ：</strong> ${(person.freeTags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}<br>
-          <details>
-            <summary>関係性を見る</summary>
-            ${(person.relations || []).map(r => `<div>・${r.name}：${r.detail}</div>`).join('')}
-          </details>
+          <details><summary>関係性を見る</summary>${(person.relations || []).map(r => `<div>・${r.name}：${r.detail}</div>`).join('')}</details>
           <strong>公開：</strong> ${person.isPublic ? '公開' : '非公開'}<br>
           <button onclick="editPerson('${key}')" class="btn" style="background:#1976d2;">編集</button>
-          <button onclick="deletePerson('${key}')" class="btn" style="background:#f44336;">削除</button>
-        `;
+          <button onclick="deletePerson('${key}')" class="btn" style="background:#f44336;">削除</button>`;
         personList.appendChild(card);
       });
     });
@@ -226,14 +242,19 @@
       document.getElementById('comment').value = person.comment;
       document.getElementById('isPublic').checked = person.isPublic;
 
+      siteInfosContainer.innerHTML = `<div class="siteInfo-entry"><input type="url" placeholder="URL" class="siteInfo-url"><input type="text" placeholder="サイト情報" class="siteInfo-desc"></div>`;
+      (person.siteInfos || []).forEach(s => {
+        const entry = document.createElement('div');
+        entry.className = 'siteInfo-entry';
+        entry.innerHTML = `<input type="url" value="${s.url}" placeholder="URL" class="siteInfo-url"><input type="text" value="${s.desc}" placeholder="サイト情報" class="siteInfo-desc">`;
+        siteInfosContainer.appendChild(entry);
+      });
+
       relationsContainer.innerHTML = `<label><strong>関係性リスト</strong></label><br>`;
       (person.relations || []).forEach(r => {
         const entry = document.createElement('div');
         entry.className = 'relation-entry';
-        entry.innerHTML = `
-          <input type="text" value="${r.name}" placeholder="相手名" class="relation-name">
-          <input type="text" value="${r.detail}" placeholder="エピソード" class="relation-detail">
-        `;
+        entry.innerHTML = `<input type="text" value="${r.name}" placeholder="相手名" class="relation-name"><input type="text" value="${r.detail}" placeholder="エピソード" class="relation-detail">`;
         relationsContainer.appendChild(entry);
       });
 
