@@ -201,34 +201,48 @@
     sitesContainer.innerHTML = `<div class="site-entry"><input type="text" placeholder="サイト情報" class="site-input"></div>`;
     relationsContainer.innerHTML = `<label><strong>関係性リスト</strong></label><br><div class="relation-entry"><input type="text" placeholder="相手名" class="relation-name"><input type="text" placeholder="エピソード" class="relation-detail"></div>`;
   });
-
+  
   function loadPeople() {
-    personList.innerHTML = '';
-    charactersRef.on('value', (snapshot) => {
-      snapshot.forEach((childSnapshot) => {
-        const person = childSnapshot.val();
-        const key = childSnapshot.key;
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <strong>実名：</strong> ${person.realName}<br>
-          <strong>役名：</strong> ${person.roleName}<br>
-          <strong>肩書き・役割：</strong> ${person.position}<br>
-          <strong>所属：</strong> ${person.affiliation}<br>
-          <strong>URLリスト：</strong><br>${(person.urls || []).map(url => `<a href="${url}" target="_blank">${url}</a>`).join('<br>')}<br>
-          <strong>サイト情報：</strong><br>${(person.sites || []).map(site => `<div>${site}</div>`).join('<br>')}<br>
-          <strong>コメント：</strong> ${person.comment}<br>
-          <strong>固定タグ：</strong> ${person.fixedTag ? `<span class="tag">${person.fixedTag}</span>` : '未選択'}<br>
-          <strong>自由タグ：</strong> ${(person.freeTags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}<br>
-          <details><summary>関係性を見る</summary>${(person.relations || []).map(r => `<div>・${r.name}：${r.detail}</div>`).join('')}</details>
-          <strong>公開：</strong> ${person.isPublic ? '公開' : '非公開'}<br>
-          <button onclick="editPerson('${key}')" class="btn" style="background:#1976d2;">編集</button>
-          <button onclick="deletePerson('${key}')" class="btn" style="background:#f44336;">削除</button>
-        `;
-        personList.appendChild(card);
-      });
+  personList.innerHTML = '';
+  charactersRef.on('value', (snapshot) => {
+    snapshot.forEach((childSnapshot) => {
+      const person = childSnapshot.val();
+      const key = childSnapshot.key;
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <strong>実名：</strong> ${person.realName}<br>
+        <strong>役名：</strong> ${person.roleName}<br>
+        <strong>肩書き・役割：</strong> ${person.position}<br>
+        <strong>所属：</strong> ${person.affiliation}<br>
+
+        <details>
+          <summary>URLリストを見る</summary>
+          ${(person.urls || []).map(url => `<div><a href="${url}" target="_blank">${url}</a></div>`).join('')}
+        </details>
+
+        <details>
+          <summary>サイト情報を見る</summary>
+          ${(person.sites || []).map(site => `<div>${site}</div>`).join('')}
+        </details>
+
+        <strong>コメント：</strong> ${person.comment}<br>
+        <strong>固定タグ：</strong> ${person.fixedTag ? `<span class="tag">${person.fixedTag}</span>` : '未選択'}<br>
+        <strong>自由タグ：</strong> ${(person.freeTags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}<br>
+
+        <details>
+          <summary>関係性を見る</summary>
+          ${(person.relations || []).map(r => `<div>・${r.name}：${r.detail}</div>`).join('')}
+        </details>
+
+        <strong>公開：</strong> ${person.isPublic ? '公開' : '非公開'}<br>
+        <button onclick="editPerson('${key}')" class="btn" style="background:#1976d2;">編集</button>
+        <button onclick="deletePerson('${key}')" class="btn" style="background:#f44336;">削除</button>
+      `;
+      personList.appendChild(card);
     });
-  }
+  });
+}
 
   function editPerson(key) {
     charactersRef.child(key).once('value', (snapshot) => {
