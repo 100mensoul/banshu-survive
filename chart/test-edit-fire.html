@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>登場人物管理（Firebase保存版v5）</title>
+  <title>登場人物管理（Firebase保存版v6）</title>
   <style>
     body {
       font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
@@ -119,15 +119,16 @@
   };
 
   firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const charactersRef = db.ref("testcharacters");
-const form = document.getElementById('person-form');
+  const db = firebase.database();
+  const charactersRef = db.ref("testcharacters");
+  const form = document.getElementById('person-form');
+  const personList = document.getElementById('person-list');
   const relationsContainer = document.getElementById('relations-container');
   const addRelationBtn = document.getElementById('add-relation');
   const submitBtn = document.getElementById('submit-btn');
 
   let editKey = null;
-  
+
   loadPeople();
 
   addRelationBtn.addEventListener('click', () => {
@@ -200,10 +201,10 @@ const form = document.getElementById('person-form');
           <strong>コメント：</strong> ${person.comment}<br>
           <strong>固定タグ：</strong> ${person.fixedTag ? `<span class="tag">${person.fixedTag}</span>` : '未選択'}<br>
           <strong>自由タグ：</strong> ${(person.freeTags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}<br>
-            <details>
+          <details>
             <summary>関係性を見る</summary>
-             ${(person.relations || []).map(r => `<div>・${r.name}：${r.detail}</div>`).join('')}
-　　　　　　　　</details>
+            ${(person.relations || []).map(r => `<div>・${r.name}：${r.detail}</div>`).join('')}
+          </details>
           <strong>公開：</strong> ${person.isPublic ? '公開' : '非公開'}<br>
           <button onclick="editPerson('${key}')" class="btn" style="background:#1976d2;">編集</button>
           <button onclick="deletePerson('${key}')" class="btn" style="background:#f44336;">削除</button>
@@ -221,12 +222,12 @@ const form = document.getElementById('person-form');
       document.getElementById('position').value = person.position;
       document.getElementById('affiliation').value = person.affiliation;
       document.getElementById('fixedTag').value = person.fixedTag;
-      document.getElementById('tags').value = person.freeTags.join(', ');
+      document.getElementById('tags').value = (person.freeTags || []).join(', ');
       document.getElementById('comment').value = person.comment;
       document.getElementById('isPublic').checked = person.isPublic;
 
       relationsContainer.innerHTML = `<label><strong>関係性リスト</strong></label><br>`;
-      person.relations.forEach(r => {
+      (person.relations || []).forEach(r => {
         const entry = document.createElement('div');
         entry.className = 'relation-entry';
         entry.innerHTML = `
@@ -245,7 +246,6 @@ const form = document.getElementById('person-form');
   function deletePerson(key) {
     if (confirm('このデータを削除しますか？')) {
       charactersRef.child(key).remove();
-      loadPeople();
     }
   }
 </script>
