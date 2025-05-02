@@ -104,7 +104,7 @@ const firebaseConfig={apiKey:"AIzaSyCtDPnYex-KL2hbHAQe5fYSPv9rz9xTa9A",authDomai
 firebase.initializeApp(firebaseConfig);
   /* ★★★ ここを追加 ★★★ */
   // Safari の long-polling バグ回避：WebSocket を強制
-  firebase.database().INTERNAL.forceWebSockets();
+  firebase.database().INTERNAL.forceWebSockets(); = true; 
 const db=firebase.database();
 const charactersRef=db.ref("testcharacters");
 
