@@ -180,7 +180,7 @@
   };
 
   firebase.initializeApp(firebaseConfig);
-  firebase.database().INTERNAL.forceWebSockets = true; // Safari 対策
+  //firebase.database().INTERNAL.forceWebSockets = true; // Safari 対策
   const db = firebase.database();
   const charactersRef = db.ref("testcharacters");
 
