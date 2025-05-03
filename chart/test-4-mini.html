@@ -263,9 +263,9 @@
         comment: document.getElementById('comment').value,
         isPublic: document.getElementById('isPublic').checked,
         updatedAt: Date.now()
-          // ← ここを追加！
-  console.log('▶︎ 送信前の personData:', personData);  // ← ここを追加！
-  console.log('▶︎ 送信前の personData:', personData);
+
+       // ← ここを追加！
+    console.log('▶︎ これから送る personData:', JSON.stringify(personData, null, 2));
       };
 
       if (editKey) {
