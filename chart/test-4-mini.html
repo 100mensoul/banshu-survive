@@ -167,21 +167,23 @@
   <!-- Firebase v8 互換 -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script>
-    // ---------- Firebase 初期化 ----------
-    const firebaseConfig = {
-      apiKey: "...",
-      authDomain: "...",
-      databaseURL: "https://u2memo-36f61-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "u2memo-36f61",
-      storageBucket: "u2memo-36f61.appspot.com",
-      messagingSenderId: "...",
-      appId: "..."
-    };
-    firebase.initializeApp(firebaseConfig);
-    firebase.database().INTERNAL.forceWebSockets = true;  // Safari long-pollingバグ回避
-    const db = firebase.database();
-    const charactersRef = db.ref("testcharacters");
+ <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCtDPnYex‑K...",
+    authDomain: "u2memo-36f61.firebaseapp.com",
+    databaseURL:
+      "https://u2memo-36f61-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "u2memo-36f61",
+    storageBucket: "u2memo-36f61.appspot.com",   // ← appspot.com に！
+    messagingSenderId: "14274931072",
+    appId: "1:14274931072:web:5d9c9026905fdc0b383965"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  firebase.database().INTERNAL.forceWebSockets = true; // Safari 対策
+  const db = firebase.database();
+  const charactersRef = db.ref("testcharacters");
+
 
     // ---------- DOM 要素取得 ----------
     const form = document.getElementById('person-form');
