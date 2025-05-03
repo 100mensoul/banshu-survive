@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>コトバの路 – 播州弁 特設ページ｜播州サバイブ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 共通CSS -->
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/guide.css">
+  <!-- ページ専用スタイル -->
+  <style>
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1rem;
+      line-height: 1.6;
+      font-family: sans-serif;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 0 0.75rem; }
+    }
+    .section-title h2 {
+      font-size: 1.75rem;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+    .toc {
+      background-color: #f9f9f9;
+      padding: 1rem;
+      border-radius: 6px;
+      margin: 1.5rem 0;
+    }
+    .toc h2 {
+      margin: 0 0 0.5rem;
+      font-weight: bold;
+    }
+    .toc ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    .toc li + li {
+      margin-top: 0.5rem;
+    }
+    .toc a {
+      color: #007acc;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    section h3 {
+      margin-top: 2rem;
+      margin-bottom: 0.5rem;
+      font-size: 1.25rem;
+    }
+    .rap-analysis {
+      background: #f0f8ff;
+      padding: 1rem;
+      border-left: 4px solid #007acc;
+      margin: 1rem 0;
+    }
+    .rap-analysis h4 {
+      margin-top: 0;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+    /* プロソディ可視化 */
+    #prosodyContainer {
+      margin: 2rem 0;
+      text-align: center;
+    }
+    #prosodyChart {
+      max-width: 100%;
+      height: 200px;
+    }
+    #startButton, #stopButton {
+      margin: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  </style>
+  <!-- ライブ解析用ライブラリ -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/meyda/dist/web/meyda.min.js"></script>
+</head>
+<body>
+  <div class="container">
+
+    <header class="section-title">
+      <h2>コトバの路 <span class="en">– 播州弁 特設ページ –</span></h2>
+    </header>
+
+    <!-- 目次 -->
+    <nav class="toc">
+      <h2>目次</h2>
+      <ul>
+        <li><a href="#gojamon">ごじゃもん</a></li>
+        <li><a href="#wayakucha">わやくちゃ</a></li>
+        <li><a href="#yobareru">よばれる</a></li>
+        <li><a href="#warai">笑い話し</a></li>
+        <li><a href="#kinka">きんか</a></li>
+        <li><a href="#identity">言葉と言語アイデンティティ</a></li>
+        <li><a href="#hamate">浜手エリアの播州弁</a></li>
+        <li><a href="#rhythm">播州弁のリズム感と快感</a></li>
+        <li><a href="#live-prosody">生播州弁プロソディ解析</a></li>
+      </ul>
+    </nav>
+
+    <!-- ごじゃもん -->
+    <section id="gojamon">
+      <h3>ごじゃもん</h3>
+      <p>意味：無秩序・混沌。談笑の中で「ごじゃもんやな」と言えば「めちゃくちゃだね」の意。</p>
+      <div class="rap-analysis">
+        <h4>ラップ的リズム解説</h4>
+        <p>
+          <strong>ビート構成例（4/4拍子）:</strong><br>
+          ご-じゃ│もん│ご-じゃ│もん│<br>
+          1＆2＆3＆4＆<br>
+          <span style="color:#007acc;">パンチライン：</span>「もん」の語尾で語感をリズムよく締めるのがコツ。
+        </p>
+      </div>
+    </section>
+
+    <!-- わやくちゃ -->
+    <section id="wayakucha">
+      <h3>わやくちゃ</h3>
+      <p>意味：めちゃくちゃ、ひどく散らかった様子。</p>
+      <div class="rap-analysis">
+        <h4>ラップ的リズム解説</h4>
+        <p>
+          <strong>ビート構成例（4/4拍子）:</strong><br>
+          わ-や│く-ちゃ│わ-や│く-ちゃ│<br>
+          1＆2＆3＆4＆<br>
+          <span style="color:#007acc;">パンチライン：</span>「ちゃ」の強いアクセントでエネルギーを表現。
+        </p>
+      </div>
+    </section>
+
+    <!-- よばれる -->
+    <section id="yobareru">
+      <h3>よばれる</h3>
+      <p>意味：呼ばれる、呼び出される。播州では「よばれた？」で「ご飯呼ばれた？」などの意味にも。</p>
+      <div class="rap-analysis">
+        <h4>ラップ的リズム解説</h4>
+        <p>
+          <strong>ビート構成例（4/4拍子）:</strong><br>
+          よ-ば│れ-る│よ-ば│れ-る│<br>
+          1＆2＆3＆4＆<br>
+          <span style="color:#007acc;">パンチライン：</span>語尾「る」を伸ばしてフローを生む。
+        </p>
+      </div>
+    </section>
+
+    <!-- 笑い話し -->
+    <section id="warai">
+      <h3>笑い話し</h3>
+      <p>意味：圧力に屈せずに穏便に交渉する術。播州で育った者はこのスキルを身につけるとか。</p>
+      <div class="rap-analysis">
+        <h4>ラップ的リズム解説</h4>
+        <p>
+          <strong>ビート構成例（4/4拍子）:</strong><br>
+          わ-ら│い-ば│な-し│わ-ら│<br>
+          1＆2＆3＆4＆<br>
+          <span style="color:#007acc;">パンチライン：</span>「ば」で転調、「し」で決める。
+        </p>
+      </div>
+    </section>
+
+    <!-- きんか -->
+    <section id="kinka">
+      <h3>きんか</h3>
+      <p>意味：語尾につけるフレーズ。例「行ってきんか？」で「行ってきてね？」の意。</p>
+      <div class="rap-analysis">
+        <h4>ラップ的リズム解説</h4>
+        <p>
+          <strong>ビート構成例（4/4拍子）:</strong><br>
+          き-ん│か-？│き-ん│か-？│<br>
+          1＆2＆3＆4＆<br>
+          <span style="color:#007acc;">パンチライン：</span>「か？」のトーンで柔らかく締める。
+        </p>
+      </div>
+    </section>
+
+    <!-- 言葉と言語アイデンティティ -->
+    <section id="identity">
+      <h3>言葉と言語アイデンティティ</h3>
+      <p>
+        民俗学者の柳田國男は「言葉はアイデンティティであり、先祖から受け継がれる生きたDNAである」と説きました。播州弁はまさに私たちのルーツを体現する声の遺伝子とも言えます。
+      </p>
+    </section>
+
+    <!-- 浜手エリアの播州弁 -->
+    <section id="hamate">
+      <h3>浜手エリアの播州弁</h3>
+      <p>
+        播州の沿岸部（浜手エリア）では、播州弁が特にきつく、「普通に話しているだけなのに喧嘩のように聞こえる」とも評されます。大阪を抜いて「日本一汚い」方言とも言われるその強烈なイントネーションには、独特の迫力と魅力があります。
+      </p>
+    </section>
+
+    <!-- 播州弁のリズム感と快感 -->
+    <section id="rhythm">
+      <h3>播州弁のリズム感と快感</h3>
+      <p>
+        播州弁には「抜け感」や「リズム感」があり、言葉を紡ぐたびにビートが生まれるような心地良さがあります。まるでラップのフローのように、イントネーションの波に乗る瞬間が醍醐味です。
+      </p>
+    </section>
+
+    <!-- 生播州弁プロソディ解析 -->
+    <section id="live-prosody">
+      <h3>生播州弁プロソディ解析</h3>
+      <p>マイクをオンにして、話した抑揚をリアルタイムでグラフ化します。</p>
+      <div id="prosodyContainer">
+        <button id="startButton">解析開始</button>
+        <button id="stopButton" disabled>停止</button>
+        <canvas id="prosodyChart"></canvas>
+      </div>
+    </section>
+
+    <footer>
+      <p><a href="guide2.html">← 手引書に戻る</a></p>
+    </footer>
+
+  </div>
+
+  <script>
+    // Chart.js 初期設定
+    const ctx = document.getElementById('prosodyChart').getContext('2d');
+    const prosodyChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'RMS (抑揚レベル)',
+          data: [],
+          fill: false,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        animation: false,
+        scales: {
+          x: { display: false },
+          y: { suggestedMin: 0, suggestedMax: 0.1 }
+        }
+      }
+    });
+
+    let meydaAnalyzer, audioContext;
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+
+    startButton.addEventListener('click', async () => {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const source = audioContext.createMediaStreamSource(stream);
+
+      meydaAnalyzer = Meyda.createMeydaAnalyzer({
+        audioContext,
+        source,
+        bufferSize: 512,
+        featureExtractors: ['rms'],
+        callback: features => {
+          const time = Date.now();
+          prosodyChart.data.labels.push(time);
+          prosodyChart.data.datasets[0].data.push(features.rms);
+          if (prosodyChart.data.labels.length > 100) {
+            prosodyChart.data.labels.shift();
+            prosodyChart.data.datasets[0].data.shift();
+          }
+          prosodyChart.update();
+        }
+      });
+
+      meydaAnalyzer.start();
+      startButton.disabled = true;
+      stopButton.disabled = false;
+    });
+
+    stopButton.addEventListener('click', () => {
+      meydaAnalyzer.stop();
+      audioContext.close();
+      startButton.disabled = false;
+      stopButton.disabled = true;
+    });
+  </script>
+</body>
+</html>
