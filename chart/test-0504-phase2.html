@@ -14,25 +14,48 @@
     .btn { background:#4caf50; color:#fff; border:none; cursor:pointer; }
     .add-btn { background:#81c784; }
     button { width:auto; }
+
     /* --- モーダル --- */
+    /* デフォルトは非表示 */
     #detailsModal {
       background:rgba(0,0,0,0.5);
       position:fixed; top:0; left:0; width:100%; height:100%;
+      display:none;
+    }
+    /* .hidden を外すと表示 */
+    #detailsModal:not(.hidden) {
       display:flex; align-items:center; justify-content:center;
     }
-    #detailsModal.hidden { display:none; }
     .modal-content {
       position:relative;
       background:#fff; padding:1rem; border-radius:8px;
       width:90%; max-width:500px; max-height:90%; overflow:auto;
     }
+    /* 閉じるボタン */
     .modal-close {
       position:absolute; top:0.5rem; right:0.5rem;
       background:transparent; border:none; font-size:1.2rem; cursor:pointer;
     }
+    /* モーダル内の要素を縦並びに揃える */
+    .modal-content > input,
+    .modal-content > textarea,
+    .modal-content > select,
+    .modal-content > label,
+    .modal-content > button {
+      display:block;
+      width:100%;
+      margin-bottom:0.75rem;
+      box-sizing:border-box;
+    }
+
     .section-label { font-weight:bold; margin-top:1rem; }
-    .siteInfo-entry, .relation-entry { display:flex; gap:0.5rem; margin-bottom:0.5rem; }
+    .siteInfo-entry, .relation-entry {
+      display:flex; flex-direction:column; align-items:stretch;
+      gap:0.5rem; margin-bottom:0.5rem;
+    }
     .siteInfo-entry input, .relation-entry input { flex:1; }
+
+    /* カードスタイル */
     .card { background:#fff; border:1px solid #ddd; border-radius:8px;
       padding:1rem; margin:1rem auto; max-width:600px; box-shadow:2px 2px 5px rgba(0,0,0,0.1);
     }
@@ -141,14 +164,14 @@
       // 行追加
       addSiteBtn .addEventListener('click', ()=> {
         const d = document.createElement('div'); d.className='siteInfo-entry';
-        d.innerHTML = `<input type="url" class="siteInfo-url" placeholder="URL">
-                       <input type="text" class="siteInfo-desc" placeholder="説明">`;
+        d.innerHTML = `<input type="url" class="siteInfo-url" placeholder="URL">` +
+                      `<input type="text" class="siteInfo-desc" placeholder="説明">`;
         siteContainer.appendChild(d);
       });
       addRelBtn  .addEventListener('click', ()=> {
         const d = document.createElement('div'); d.className='relation-entry';
-        d.innerHTML = `<input type="text" class="relation-name" placeholder="相手名">
-                       <input type="text" class="relation-detail" placeholder="エピソード">`;
+        d.innerHTML = `<input type="text" class="relation-name" placeholder="相手名">` +
+                      `<input type="text" class="relation-detail" placeholder="エピソード">`;
         relContainer.appendChild(d);
       });
 
@@ -210,23 +233,24 @@
             card.classList.add(cls);
           }
           const tm = new Date(p.updatedAt).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-          let html = `<strong>更新：</strong>${tm}<br>
-                      <strong>実名：</strong>${p.realName}<br>
-                      <strong>コメント：</strong>${p.comment}<br>
-                      <details class="details-section"><summary>詳細を見る</summary>`;
-          html += `<p><strong>役名：</strong>${p.roleName||'―'}</p>
-                   <p><strong>肩書き：</strong>${p.position||'―'}</p>
-                   <p><strong>所属：</strong>${p.affiliation||'―'}</p>
-                   <p><strong>固定タグ：</strong>${p.fixedTag||'―'}</p>
-                   <p><strong>自由タグ：</strong>${p.freeTags.map(t=>`<span class="tag">${t}</span>`).join('')||'―'}</p>
-                   <p><strong>関連プロジェクト：</strong>${p.relatedProjects.map(t=>`<span class="tag">${t}</span>`).join('')||'―'}</p>
-                   <p><strong>エリア：</strong>${p.areas.map(t=>`<span class="tag">${t}</span>`).join('')||'―'}</p>
-                   <details class="details-section"><summary>サイト情報</summary>${p.sites.map(s=>`<p>${s.desc}：<a href="${s.url}" target="_blank">${s.url}</a></p>`).join('')}</details>
-                   <details class="details-section"><summary>関係性</summary>${p.relations.map(r=>`<p>・${r.name}：${r.detail}</p>`).join('')}</details>
-                   <p><strong>公開：</strong>${p.isPublic?'公開':'非公開'}</p>
-                   <button onclick="editPerson('${p._key}')" class="btn">編集</button>
-                   <button onclick="deletePerson('${p._key}')" class="btn">削除</button>`;
-          html += `</details>`;
+          let html = `<strong>更新：</strong>${tm}<br>` +
+                     `<strong>実名：</strong>${p.realName}<br>` +
+                     `<strong>コメント：</strong>${p.comment}<br>` +
+                     `<details class="details-section"><summary>詳細を見る</summary>`;
+          html += `<p><strong>役名：</strong>${p.roleName||'―'}</p>` +
+                  `<p><strong>肩書き：</strong>${p.position||'―'}</p>` +
+                  `<p><strong>所属：</strong>${p.affiliation||'―'}</p>` +
+                  `<p><strong>固定タグ：</strong>${p.fixedTag||'―'}</p>` +
+                  `<p><strong>自由タグ：</strong>${p.freeTags.map(t=>`<span class="tag">${t}</span>`).join('')||'―'}</p>` +
+                  `<p><strong>関連プロジェクト：</strong>${p.relatedProjects.map(t=>`<span class="tag">${t}</span>`).join('')||'―'}</p>` +
+                  `<p><strong>エリア：</strong>${p.areas.map(t=>`<span class="tag">${t}</span>`).join('')||'―'}</p>`;
+          html += `<details class="details-section"><summary>サイト情報</summary>` +
+                   p.sites.map(s=>`<p>${s.desc}：<a href="${s.url}" target="_blank">${s.url}</a></p>`).join('') + `</details>`;
+          html += `<details class="details-section"><summary>関係性</summary>` +
+                   p.relations.map(r=>`<p>・${r.name}：${r.detail}</p>`).join('') + `</details>`;
+          html += `<p><strong>公開：</strong>${p.isPublic?'公開':'非公開'}</p>` +
+                  `<button onclick="editPerson('${p._key}')" class="btn">編集</button> ` +
+                  `<button onclick="deletePerson('${p._key}')" class="btn">削除</button></details>`;
           card.innerHTML = html;
           listContainer.appendChild(card);
         });
@@ -244,23 +268,22 @@
         document.getElementById('relatedProjects').value = p.relatedProjects.join(', ');
         document.getElementById('areas').value = p.areas.join(', ');
         document.getElementById('fixedTag').value = p.fixedTag;
-        document.getElementById('tags').value = p.freeTags.join(', ');
+        document.getElementById('tags') .value = p.freeTags.join(', ');
         document.getElementById('isPublic').checked = p.isPublic;
+        // 行をモーダルに再構築
         siteContainer.innerHTML = '';
         p.sites.forEach(s=>{
           const d = document.createElement('div'); d.className='siteInfo-entry';
-          d.innerHTML = `<input type="url" class="siteInfo-url" value="${s.url}">
-                         <input type="text" class="siteInfo-desc" value="${s.desc}">`;
+          d.innerHTML = `<input type="url" class="siteInfo-url" value="${s.url}"><input type="text" class="siteInfo-desc" value="${s.desc}">`;
           siteContainer.appendChild(d);
         });
         relContainer.innerHTML = '';
         p.relations.forEach(r=>{
           const d = document.createElement('div'); d.className='relation-entry';
-          d.innerHTML = `<input type="text" class="relation-name" value="${r.name}">
-                         <input type="text" class="relation-detail" value="${r.detail}">`;
+          d.innerHTML = `<input type="text" class="relation-name" value="${r.name}"><input type="text" class="relation-detail" value="${r.detail}">`;
           relContainer.appendChild(d);
         });
-        // モーダル自動オープン
+        // モーダル開く
         modal.classList.remove('hidden');
       };
       window.deletePerson = key => {
