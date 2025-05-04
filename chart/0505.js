@@ -26,6 +26,9 @@
       const listContainer = document.getElementById('person-list');
       const tagInput      = document.getElementById('tags');
       const datalist      = document.getElementById('tagSuggestions');
+        const searchBtn = document.getElementById('searchBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const searchKeyword = document.getElementById('searchKeyword');
       let masterData = [];
 
       // 過去タグ履歴をlocalStorageから取得
