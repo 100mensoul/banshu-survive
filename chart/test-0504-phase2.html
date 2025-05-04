@@ -35,13 +35,15 @@
     .modal-close {
       position:absolute; top:0.5rem; right:0.5rem;
       background:transparent; border:none; font-size:1.2rem; cursor:pointer;
+      /* モーダル内フル幅ボタンの影響を回避 */
+      width:auto; margin:0;
     }
-    /* モーダル内の要素を縦並びに揃える */
+    /* モーダル内の要素を縦並びに揃える。閉じるボタンを除外 */
     .modal-content > input,
     .modal-content > textarea,
     .modal-content > select,
     .modal-content > label,
-    .modal-content > button {
+    .modal-content > button:not(.modal-close) {
       display:block;
       width:100%;
       margin-bottom:0.75rem;
@@ -69,7 +71,7 @@
   </style>
 </head>
 <body>
-  <h1>登場人物管理15:25（Firebase保存版 Phase2）</h1>
+  <h1>登場人物管理15:33（Firebase保存版 Phase2）</h1>
 
   <form id="person-form" data-edit-key="">
     <input type="text" id="realName" placeholder="実名（非公開）" required />
@@ -133,6 +135,7 @@
       const cfg = {
         apiKey: "AIzaSyC6YRajLSSBQQszeaxhSNdj6zs_0-jcXlc",
         authDomain: "banshu-5100b.firebaseapp.com",
+        // phase2 用に新しい node を指定
         databaseURL: "https://banshu-5100b-default-rtdb.asia-southeast1.firebasedatabase.app",
         projectId: "banshu-5100b",
         storageBucket: "banshu-5100b.appspot.com",
@@ -140,7 +143,8 @@
         appId: "1:178397472277:web:edc9cb8bb9096b605cd01c"
       };
       firebase.initializeApp(cfg);
-      const refDB = firebase.database().ref("testcharacters");
+      // Phase2 ログ専用リファレンス
+      const refDB = firebase.database().ref("testcharacters_phase2");
 
       // --- DOM取得 ---
       const form           = document.getElementById('person-form');
@@ -162,13 +166,13 @@
       saveDetailsBtn.addEventListener('click', () => modal.classList.add('hidden'));
 
       // 行追加
-      addSiteBtn .addEventListener('click', ()=> {
+      addSiteBtn.addEventListener('click', () => {
         const d = document.createElement('div'); d.className='siteInfo-entry';
         d.innerHTML = `<input type="url" class="siteInfo-url" placeholder="URL">` +
                       `<input type="text" class="siteInfo-desc" placeholder="説明">`;
         siteContainer.appendChild(d);
       });
-      addRelBtn  .addEventListener('click', ()=> {
+      addRelBtn.addEventListener('click', () => {
         const d = document.createElement('div'); d.className='relation-entry';
         d.innerHTML = `<input type="text" class="relation-name" placeholder="相手名">` +
                       `<input type="text" class="relation-detail" placeholder="エピソード">`;
@@ -179,19 +183,19 @@
       form.addEventListener('submit', e => {
         e.preventDefault();
         const data = {
-          realName:       document.getElementById('realName').value.trim(),
-          comment:        document.getElementById('comment').value.trim(),
-          roleName:       document.getElementById('roleName').value.trim(),
-          position:       document.getElementById('position').value.trim(),
-          affiliation:    document.getElementById('affiliation').value.trim(),
-          fixedTag:       document.getElementById('fixedTag').value,
-          freeTags:       document.getElementById('tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-          relatedProjects:document.getElementById('relatedProjects').value.split(',').map(t=>t.trim()).filter(Boolean),
-          areas:          document.getElementById('areas').value.split(',').map(t=>t.trim()).filter(Boolean),
-          sites:          [],
-          relations:      [],
-          isPublic:       document.getElementById('isPublic').checked,
-          updatedAt:      Date.now()
+          realName:        document.getElementById('realName').value.trim(),
+          comment:         document.getElementById('comment').value.trim(),
+          roleName:        document.getElementById('roleName').value.trim(),
+          position:        document.getElementById('position').value.trim(),
+          affiliation:     document.getElementById('affiliation').value.trim(),
+          fixedTag:        document.getElementById('fixedTag').value,
+          freeTags:        document.getElementById('tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+          relatedProjects: document.getElementById('relatedProjects').value.split(',').map(t=>t.trim()).filter(Boolean),
+          areas:           document.getElementById('areas').value.split(',').map(t=>t.trim()).filter(Boolean),
+          sites:           [],
+          relations:       [],
+          isPublic:        document.getElementById('isPublic').checked,
+          updatedAt:       Date.now()
         };
         siteContainer.querySelectorAll('.siteInfo-entry').forEach(ent => {
           const url  = ent.querySelector('.siteInfo-url').value.trim();
@@ -274,21 +278,21 @@
         siteContainer.innerHTML = '';
         p.sites.forEach(s=>{
           const d = document.createElement('div'); d.className='siteInfo-entry';
-          d.innerHTML = `<input type="url" class="siteInfo-url" value="${s.url}"><input type="text" class="siteInfo-desc" value="${s.desc}">`;
+          d.innerHTML = `<input type="url" class="siteInfo-url" value="${s.url}">` +
+                         `<input type="text" class="siteInfo-desc" value="${s.desc}">`;
           siteContainer.appendChild(d);
         });
         relContainer.innerHTML = '';
         p.relations.forEach(r=>{
           const d = document.createElement('div'); d.className='relation-entry';
-          d.innerHTML = `<input type="text" class="relation-name" value="${r.name}"><input type="text" class="relation-detail" value="${r.detail}">`;
+          d.innerHTML = `<input type="text" class="relation-name" value="${r.name}">` +
+                         `<input type="text" class="relation-detail" value="${r.detail}">`;
           relContainer.appendChild(d);
         });
         // モーダル開く
         modal.classList.remove('hidden');
       };
-      window.deletePerson = key => {
-        if (confirm('削除しますか？')) refDB.child(key).remove();
-      };
+      window.deletePerson = key => { if (confirm('削除しますか？')) refDB.child(key).remove(); };
     });
   </script>
 </body>
