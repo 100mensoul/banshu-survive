@@ -3,25 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>登場人物管理（Firebase保存版）</title>
+  <title>登場人物管理14:02（Firebase保存版）</title>
   <style>
-    body { font-family:'Hiragino Kaku Gothic ProN',Meiryo,sans-serif; margin:1rem; background:#fefef0; color:#333; }
-    h1 { text-align:center; }
-    form { display:flex; flex-direction:column; gap:0.75rem; max-width:600px; margin:1rem auto; }
-    input, textarea, select, button { padding:0.5rem; font-size:1rem; border-radius:6px; }
-    input, textarea, select { border:1px solid #ccc; }
-    .btn { background:#4caf50; color:#fff; border:none; cursor:pointer; }
-    .add-btn { background:#81c784; }
-    #searchWrap { display:flex; gap:8px; max-width:600px; margin:1rem auto; }
-    #tagFilters { text-align:center; margin:1rem auto; display:flex; flex-wrap:wrap; gap:0.5rem; max-width:640px; }
-    #tagFilters button { background:#ccc; color:#333; border:none; padding:0.4rem 0.8rem; border-radius:6px; font-size:0.85rem; cursor:pointer; }
-    .card { background:#fff; border:1px solid #ddd; border-radius:8px; padding:1rem; margin:1rem auto; max-width:600px; box-shadow:2px 2px 5px rgba(0,0,0,0.1); }
-    .card h2 { margin-top:0; }
-    .tag { display:inline-block; color:#00695c; padding:0.3rem 0.7rem; border-radius:12px; font-size:0.85rem; margin:0.2rem; }
-    .section-label { font-weight:bold; margin-top:1rem; }
-    .siteInfo-entry, .relation-entry { display:flex; gap:0.5rem; }
-    .siteInfo-entry input, .relation-entry input { flex:1; }
-    .details-section { margin-top:0.5rem; }
+    body { font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; margin: 1rem; background: #fefef0; color: #333; }
+    h1 { text-align: center; }
+    form { display: flex; flex-direction: column; gap: 0.75rem; max-width: 600px; margin: 1rem auto; }
+    input, textarea, select, button { padding: 0.5rem; font-size: 1rem; border-radius: 6px; }
+    input, textarea, select { border: 1px solid #ccc; }
+    .btn { background: #4caf50; color: #fff; border: none; cursor: pointer; }
+    .add-btn { background: #81c784; }
+    #searchWrap { display: flex; gap: 8px; max-width: 600px; margin: 1rem auto; }
+    #tagFilters { text-align: center; margin: 1rem auto; display: flex; flex-wrap: wrap; gap: 0.5rem; max-width: 640px; }
+    #tagFilters button { background: #ccc; color: #333; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin: 1rem auto; max-width: 600px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); }
+    .card h2 { margin-top: 0; }
+    .tag { display: inline-block; color: #00695c; padding: 0.3rem 0.7rem; border-radius: 12px; font-size: 0.85rem; margin: 0.2rem; }
+    .section-label { font-weight: bold; margin-top: 1rem; }
+    .siteInfo-entry, .relation-entry { display: flex; gap: 0.5rem; }
+    .siteInfo-entry input, .relation-entry input { flex: 1; }
+    .details-section { margin-top: 0.5rem; }
   </style>
 </head>
 <body>
@@ -32,6 +32,9 @@
     <input type="text" id="roleName" placeholder="役名（公開）" required />
     <input type="text" id="position" placeholder="肩書き・役割" />
     <input type="text" id="affiliation" placeholder="所属" />
+    <!-- 必須のIDを追加 -->
+    <input type="text" id="relatedProjects" placeholder="関連プロジェクト（カンマ区切り）" />
+    <input type="text" id="areas" placeholder="エリア（カンマ区切り）" />
 
     <div class="section-label">サイト情報リスト</div>
     <div id="siteInfos-container">
@@ -163,32 +166,41 @@
     });
 
     function renderCards(kw=''){
-      personList.innerHTML='';
-      const tagSet=new Set();
+      personList.innerHTML='';const tagSet=new Set();
       masterData.filter(p=>{
-        if(!kw)return true;
+        if(!kw) return true;
         const hay=[p.realName,p.roleName,p.position,p.affiliation,...p.relatedProjects,...p.areas,...p.freeTags,p.comment].join(' ').toLowerCase();
         return hay.includes(kw.toLowerCase());
       }).forEach(p=>{
-        // collect tags
         p.freeTags.forEach(t=>tagSet.add(t));
         p.relatedProjects.forEach(t=>tagSet.add(t));
         p.areas.forEach(t=>tagSet.add(t));
-        // card
         const card=document.createElement('div'); card.className='card';
-        if(p.fixedTag) card.classList.add(p.fixedTag==='播州人'?'bg-banshu':p.fixedTag==='NBT'?'bg-nbt':'bg-tosama');
-        const timeStr=new Date(p.updatedAt).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-        let html=`<strong>更新：</strong>${timeStr}<br><strong>実名：</strong>${p.realName}<br><strong>役名：</strong>${p.roleName}<br><strong>肩書き：</strong>${p.position}<br><strong>所属：</strong>${p.affiliation}<br><strong>固定タグ：</strong>${p.fixedTag||'―'}<br><strong>自由タグ：</strong>${p.freeTags.map(t=>`<span class="tag">${t}</span>`).join('')||'―'}<br><strong>関連プロジェクト：</strong>${p.relatedProjects.map(t=>`<span class="tag">${t}</span>`).join('')||'―'}<br><strong>エリア：</strong>${p.areas.map(t=>`<span class="tag">${t}</span>`).join('')||'―'}<br><details class="details-section"><summary>サイト情報を見る</summary>`;
+        if(p.fixedTag) card.classList.add(
+          p.fixedTag==='播州人'?'bg-banshu':
+          p.fixedTag==='NBT'?'bg-nbt':'bg-tosama'
+        );
+        const timeStr=new Date(p.updatedAt)
+          .toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+        let html=`<strong>更新：</strong>${timeStr}<br><strong>実名：</strong>${p.realName}<br>`+
+          `<strong>役名：</strong>${p.roleName}<br><strong>肩書き：</strong>${p.position}<br>`+
+          `<strong>所属：</strong>${p.affiliation}<br><strong>固定タグ：</strong>${p.fixedTag||'―'}<br>`+
+          `<strong>自由タグ：</strong>${p.freeTags.map(t=>`<span class="tag">${t}</span>`).join('')||'―'}<br>`+
+          `<strong>関連プロジェクト：</strong>${p.relatedProjects.map(t=>`<span class="tag">${t}</span>`).join('')||'―'}<br>`+
+          `<strong>エリア：</strong>${p.areas.map(t=>`<span class="tag">${t}</span>`).join('')||'―'}<br>`+
+          `<details class="details-section"><summary>サイト情報を見る</summary>`;
         p.sites.forEach(s=> html+=`<p>${s.desc}：<a href="${s.url}" target="_blank">${s.url}</a></p>`);
         html+=`</details><details class="details-section"><summary>関係性を見る</summary>`;
         p.relations.forEach(r=> html+=`<p>・${r.name}：${r.detail}</p>`);
-        html+=`</details><strong>公開：</strong>${p.isPublic?'公開':'非公開'}<br><strong>コメント：</strong>${p.comment}<br><button onclick="editPerson('${p._key}')" class="btn">編集</button> <button onclick="deletePerson('${p._key}')" class="btn">削除</button>`;
+        html+=`</details><strong>公開：</strong>${p.isPublic?'公開':'非公開'}<br>`+
+          `<strong>コメント：</strong>${p.comment}<br>`+
+          `<button onclick="editPerson('${p._key}')" class="btn">編集</button> `+
+          `<button onclick="deletePerson('${p._key}')" class="btn">削除</button>`;
         card.innerHTML=html;
         personList.appendChild(card);
       });
-      // update datalist
+      // datalist更新
       tagSuggestions.innerHTML=[...tagSet].map(t=>`<option value="${t}">`).join('');
-      renderTagButtons();
     }
 
     function editPerson(key){
@@ -197,33 +209,30 @@
       document.getElementById('roleName').value=p.roleName;
       document.getElementById('position').value=p.position;
       document.getElementById('affiliation').value=p.affiliation;
-      fixedTag.value=p.fixedTag;
-      tagsInput.value=p.freeTags.join(', ');
       document.getElementById('relatedProjects').value=p.relatedProjects.join(', ');
       document.getElementById('areas').value=p.areas.join(', ');
+      document.getElementById('fixedTag').value=p.fixedTag;
+      tagsInput.value=p.freeTags.join(', ');
       document.getElementById('comment').value=p.comment;
       document.getElementById('isPublic').checked=p.isPublic;
-      // rebuild site entries
+      // sites再構築
       siteContainer.innerHTML='';
       p.sites.forEach(s=>{
         const d=document.createElement('div'); d.className='siteInfo-entry';
         d.innerHTML=`<input type="url" class="siteInfo-url" value="${s.url}"><input type="text" class="siteInfo-desc" value="${s.desc}">`;
         siteContainer.appendChild(d);
       });
-      // rebuild relation entries
+      // relations再構築
       relationsContainer.innerHTML='';
       p.relations.forEach(r=>{
         const d=document.createElement('div'); d.className='relation-entry';
         d.innerHTML=`<input type="text" class="relation-name" value="${r.name}"><input type="text" class="relation-detail" value="${r.detail}">`;
         relationsContainer.appendChild(d);
       });
-      form.dataset.editKey = key;
+      form.dataset.editKey=key;
     }
 
-    function deletePerson(key){
-      if (!confirm('このデータを削除しますか？')) return;
-      charactersRef.child(key).remove();
-    }
+    function deletePerson(key){ if(confirm('このデータを削除しますか？')) charactersRef.child(key).remove(); }
   </script>
 </body>
 </html>
