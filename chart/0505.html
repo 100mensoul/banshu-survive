@@ -1,4 +1,4 @@
-ちょっとまず、整備したいなと。<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="ja">
 <head>
@@ -6,10 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ヒメジン登録シート（Firebase保存版 Phase3）</title>
  
-
-
   <!-- Firebase v8 SDK -->
-
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   
@@ -26,7 +23,6 @@
   </form>
 
   <!-- 詳細入力モーダル -->
-
   <div id="detailsModal" class="hidden">
     <div class="modal-content">
       <button type="button" class="modal-close" id="closeDetails">×</button>
@@ -35,8 +31,8 @@
       <input type="text" id="affiliation" placeholder="所属" />
       <input type="text" id="relatedProjects" placeholder="関連プロジェクト（カンマ区切り）" />
       <input type="text" id="areas" placeholder="エリア（カンマ区切り）" />
+    </div>
 
-```
   <div class="section-label">サイト情報リスト</div>
   <div id="siteInfos-container">
     <div class="siteInfo-entry">
@@ -45,7 +41,7 @@
     </div>
   </div>
   <button type="button" id="add-siteInfo" class="btn add-btn">サイト情報を追加</button>
-
+      
   <div class="section-label">関係性リスト</div>
   <div id="relations-container">
     <div class="relation-entry">
@@ -53,8 +49,8 @@
       <input type="text" class="relation-detail" placeholder="エピソード" />
     </div>
   </div>
+      
   <button type="button" id="add-relation" class="btn add-btn">関係性を追加</button>
-
   <div class="section-label">タグ</div>
   <select id="fixedTag">
     <option value="">固定タグを選択</option>
@@ -67,16 +63,9 @@
   <label><input type="checkbox" id="isPublic" /> 公開する</label>
   <button type="button" id="saveDetails" class="btn">詳細を保存</button>
 </div>
-```
-
-  </div>
-
+</div> 
   <div id="person-list"></div>
-
-
-
   <script src="0505.js"></script>
-
   
 </body>
 </html>
