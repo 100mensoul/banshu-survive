@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>登場人物管理（Firebase保存版 Phase3）</title>
 
   <!-- Firebase v8 SDK -->
@@ -10,7 +10,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <style>
-    /* ベース */
+    /* ベーススタイル */
     body { font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; margin: 1rem; background: #fefef0; color: #333; }
     h1 { text-align: center; margin-bottom: 1rem; }
     form { display: flex; flex-direction: column; gap: 0.75rem; max-width: 600px; margin: 0 auto 2rem; }
@@ -21,7 +21,7 @@
     button { width: auto; }
 
     /* モーダル */
-    #detailsModal { background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; }
+    #detailsModal { display: none; background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
     #detailsModal:not(.hidden) { display: flex; align-items: center; justify-content: center; }
     .modal-content {
       position: relative;
@@ -123,19 +123,19 @@
         appId: "1:178397472277:web:edc9cb8bb9096b605cd01c"
       };
       firebase.initializeApp(cfg);
-      const refDB = firebase.database().ref("testcharacters_phase2");
+      const refDB = firebase.database().ref("testcharacters_phase3");
 
       // DOM取得
-      const form           = document.getElementById('person-form');
-      const showBtn        = document.getElementById('showDetails');
-      const closeBtn       = document.getElementById('closeDetails');
-      const saveBtn        = document.getElementById('saveDetails');
-      const modal          = document.getElementById('detailsModal');
-      const siteContainer  = document.getElementById('siteInfos-container');
-      const addSiteBtn     = document.getElementById('add-siteInfo');
-      const relContainer   = document.getElementById('relations-container');
-      const addRelBtn      = document.getElementById('add-relation');
-      const listContainer  = document.getElementById('person-list');
+      const form          = document.getElementById('person-form');
+      const showBtn       = document.getElementById('showDetails');
+      const closeBtn      = document.getElementById('closeDetails');
+      const saveBtn       = document.getElementById('saveDetails');
+      const modal         = document.getElementById('detailsModal');
+      const siteContainer = document.getElementById('siteInfos-container');
+      const addSiteBtn    = document.getElementById('add-siteInfo');
+      const relContainer  = document.getElementById('relations-container');
+      const addRelBtn     = document.getElementById('add-relation');
+      const listContainer = document.getElementById('person-list');
       let masterData = [];
 
       // モーダル表示/非表示
@@ -146,14 +146,18 @@
       // 行追加
       addSiteBtn.addEventListener('click', () => {
         const d = document.createElement('div'); d.className = 'siteInfo-entry';
-        d.innerHTML = `<input type="url" class="siteInfo-url" placeholder="URL">
-                       <input type="text" class="siteInfo-desc" placeholder="説明（公式HPなど）">`;
+        d.innerHTML = `
+          <input type="url" class="siteInfo-url" placeholder="URL">
+          <input type="text" class="siteInfo-desc" placeholder="説明（公式HPなど）">
+        `;
         siteContainer.appendChild(d);
       });
       addRelBtn.addEventListener('click', () => {
         const d = document.createElement('div'); d.className = 'relation-entry';
-        d.innerHTML = `<input type="text" class="relation-name" placeholder="相手名">
-                       <input type="text" class="relation-detail" placeholder="エピソード">`;
+        d.innerHTML = `
+          <input type="text" class="relation-name" placeholder="相手名">
+          <input type="text" class="relation-detail" placeholder="エピソード">
+        `;
         relContainer.appendChild(d);
       });
 
@@ -175,67 +179,119 @@
           isPublic:        document.getElementById('isPublic').checked,
           updatedAt:       Date.now()
         };
-        console.log('Submit data (Phase2):', data);
+        console.log('Submit data (Phase3):', data);
         siteContainer.querySelectorAll('.siteInfo-entry').forEach(ent => {
-          const url = ent.querySelector('.siteInfo-url').value.trim();
-          const desc= ent.querySelector('.siteInfo-desc').value.trim();
-          if (url||desc) data.sites.push({url,desc});
+          const url  = ent.querySelector('.siteInfo-url').value.trim();
+          const desc = ent.querySelector('.siteInfo-desc').value.trim();
+          if(url||desc) data.sites.push({url,desc});
         });
         relContainer.querySelectorAll('.relation-entry').forEach(ent => {
-          const name= ent.querySelector('.relation-name').value.trim();
-          const detail=ent.querySelector('.relation-detail').value.trim();
-          if (name||detail) data.relations.push({name,detail});
+          const name   = ent.querySelector('.relation-name').value.trim();
+          const detail = ent.querySelector('.relation-detail').value.trim();
+          if(name||detail) data.relations.push({name,detail});
         });
         const key = form.dataset.editKey;
-        if (key) { refDB.child(key).set(data); console.log('Updated Phase2:',key); form.dataset.editKey=''; }
-        else { const newRef=refDB.push(); newRef.set(data); console.log('Pushed Phase2 key:',newRef.key); }
-        form.reset(); modal.classList.add('hidden');
+        if(key) {
+          refDB.child(key).set(data);
+          console.log('Updated Phase3 record:', key);
+          form.dataset.editKey = '';
+        } else {
+          const newRef = refDB.push();
+          newRef.set(data);
+          console.log('Pushed Phase3 record with key:', newRef.key);
+        }
+        form.reset();
+        modal.classList.add('hidden');
       });
 
       // リアルタイム取得
       refDB.on('value', snap => {
-        masterData=[];
-        snap.forEach(c=> masterData.push({...c.val(),_key:c.key}));
+        masterData = [];
+        snap.forEach(c => {
+          const p = c.val();
+          masterData.push({
+            _key:             c.key,
+            realName:         p.realName || '',
+            comment:          p.comment  || '',
+            roleName:         p.roleName || '',
+            position:         p.position || '',
+            affiliation:      p.affiliation || '',
+            fixedTag:         p.fixedTag || '',
+            freeTags:         Array.isArray(p.freeTags)    ? p.freeTags    : [],
+            relatedProjects:  Array.isArray(p.relatedProjects) ? p.relatedProjects : [],
+            areas:            Array.isArray(p.areas)       ? p.areas       : [],
+            sites:            Array.isArray(p.sites)       ? p.sites       : [],
+            relations:        Array.isArray(p.relations)   ? p.relations   : [],
+            isPublic:         !!p.isPublic,
+            updatedAt:        p.updatedAt || Date.now()
+          });
+        });
         masterData.sort((a,b)=>b.updatedAt-a.updatedAt);
-        console.log('Phase2 データ:', masterData);
+        console.log('Phase3 data:', masterData);
         renderCards();
       });
 
-      function renderCards(){
-        listContainer.innerHTML='';
-        masterData.forEach(p=>{
-          const card=document.createElement('div'); card.className='card';
-          if(p.fixedTag) card.classList.add(p.fixedTag==='播州人'?'bg-banshu':p.fixedTag==='NBT'?'bg-nbt':'bg-tosama');
-          const tm=new Date(p.updatedAt).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-          let html=`<strong>更新：</strong>${tm}<br><strong>実名：</strong>${p.realName}<br><strong>コメント：</strong>${p.comment}`;
-          html+=`<details><summary>詳細</summary>`;
-          [['役名',p.roleName],['肩書き',p.position],['所属',p.affiliation],['固定タグ',p.fixedTag]].forEach(([l,v])=> html+=`<p><strong>${l}：</strong>${v||'―'}</p>`);
-          [['自由タグ',p.freeTags],['関連プロジェクト',p.relatedProjects],['エリア',p.areas]].forEach(([l,v])=> html+=`<p><strong>${l}：</strong>${(v||[]).map(t=>`<span class="tag">${t}</span>`).join('')||'―'}</p>`);
-          [['サイト情報',p.sites],['関係性',p.relations]].forEach(([l,v])=>{
-            html+=`<details><summary>${l}</summary>`;
-            v.forEach(item=>{
-              if(l==='サイト情報') html+=`<p>${item.desc||''}: <a href="${item.url}" target="_blank">${item.url}</a></p>`;
-              else html+=`<p>・${item.name||''}：${item.detail||''}</p>`;
-            }); html+=`</details>`;
+      function renderCards() {
+        listContainer.innerHTML = '';
+        masterData.forEach(p => {
+          const card = document.createElement('div'); card.className = 'card';
+          if(p.fixedTag) {
+            const cls = p.fixedTag==='播州人'?'bg-banshu':p.fixedTag==='NBT'?'bg-nbt':'bg-tosama';
+            card.classList.add(cls);
+          }
+          const tm = new Date(p.updatedAt).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+          let html = `<strong>更新：</strong>${tm}<br><strong>実名：</strong>${p.realName}<br><strong>コメント：</strong>${p.comment}<details><summary>詳細</summary>`;
+          html += `<p><strong>役名：</strong>${p.roleName||'―'}</p><p><strong>肩書き：</strong>${p.position||'―'}</p><p><strong>所属：</strong>${p.affiliation||'―'}</p><p><strong>固定タグ：</strong>${p.fixedTag||'―'}</p>`;
+          [['自由タグ', 'freeTags'], ['関連プロジェクト','relatedProjects'], ['エリア','areas']].forEach(([label, key]) => {
+            html += `<p><strong>${label}：</strong>${(p[key]||[]).map(t=>`<span class="tag">${t}</span>`).join('')||'―'}</p>`;
           });
-          html+=`<p><strong>公開：</strong>${p.isPublic?'公開':'非公開'}</p>`;
-          html+=`<button onclick="editPerson('${p._key}')" class="btn">編集</button> <button onclick="deletePerson('${p._key}')" class="btn">削除</button></details>`;
-          card.innerHTML=html; listContainer.appendChild(card);
+          [['サイト情報','sites'], ['関係性','relations']].forEach(([label, key]) => {
+            html += `<details><summary>${label}</summary>`;
+            p[key].forEach(item => {
+              if(key==='sites') html += `<p>${item.desc||''}：<a href="${item.url}" target="_blank">${item.url}</a></p>`;
+              else html += `<p>・${item.name||''}：${item.detail||''}</p>`;
+            });
+            html += `</details>`;
+          });
+          html += `<p><strong>公開：</strong>${p.isPublic?'公開':'非公開'}</p><button onclick="editPerson('${p._key}')" class="btn">編集</button> <button onclick="deletePerson('${p._key}')" class="btn">削除</button></details>`;
+          card.innerHTML = html;
+          listContainer.appendChild(card);
         });
       }
 
-      window.editPerson=key=>{
-        const p=masterData.find(x=>x._key===key);
-        form.dataset.editKey=key;
-        showBtn.click();
-        ['realName','comment','roleName','position','affiliation','relatedProjects','areas'].forEach(id=>document.getElementById(id).value=p[id]||'');
-        document.getElementById('fixedTag').value=p.fixedTag;
-        document.getElementById('tags').value=(p.freeTags||[]).join(', ');
-        document.getElementById('isPublic').checked=p.isPublic;
-        siteContainer.innerHTML=''; p.sites.forEach(s=>{ const d=document.createElement('div'); d.className='siteInfo-entry'; d.innerHTML=`<input type="url" class="siteInfo-url" value="${s.url||''}"><input type="text" class="siteInfo-desc" value="${s.desc||''}">`; siteContainer.appendChild(d);});
-        relContainer.innerHTML=''; p.relations.forEach(r=>{ const d=document.createElement('div'); d.className='relation-entry'; d.innerHTML=`<input type="text" class="relation-name" value="${r.name||''}"><input type="text" class="relation-detail" value="${r.detail||''}">`; relContainer.appendChild(d);});
+      window.editPerson = key => {
+        const p = masterData.find(x=>x._key===key);
+        form.dataset.editKey = key;
+        document.getElementById('realName').value         = p.realName;
+        document.getElementById('comment').value          = p.comment;
+        document.getElementById('roleName').value         = p.roleName;
+        document.getElementById('position').value         = p.position;
+        document.getElementById('affiliation').value      = p.affiliation;
+        document.getElementById('relatedProjects').value  = p.relatedProjects.join(', ');
+        document.getElementById('areas').value            = p.areas.join(', ');
+        document.getElementById('fixedTag').value         = p.fixedTag;
+        document.getElementById('tags').value             = p.freeTags.join(', ');
+        document.getElementById('isPublic').checked       = p.isPublic;
+        // rebuild site entries
+        siteContainer.innerHTML = '';
+        p.sites.forEach(s => {
+          const d = document.createElement('div'); d.className='siteInfo-entry';
+          d.innerHTML = `<input type="url" class="siteInfo-url" value="${s.url||''}"><input type="text" class="siteInfo-desc" value="${s.desc||''}">`;
+          siteContainer.appendChild(d);
+        });
+        // rebuild relation entries
+        relContainer.innerHTML = '';
+        p.relations.forEach(r => {
+          const d = document.createElement('div'); d.className='relation-entry';
+          d.innerHTML = `<input type="text" class="relation-name" value="${r.name||''}"><input type="text" class="relation-detail" value="${r.detail||''}">`;
+          relContainer.appendChild(d);
+        });
+        modal.classList.remove('hidden');
       };
-      window.deletePerson=key=>{ if(confirm('削除しますか？')) refDB.child(key).remove(); };
+
+      window.deletePerson = key => {
+        if(confirm('このデータを削除しますか？')) refDB.child(key).remove();
+      };
     });
   </script>
 </body>
