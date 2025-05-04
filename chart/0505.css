@@ -41,5 +41,15 @@ button { width: auto; }
 .bg-banshu { background: #fff9c4 !important; }
 .bg-nbt    { background: #e8f5e9 !important; }
 .bg-tosama { background: #f3e5f5 !important; }
-**
 
+#search-area {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+#search-area input {
+  flex: 1;
+  min-width: 200px;
+}
