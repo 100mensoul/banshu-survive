@@ -21,11 +21,11 @@ button { width: auto; }
   position: absolute; top: 0.5rem; right: 0.5rem;
   background: transparent; border: none; font-size: 1.5rem; cursor: pointer;
 }
-.modal-content > input,
-.modal-content > textarea,
-.modal-content > select,
-.modal-content > label,
-.modal-content > button:not(.modal-close) {
+.modal-content  input,
+.modal-content  textarea,
+.modal-content  select,
+.modal-content  label,
+.modal-content  button:not(.modal-close) {
   display: block; width: 100%; margin-bottom: 0.75rem; box-sizing: border-box;
 }
 .section-label { font-weight: bold; margin: 1rem 0 0.5rem; }
