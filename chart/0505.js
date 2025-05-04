@@ -1,4 +1,4 @@
-  <script>
+
     document.addEventListener('DOMContentLoaded', () => {
       // Firebase 初期化
       const cfg = {
@@ -193,4 +193,4 @@
         if(confirm('このデータを削除しますか？')) refDB.child(key).remove();
       };
     });
-  </script>
+
