@@ -1,33 +1,18 @@
+// ===== Project Structure =====
+// /list/
+//   ├── index-0504-new.html   ← HTML ファイル
+//   └── js/
+//       ├── firebase-config.js ← 既存の Firebase 設定（initializeApp + exports）
+//       └── main.js            ← 以下の JavaScript を貼る
+
+/* ==== HTML File: index-0504-new.html ==== */
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>ヒメラボ（Hime Lab）14:36｜播州サバイブ リサーチログ</title>
+  <title>ヒメラボ（Hime Lab）｜播州サバイブ リサーチログ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body { font-family:"Hiragino Kaku Gothic ProN",sans-serif; margin:1rem; background:#fffde7; color:#333; }
-    h1 { text-align:center; margin-bottom:1rem; font-size:2rem; }
-    form { max-width:600px; margin:0 auto 1rem; background:#fff; padding:1.5rem; border-radius:8px; box-shadow:2px 2px 5px rgba(0,0,0,0.1); }
-    label { display:block; margin-bottom:0.5rem; font-weight:bold; }
-    input, textarea, select, button { width:100%; padding:0.75rem; margin-bottom:1rem; border-radius:6px; box-sizing:border-box; font-size:1rem; }
-    input, textarea, select { border:1px solid #ccc; }
-    button { background:#4caf50; color:#fff; border:none; cursor:pointer; }
-    button.clear { background:#ccc; color:#333; }
-    #tagFilters { max-width:600px; margin:0 auto 1rem; display:flex; flex-wrap:wrap; gap:0.5rem; }
-    #tagFilters button { padding:0.5rem 1rem; border:none; border-radius:6px; cursor:pointer; background:#eee; }
-    #tagFilters button.active { background:#4caf50; color:white; }
-    .card { background:white; border-radius:8px; box-shadow:2px 2px 5px rgba(0,0,0,0.1); padding:1rem; margin:1rem auto; max-width:600px; }
-    .badge { display:inline-block; padding:0.3rem 0.6rem; border-radius:4px; font-size:0.85rem; color:#fff; margin-right:0.5rem; }
-    .card[data-fixed="プロジェクト"] { border-left:4px solid #1976d2; }
-    .card[data-fixed="団体・組織"] { border-left:4px solid #388e3c; }
-    .card[data-fixed="企業"] { border-left:4px solid #f57c00; }
-    .card[data-fixed="個人活動"] { border-left:4px solid #7b1fa2; }
-    .card[data-fixed="公共施設"] { border-left:4px solid #0288d1; }
-    .card[data-fixed="道の駅"] { border-left:4px solid #d32f2f; }
-    .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; }
-    .modal-content { background:white; padding:1rem; border-radius:6px; max-width:500px; width:90%; position:relative; }
-    .modal-close { position:absolute; top:0.5rem; right:0.5rem; background:#f44336; color:white; border:none; padding:0.3rem 0.6rem; cursor:pointer; }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <h1>ヒメラボ（Hime Lab） リサーチログ</h1>
@@ -43,18 +28,22 @@
       <option>公共施設</option>
       <option>道の駅</option>
     </select>
+
     <label for="freeTagInput">自由タグ（#付）</label>
     <input list="freeTagList" id="freeTagInput" name="freeTagInput" placeholder="#職人" />
     <datalist id="freeTagList"></datalist>
+
     <label for="nameInput">施設名・プロジェクト名</label>
     <input type="text" id="nameInput" name="name" placeholder="施設名・プロジェクト名" required />
+
     <label for="locationInput">所在地（例：長野県信濃町）</label>
     <input type="text" id="locationInput" name="location" placeholder="所在地（例：長野県信濃町）" required />
+
     <button type="button" id="openDetails">詳細を入力</button>
     <button type="submit">追加</button>
   </form>
 
-  <!-- モーダル：詳細＆サイト追加 -->
+  <!-- モーダル: 詳細／関係者追加／サイト追加 -->
   <div id="modal" class="modal">
     <div class="modal-content">
       <button class="modal-close">×</button>
@@ -68,11 +57,12 @@
 
   <!-- フィルタ＆検索 -->
   <div id="tagFilters"></div>
-  <input type="text" id="textSearch" placeholder="キーワード検索" style="max-width:600px; margin:0.5rem auto; display:block;" />
+  <input type="text" id="textSearch" placeholder="キーワード検索" />
 
-  <!-- プロジェクトリスト -->
+  <!-- リスト表示エリア -->
   <div id="projectList"></div>
 
+  <!-- ここではモジュールを読み込むのみ -->
   <script type="module" src="./js/main.js"></script>
 </body>
 </html>
