@@ -1,0 +1,80 @@
+ちょっとまず、整備したいなと。<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ヒメジン登録シート（Firebase保存版 Phase3）</title>
+
+  <!-- Firebase v8 SDK -->
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+
+</head>
+<body>
+  <h1>ヒメジン登録シート（Firebase保存版 Phase4）</h1>
+
+  <form id="person-form" data-edit-key="">
+    <input type="text" id="realName" placeholder="実名（非公開）" required />
+    <textarea id="comment" rows="2" placeholder="一言コメント" required></textarea>
+    <button type="button" id="showDetails" class="btn">詳細を記入する</button>
+    <button type="submit" class="btn">登録する</button>
+  </form>
+
+  <!-- 詳細入力モーダル -->
+
+  <div id="detailsModal" class="hidden">
+    <div class="modal-content">
+      <button type="button" class="modal-close" id="closeDetails">×</button>
+      <input type="text" id="roleName" placeholder="役名（公開）" />
+      <input type="text" id="position" placeholder="肩書き・役割" />
+      <input type="text" id="affiliation" placeholder="所属" />
+      <input type="text" id="relatedProjects" placeholder="関連プロジェクト（カンマ区切り）" />
+      <input type="text" id="areas" placeholder="エリア（カンマ区切り）" />
+
+```
+  <div class="section-label">サイト情報リスト</div>
+  <div id="siteInfos-container">
+    <div class="siteInfo-entry">
+      <input type="url" class="siteInfo-url" placeholder="URL" />
+      <input type="text" class="siteInfo-desc" placeholder="説明（公式HPなど）" />
+    </div>
+  </div>
+  <button type="button" id="add-siteInfo" class="btn add-btn">サイト情報を追加</button>
+
+  <div class="section-label">関係性リスト</div>
+  <div id="relations-container">
+    <div class="relation-entry">
+      <input type="text" class="relation-name" placeholder="相手名" />
+      <input type="text" class="relation-detail" placeholder="エピソード" />
+    </div>
+  </div>
+  <button type="button" id="add-relation" class="btn add-btn">関係性を追加</button>
+
+  <div class="section-label">タグ</div>
+  <select id="fixedTag">
+    <option value="">固定タグを選択</option>
+    <option value="播州人">播州人</option>
+    <option value="NBT">NBT</option>
+    <option value="外様">外様</option>
+  </select>
+  <input type="text" id="tags" list="tagSuggestions" placeholder="自由タグ（カンマ区切り）" />
+  <datalist id="tagSuggestions"></datalist>
+  <label><input type="checkbox" id="isPublic" /> 公開する</label>
+  <button type="button" id="saveDetails" class="btn">詳細を保存</button>
+</div>
+```
+
+  </div>
+
+  <div id="person-list"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+</body>
+</html>
