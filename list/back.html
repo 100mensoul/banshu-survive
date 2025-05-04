@@ -2,22 +2,58 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>ヒメラボ（Hime Lab）｜播州サバイブ リサーチログ</title>
+  <title>ヒメラボ（Hime Lab）｜播州サバイブ リサーチログ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- ↓ いったん昔の style をそのまま貼り戻すか、外部 CSS に切り出してください -->
-  <style>/* ここに以前のCSS全文を戻す */</style>
+
+  <!-- ★ 最低限の見た目だけ戻してあります。お好みで調整してください ★ -->
+  <style>
+    body { font-family:"Hiragino Kaku Gothic ProN",sans-serif; margin:1rem; background:#fffde7; color:#333; }
+    h1   { text-align:center; font-size:2rem; margin-bottom:1rem; }
+    form { max-width:600px; margin:0 auto 2rem; background:#fff; padding:1rem; border-radius:8px;
+           box-shadow:2px 2px 5px rgba(0,0,0,.1); }
+    label { display:block; margin-bottom:.4rem; font-weight:bold; }
+    input, select, button { width:100%; padding:.6rem; margin-bottom:.8rem; border-radius:6px; font-size:1rem; box-sizing:border-box; }
+    input, select { border:1px solid #ccc; }
+    button { background:#4caf50; color:#fff; border:none; cursor:pointer; }
+    button.clear { background:#ccc; color:#333; }
+    #tagFilters { max-width:600px; margin:0 auto 1rem; display:flex; flex-wrap:wrap; gap:.5rem; }
+    #tagFilters button { padding:.4rem .8rem; border:none; border-radius:6px; background:#eee; cursor:pointer; }
+    .card { background:#fff; padding:1rem; margin:1rem auto; max-width:600px; border-radius:8px;
+            box-shadow:2px 2px 5px rgba(0,0,0,.1); }
+    .badge { display:inline-block; padding:.25rem .5rem; border-radius:4px; font-size:.85rem; color:#fff; margin-right:.4rem; }
+    .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5);
+             justify-content:center; align-items:center; }
+    .modal-content { background:#fff; padding:1rem; border-radius:6px; width:90%; max-width:500px; position:relative; }
+    .modal-close { position:absolute; top:.4rem; right:.4rem; background:#f44336; color:#fff; border:none; padding:.2rem .6rem; cursor:pointer; }
+  </style>
 </head>
 <body>
-  <h1>ヒメラボ（Hime Lab） リサーチログ</h1>
+  <h1>ヒメラボ（Hime Lab） リサーチログ</h1>
 
+  <!-- 入力フォーム -->
   <form id="form">
-    <!-- 固定/自由タグ + 基本入力だけ -->
-    …（省略せずに今のまま）…
+    <label for="fixedTag">固定タグ</label>
+    <select id="fixedTag" name="fixedTag" required>
+      <option value="">選択してください</option>
+      <option>プロジェクト</option><option>団体・組織</option><option>企業</option>
+      <option>個人活動</option><option>公共施設</option><option>道の駅</option>
+    </select>
+
+    <label for="freeTagInput">自由タグ（#付）</label>
+    <input list="freeTagList" id="freeTagInput" name="freeTagInput" placeholder="#職人">
+    <datalist id="freeTagList"></datalist>
+
+    <label for="nameInput">施設名・プロジェクト名</label>
+    <input type="text" id="nameInput" name="name" placeholder="施設名・プロジェクト名" required>
+
+    <label for="locationInput">所在地（例：長野県信濃町）</label>
+    <input type="text" id="locationInput" name="location" placeholder="所在地（例：長野県信濃町）" required>
+
     <button type="button" id="openDetails">詳細を入力</button>
     <button type="submit">追加</button>
   </form>
 
-  <!-- モーダル（ID はモーダル内にしか置かない）-->
+  <!-- 詳細モーダル -->
   <div id="modal" class="modal">
     <div class="modal-content">
       <button class="modal-close">×</button>
@@ -31,9 +67,11 @@
     </div>
   </div>
 
-  <!-- ★ これが無いとカードが描画できない ★ -->
+  <!-- フィルタ & 検索 -->
   <div id="tagFilters"></div>
-  <input type="text" id="textSearch" placeholder="キーワード検索" />
+  <input type="text" id="textSearch" placeholder="キーワード検索" style="max-width:600px; margin:0 auto; display:block;" />
+
+  <!-- ★ ここにカードが挿入されるエリア ★ -->
   <div id="projectList"></div>
 
   <script type="module" src="./js/main.js"></script>
