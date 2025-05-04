@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>登場人物管理（Firebase保存版）</title>
 
-  <!-- Firebase SDK (v8) -->
+  <!-- Firebase SDK (v8 互換) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+  <!-- Firebase 初期化 -->
   <script>
-    // Firebase設定（新プロジェクト banshu-5100b）
     const firebaseConfig = {
       apiKey: "AIzaSyC6YRajLSSBQQszeaxhSNdj6zs_0-jcXlc",
       authDomain: "banshu-5100b.firebaseapp.com",
@@ -21,6 +21,8 @@
       appId: "1:178397472277:web:edc9cb8bb9096b605cd01c"
     };
     firebase.initializeApp(firebaseConfig);
+    // Safari対策: 必要に応じて有効化
+    // firebase.database().INTERNAL.forceWebSockets = true;
     const db = firebase.database();
     const charactersRef = db.ref("testcharacters");
   </script>
@@ -77,12 +79,10 @@
       background: #fff;
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
-    /* 固定タグ別カラー */
     .bg-banshu { background: #fff9c4 !important; }
     .bg-nbt    { background: #e8f5e9 !important; }
     .bg-tosama { background: #f3e5f5 !important; }
 
-    /* タグバッジ */
     .tag {
       display: inline-block;
       color: #00695c;
@@ -95,7 +95,6 @@
     label { display: block; font-weight: bold; margin-top: 1rem; }
     summary { font-weight: bold; cursor: pointer; margin-top: 0.5rem; }
 
-    /* ───────────── 検索バー ───────────── */
     #searchWrap {
       display: flex;
       gap: 8px;
@@ -104,13 +103,11 @@
     #searchInput { flex: 1; }
     #clearSearch { flex: 0 0 100px; }
 
-    /* モバイル対応 */
     @media (max-width: 600px) {
       body { padding: 1rem; font-size: 0.9rem; }
       h1 { font-size: 1.3rem; }
     }
 
-    /* アクセシビリティ：フォーカス表示 */
     button:focus, input:focus, textarea:focus, select:focus {
       outline: 2px solid #1976d2;
     }
@@ -122,29 +119,26 @@
 
   <!-- ===== フォーム ===== -->
   <form id="person-form">
-    <input type="text" id="realName"    placeholder="実名（非公開）" required>
-    <input type="text" id="roleName"    placeholder="役名（公開）"   required>
-    <input type="text" id="position"    placeholder="肩書き・役割">
+    <input type="text" id="realName" placeholder="実名（非公開）" required>
+    <input type="text" id="roleName" placeholder="役名（公開）" required>
+    <input type="text" id="position" placeholder="肩書き・役割">
     <input type="text" id="affiliation" placeholder="所属">
 
-    <!-- 関連プロジェクト & エリア -->
     <input type="text" id="relatedProject" list="projectSuggestions" placeholder="関連プロジェクト（カンマ区切り）">
     <datalist id="projectSuggestions"></datalist>
 
     <input type="text" id="area" list="areaSuggestions" placeholder="エリア（カンマ区切り）">
     <datalist id="areaSuggestions"></datalist>
 
-    <!-- サイト情報 -->
     <label><strong>サイト情報リスト</strong></label>
     <div id="siteInfos-container">
       <div class="siteInfo-entry">
-        <input type="url"  placeholder="URL" class="siteInfo-url">
+        <input type="url" placeholder="URL" class="siteInfo-url">
         <input type="text" placeholder="サイト情報（公式HP, Instagram等）" class="siteInfo-desc">
       </div>
     </div>
     <button type="button" id="add-siteInfo" class="btn add-relation-btn">サイト情報を追加</button>
 
-    <!-- 関係性 -->
     <div id="relations-container">
       <label><strong>関係性リスト</strong></label>
       <div class="relation-entry">
@@ -154,7 +148,6 @@
     </div>
     <button type="button" id="add-relation" class="btn add-relation-btn">関係性を追加</button>
 
-    <!-- 固定タグ -->
     <label><strong>固定タグ</strong></label>
     <select id="fixedTag">
       <option value="">選択してください</option>
@@ -163,7 +156,6 @@
       <option value="外様">外様</option>
     </select>
 
-    <!-- 自由タグ（補完付き） -->
     <input type="text" id="tags" list="tagSuggestions" placeholder="自由タグ（カンマ区切り）">
     <datalist id="tagSuggestions"></datalist>
 
@@ -183,7 +175,7 @@
   <!-- ===== カードエリア ===== -->
   <div id="person-list"></div>
 
-  <!-- ===== JavaScript ===== -->
+  <!-- ===== アプリロジック ===== -->
   <script>
     // ---------- DOM 要素取得 ----------
     const form = document.getElementById('person-form');
@@ -211,8 +203,7 @@
 
     // ---------- 動的行追加 ----------
     addRelationBtn.addEventListener('click', () => {
-      const e = document.createElement('div');
-      e.className = 'relation-entry';
+      const e = document.createElement('div'); e.className = 'relation-entry';
       e.innerHTML = `
         <input type="text" placeholder="相手名" class="relation-name">
         <input type="text" placeholder="エピソード" class="relation-detail">
@@ -220,6 +211,147 @@
       relationsContainer.appendChild(e);
     });
     addSiteBtn.addEventListener('click', () => {
-      const e = document.createElement('div');
-      e.className = '
-]
+      const e = document.createElement('div'); e.className = 'siteInfo-entry';
+      e.innerHTML = `
+        <input type="url" placeholder="URL" class="siteInfo-url">
+        <input type="text" placeholder="サイト情報（公式HP, Instagram等）" class="siteInfo-desc">
+      `;
+      sitesContainer.appendChild(e);
+    });
+
+    // ---------- フォーム送信（登録・更新） ----------
+    form.addEventListener('submit', ev => {
+      ev.preventDefault();
+      const relations = [...document.querySelectorAll('.relation-entry')]
+        .map(r => ({ name: r.querySelector('.relation-name').value.trim(), detail: r.querySelector('.relation-detail').value.trim() }))
+        .filter(r => r.name || r.detail);
+      const sites = [...document.querySelectorAll('.siteInfo-entry')]
+        .map(s => ({ url: s.querySelector('.siteInfo-url').value.trim(), desc: s.querySelector('.siteInfo-desc').value.trim() }))
+        .filter(s => s.url || s.desc);
+
+      const personData = {
+        realName: document.getElementById('realName').value,
+        roleName: document.getElementById('roleName').value,
+        position: document.getElementById('position').value,
+        affiliation: document.getElementById('affiliation').value,
+        relatedProjects: document.getElementById('relatedProject').value.split(',').map(t=>t.trim()).filter(Boolean),
+        areas: document.getElementById('area').value.split(',').map(t=>t.trim()).filter(Boolean),
+        relations,
+        sites,
+        fixedTag: document.getElementById('fixedTag').value,
+        freeTags: document.getElementById('tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+        comment: document.getElementById('comment').value,
+        isPublic: document.getElementById('isPublic').checked,
+        updatedAt: Date.now()
+      };
+
+      if (editKey) {
+        charactersRef.child(editKey).set(personData)
+          .then(() => { resetForm(); submitBtn.textContent='登録する'; editKey=null; })
+          .catch(err => alert('更新に失敗しました: '+err.message));
+      } else {
+        const newRef = charactersRef.push();
+        newRef.set(personData)
+          .then(() => { resetForm(); })
+          .catch(err => alert('保存に失敗しました: '+err.message));
+      }
+    });
+
+    // ---------- 検索バー挙動 ----------
+    searchInput.addEventListener('input', () => renderCards(searchInput.value.trim()));
+    clearSearchBtn.addEventListener('click', () => { searchInput.value=''; renderCards(); });
+
+    // ---------- データ取得＆リアルタイム更新 ----------
+    charactersRef.on('value', snap => {
+      masterData = [];
+      snap.forEach(c => masterData.push({ ...c.val(), _key: c.key }));
+      masterData.sort((a,b)=>b.updatedAt - a.updatedAt);
+      renderCards();
+    });
+
+    // ---------- カード描画関数 ----------
+    function renderCards(keyword='') {
+      personList.innerHTML='';
+      const tagSet=new Set(), projSet=new Set(), areaSet=new Set();
+      masterData
+        .filter(p=>{ if(!keyword) return true; const hay=[p.realName,p.roleName,p.position,p.affiliation,...(p.relatedProjects||[]),...(p.areas||[]),...(p.freeTags||[]),p.comment].join(' ').toLowerCase(); return hay.includes(keyword.toLowerCase()); })
+        .forEach(p=>{
+          const siteHtml=(p.sites||[]).map(s=>`<div>${s.desc?`${s.desc}：`:''}${s.url?`<a href="${s.url}" target="_blank">${s.url}</a>`:''}</div>`).join('');
+          const card=document.createElement('div'); card.className='card';
+          if(fixedColors[p.fixedTag]) card.classList.add(fixedColors[p.fixedTag]);
+          const timeStr=new Date(p.updatedAt).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+          const freeTagHtml=(p.freeTags||[]).map(t=>{const idx=Math.abs(hashCode(t))%pastel.length; return `<span class="tag" style="background:${pastel[idx]}">${t}</span>`;}).join('')||'―';
+          card.innerHTML=`
+            <strong>更新：</strong>${timeStr}<br>
+            <strong>実名：</strong>${p.realName}<br>
+            <strong>役名：</strong>${p.roleName}<br>
+            <strong>肩書き・役割：</strong>${p.position}<br>
+            <strong>所属：</strong>${p.affiliation}<br>
+            <strong>関連プロジェクト：</strong>${(p.relatedProjects||[]).map(t=>`<span class="tag">${t}</span>`).join('')||'―'}<br>
+            <strong>エリア：</strong>${(p.areas||[]).map(t=>`<span class="tag">${t}</span>`).join('')||'―'}<br>
+            <details><summary>サイト情報を見る</summary>${siteHtml}</details>
+            <strong>コメント：</strong>${p.comment}<br>
+            <strong>固定タグ：</strong>${p.fixedTag?`<span class="tag">${p.fixedTag}</span>`:'―'}<br>
+            <strong>自由タグ：</strong>${freeTagHtml}<br>
+            <details><summary>関係性を見る</summary>`${(p.relations||[]).map(r=>`・${r.name}：${r.detail}<br>`).join('')||'―'}`</details>
+            <strong>公開：</strong>${p.isPublic?'公開':'非公開'}<br><br>
+            <button onclick="editPerson('${p._key}')" class="btn" style="background:#1976d2;">編集</button>
+            <button onclick="deletePerson('${p._key}')" class="btn" style="background:#f44336;">削除</button>
+          `;
+          personList.appendChild(card);
+          (p.freeTags||[]).forEach(t=>tagSet.add(t));
+          (p.relatedProjects||[]).forEach(t=>projSet.add(t));
+          (p.areas||[]).forEach(t=>areaSet.add(t));
+        });
+      tagDatalist.innerHTML=[...tagSet].map(t=>`<option value="${t}">`).join('');
+      projDatalist.innerHTML=[...projSet].map(t=>`<option value="${t}">`).join('');
+      areaDatalist.innerHTML=[...areaSet].map(t=>`<option value="${t}">`).join('');
+    }
+
+    // ---------- 編集処理 ----------
+    function editPerson(key){
+      charactersRef.child(key).once('value').then(s=>{
+        const p=s.val();
+        document.getElementById('realName').value=p.realName;
+        document.getElementById('roleName').value=p.roleName;
+        document.getElementById('position').value=p.position;
+        document.getElementById('affiliation').value=p.affiliation;
+        document.getElementById('relatedProject').value=(p.relatedProjects||[]).join(', ');
+        document.getElementById('area').value=(p.areas||[]).join(', ');
+        document.getElementById('fixedTag').value=p.fixedTag;
+        document.getElementById('tags').value=(p.freeTags||[]).join(', ');
+        document.getElementById('comment').value=p.comment;
+        document.getElementById('isPublic').checked=p.isPublic;
+        // サイト情報再構築
+        sitesContainer.innerHTML='';
+        (p.sites||[{url:'',desc:''}]).forEach(s=>{
+          const e=document.createElement('div'); e.className='siteInfo-entry';
+          e.innerHTML=`<input type="url" value="${s.url}" class="siteInfo-url"><input type="text" value="${s.desc}" class="siteInfo-desc">`;
+          sitesContainer.appendChild(e);
+        });
+        // 関係性再構築
+        relationsContainer.innerHTML='<label><strong>関係性リスト</strong></label>';
+        (p.relations||[{name:'',detail:''}]).forEach(r=>{
+          const e=document.createElement('div'); e.className='relation-entry';
+          e.innerHTML=`<input type="text" value="${r.name}" class="relation-name"><input type="text" value="${r.detail}" class="relation-detail">`;
+          relationsContainer.appendChild(e);
+        });
+        editKey=key; submitBtn.textContent='更新する'; window.scrollTo({top:0,behavior:'smooth'});
+      }).catch(err=>alert('読み込みに失敗しました: '+err.message));
+    }
+
+    // ---------- 削除処理 ----------
+    function deletePerson(key){
+      if(!confirm('このデータを削除しますか？')) return;
+      charactersRef.child(key).remove().catch(err=>alert('削除に失敗しました: '+err.message));
+    }
+
+    // ---------- フォームリセット ----------
+    function resetForm(){
+      form.reset();
+      sitesContainer.innerHTML=`<div class="siteInfo-entry"><input type="url" placeholder="URL" class="siteInfo-url"><input type="text" placeholder="サイト情報（公式HP, Instagram等）" class="siteInfo-desc"></div>`;
+      relationsContainer.innerHTML=`<label><strong>関係性リスト</strong></label><div class="relation-entry"><input type="text" placeholder="相手名" class="relation-name"><input type="text" placeholder="エピソード" class="relation-detail"></div>`;
+    }
+  </script>
+</body>
+</html>
