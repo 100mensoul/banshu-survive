@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>ヒメラボ（Hime Lab）｜播州サバイブ リサーチログ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- ↓ いったん昔の style をそのまま貼り戻すか、外部 CSS に切り出してください -->
+  <style>/* ここに以前のCSS全文を戻す */</style>
+</head>
+<body>
+  <h1>ヒメラボ（Hime Lab） リサーチログ</h1>
+
+  <form id="form">
+    <!-- 固定/自由タグ + 基本入力だけ -->
+    …（省略せずに今のまま）…
+    <button type="button" id="openDetails">詳細を入力</button>
+    <button type="submit">追加</button>
+  </form>
+
+  <!-- モーダル（ID はモーダル内にしか置かない）-->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close">×</button>
+      <h2>詳細情報</h2>
+
+      <div id="relationsContainer"></div>
+      <button type="button" id="addRelation">関係者追加</button>
+
+      <div id="sitesContainer"></div>
+      <button type="button" id="addSite">サイト追加</button>
+    </div>
+  </div>
+
+  <!-- ★ これが無いとカードが描画できない ★ -->
+  <div id="tagFilters"></div>
+  <input type="text" id="textSearch" placeholder="キーワード検索" />
+  <div id="projectList"></div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
