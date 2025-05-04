@@ -1,1 +1,225 @@
-test
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>登場人物管理（Firebase保存版）</title>
+
+  <!-- Firebase SDK (v8) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script>
+    // Firebase設定（新プロジェクト banshu-5100b）
+    const firebaseConfig = {
+      apiKey: "AIzaSyC6YRajLSSBQQszeaxhSNdj6zs_0-jcXlc",
+      authDomain: "banshu-5100b.firebaseapp.com",
+      databaseURL: "https://banshu-5100b-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "banshu-5100b",
+      storageBucket: "banshu-5100b.appspot.com",
+      messagingSenderId: "178397472277",
+      appId: "1:178397472277:web:edc9cb8bb9096b605cd01c"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const charactersRef = db.ref("testcharacters");
+  </script>
+
+  <style>
+    /* ─────────────  ベース  */
+    :root {
+      --bg-0: #0a0a0a;
+      --bg-1: #111;
+      --card: #1a1a1a;
+      --c-text: #e0e0e0;
+      --c-sub: #aaa;
+      --c-line: #222;
+      --c-high: #ff5c5c;
+      --c-med: #ffa500;
+      --c-low: #5cafff;
+      --c-none: #777;
+      --c-pre: #888;
+      --accent: #ff2e42;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      background: #f0f8f0;
+      padding: 2rem 1rem;
+      max-width: 800px;
+      margin: auto;
+      line-height: 1.6;
+      font-size: 1rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      color: #388e3c;
+    }
+    input, textarea, select, button {
+      font-size: 1rem;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button { cursor: pointer; }
+    .btn { background: #4CAF50; color: #fff; border: none; }
+    .add-relation-btn { background: #81c784; color: #fff; }
+
+    /* ───────────── カード ───────────── */
+    .card {
+      border: 2px solid #bbb;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    /* 固定タグ別カラー */
+    .bg-banshu { background: #fff9c4 !important; }
+    .bg-nbt    { background: #e8f5e9 !important; }
+    .bg-tosama { background: #f3e5f5 !important; }
+
+    /* タグバッジ */
+    .tag {
+      display: inline-block;
+      color: #00695c;
+      padding: 0.3rem 0.7rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      margin: 0.2rem;
+    }
+
+    label { display: block; font-weight: bold; margin-top: 1rem; }
+    summary { font-weight: bold; cursor: pointer; margin-top: 0.5rem; }
+
+    /* ───────────── 検索バー ───────────── */
+    #searchWrap {
+      display: flex;
+      gap: 8px;
+      margin: 2rem 0;
+    }
+    #searchInput { flex: 1; }
+    #clearSearch { flex: 0 0 100px; }
+
+    /* モバイル対応 */
+    @media (max-width: 600px) {
+      body { padding: 1rem; font-size: 0.9rem; }
+      h1 { font-size: 1.3rem; }
+    }
+
+    /* アクセシビリティ：フォーカス表示 */
+    button:focus, input:focus, textarea:focus, select:focus {
+      outline: 2px solid #1976d2;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>登場人物管理（Firebase保存版）</h1>
+
+  <!-- ===== フォーム ===== -->
+  <form id="person-form">
+    <input type="text" id="realName"    placeholder="実名（非公開）" required>
+    <input type="text" id="roleName"    placeholder="役名（公開）"   required>
+    <input type="text" id="position"    placeholder="肩書き・役割">
+    <input type="text" id="affiliation" placeholder="所属">
+
+    <!-- 関連プロジェクト & エリア -->
+    <input type="text" id="relatedProject" list="projectSuggestions" placeholder="関連プロジェクト（カンマ区切り）">
+    <datalist id="projectSuggestions"></datalist>
+
+    <input type="text" id="area" list="areaSuggestions" placeholder="エリア（カンマ区切り）">
+    <datalist id="areaSuggestions"></datalist>
+
+    <!-- サイト情報 -->
+    <label><strong>サイト情報リスト</strong></label>
+    <div id="siteInfos-container">
+      <div class="siteInfo-entry">
+        <input type="url"  placeholder="URL" class="siteInfo-url">
+        <input type="text" placeholder="サイト情報（公式HP, Instagram等）" class="siteInfo-desc">
+      </div>
+    </div>
+    <button type="button" id="add-siteInfo" class="btn add-relation-btn">サイト情報を追加</button>
+
+    <!-- 関係性 -->
+    <div id="relations-container">
+      <label><strong>関係性リスト</strong></label>
+      <div class="relation-entry">
+        <input type="text" placeholder="相手名" class="relation-name">
+        <input type="text" placeholder="エピソード" class="relation-detail">
+      </div>
+    </div>
+    <button type="button" id="add-relation" class="btn add-relation-btn">関係性を追加</button>
+
+    <!-- 固定タグ -->
+    <label><strong>固定タグ</strong></label>
+    <select id="fixedTag">
+      <option value="">選択してください</option>
+      <option value="播州人">播州人</option>
+      <option value="NBT">NBT</option>
+      <option value="外様">外様</option>
+    </select>
+
+    <!-- 自由タグ（補完付き） -->
+    <input type="text" id="tags" list="tagSuggestions" placeholder="自由タグ（カンマ区切り）">
+    <datalist id="tagSuggestions"></datalist>
+
+    <textarea id="comment" placeholder="一言コメント" rows="2"></textarea>
+    <label><input type="checkbox" id="isPublic"> 公開する</label><br>
+
+    <button type="submit" class="btn" id="submit-btn">登録する</button>
+  </form>
+
+  <!-- ===== 検索バー ===== -->
+  <div id="searchWrap">
+    <input type="text" id="searchInput" placeholder="キーワード検索（例：たつの, 建築 など）">
+    <button type="button" id="clearSearch" class="btn">一覧に戻す</button>
+  </div>
+  <hr>
+
+  <!-- ===== カードエリア ===== -->
+  <div id="person-list"></div>
+
+  <!-- ===== JavaScript ===== -->
+  <script>
+    // ---------- DOM 要素取得 ----------
+    const form = document.getElementById('person-form');
+    const personList = document.getElementById('person-list');
+    const relationsContainer = document.getElementById('relations-container');
+    const sitesContainer = document.getElementById('siteInfos-container');
+    const addRelationBtn = document.getElementById('add-relation');
+    const addSiteBtn = document.getElementById('add-siteInfo');
+    const submitBtn = document.getElementById('submit-btn');
+    const tagDatalist = document.getElementById('tagSuggestions');
+    const projDatalist = document.getElementById('projectSuggestions');
+    const areaDatalist = document.getElementById('areaSuggestions');
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearch');
+
+    let editKey = null;
+    let masterData = [];
+
+    // ---------- タグ色用ハッシュ関数 & 配色 ----------
+    function hashCode(str) {
+      return str.split('').reduce((h,c) => ((h << 5) - h) + c.charCodeAt(0), 0);
+    }
+    const pastel = ['#ffe0b2','#b3e5fc','#d1c4e9','#c8e6c9','#ffcdd2','#f0f4c3','#b2dfdb'];
+    const fixedColors = { '播州人':'bg-banshu', 'NBT':'bg-nbt', '外様':'bg-tosama' };
+
+    // ---------- 動的行追加 ----------
+    addRelationBtn.addEventListener('click', () => {
+      const e = document.createElement('div');
+      e.className = 'relation-entry';
+      e.innerHTML = `
+        <input type="text" placeholder="相手名" class="relation-name">
+        <input type="text" placeholder="エピソード" class="relation-detail">
+      `;
+      relationsContainer.appendChild(e);
+    });
+    addSiteBtn.addEventListener('click', () => {
+      const e = document.createElement('div');
+      e.className = '
+]
