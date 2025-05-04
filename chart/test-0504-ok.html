@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登場人物管理（Firebase保存版）</title>
+  <style>
+    body { font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; margin: 1rem; background: #fefef0; color: #333; }
+    h1 { text-align: center; }
+    form { display: flex; flex-direction: column; gap: 0.75rem; max-width: 600px; margin: 1rem auto; }
+    input, textarea, button { padding: 0.5rem; font-size: 1rem; border-radius: 6px; }
+    input, textarea { border: 1px solid #ccc; }
+    button { background: #4caf50; color: white; border: none; cursor: pointer; }
+    #tagFilters { text-align: center; margin: 1rem auto; display: flex; flex-wrap: wrap; gap: 0.5rem; max-width: 640px; }
+    #tagFilters button { background: #ccc; color: #333; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+    .card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin: 1rem auto; max-width: 600px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); }
+    .card h2 { margin-top: 0; }
+    .tags, .url { font-size: 0.9rem; color: #666; }
+    .highlight { background: #fff9c4; padding: 0.25rem 0.5rem; border-radius: 4px; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>登場人物管理（Firebase保存版）</h1>
+
+  <form id="form">
+    <input type="text" name="name" placeholder="実名（非公開）" required />
+    <input type="text" name="roleName" placeholder="役名（公開）" required />
+    <input type="text" name="position" placeholder="肩書き・役割" />
+    <input type="text" name="affiliation" placeholder="所属" />
+    <input type="text" name="relatedProjects" placeholder="関連プロジェクト（カンマ区切り）" />
+    <input type="text" name="areas" placeholder="エリア（カンマ区切り）" />
+    <input type="url" name="url" placeholder="サイトURL" />
+    <textarea name="comment" rows="2" placeholder="一言コメント"></textarea>
+    <button type="submit">登録する</button>
+  </form>
+
+  <div id="tagFilters"></div>
+  <div id="projectList"></div>
+
+  <!-- Firebase モジュラー版 v10 を一つのファイルに統合 -->
+  <script type="module">
+    // Firebase SDK
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getDatabase, ref, push, onChildAdded, set, child, remove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+    // Firebase 設定
+    const firebaseConfig = {
+      apiKey: 'AIzaSyC6YRajLSSBQQszeaxhSNdj6zs_0-jcXlc',
+      authDomain: 'banshu-5100b.firebaseapp.com',
+      databaseURL: 'https://banshu-5100b-default-rtdb.asia-southeast1.firebasedatabase.app',
+      projectId: 'banshu-5100b',
+      storageBucket: 'banshu-5100b.appspot.com',
+      messagingSenderId: '178397472277',
+      appId: '1:178397472277:web:edc9cb8bb9096b605cd01c'
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const projectsRef = ref(db, 'testcharacters');
+
+    // DOM 取得
+    const form = document.getElementById('form');
+    const list = document.getElementById('projectList');
+    const tagFilters = document.getElementById('tagFilters');
+    const allTags = new Set();
+
+    // フォーム送信
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const data = {
+        realName: form.name.value,
+        roleName: form.roleName.value,
+        position: form.position.value,
+        affiliation: form.affiliation.value,
+        relatedProjects: form.relatedProjects.value,
+        areas: form.areas.value,
+        url: form.url.value,
+        comment: form.comment.value,
+        createdAt: Date.now()
+      };
+      await push(projectsRef, data);
+      form.reset();
+    });
+
+    // 既存データ読み込み
+    onChildAdded(projectsRef, snapshot => {
+      const key = snapshot.key;
+      const data = snapshot.val();
+      // タグ収集
+      if (data.relatedProjects) data.relatedProjects.split(',').map(t=>t.trim()).forEach(t=>allTags.add(t));
+      if (data.areas) data.areas.split(',').map(t=>t.trim()).forEach(t=>allTags.add(t));
+      renderCard(data, key);
+      renderTagButtons();
+    });
+
+    // タグフィルター
+    function renderTagButtons() {
+      tagFilters.innerHTML = '';
+      allTags.forEach(tag => {
+        const btn = document.createElement('button');
+        btn.textContent = tag;
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.card').forEach(card => {
+            card.style.display = card.dataset.tags.includes(tag) ? 'block' : 'none';
+          });
+        });
+        tagFilters.appendChild(btn);
+      });
+    }
+
+    // カード描画
+    function renderCard(data, key) {
+      const card = document.createElement('div'); card.className = 'card';
+      card.dataset.tags = (data.relatedProjects || '') + ',' + (data.areas || '');
+      card.innerHTML = `
+        <h2>${data.realName}</h2>
+        <p><strong>役名：</strong>${data.roleName}</p>
+        <p><strong>肩書き：</strong>${data.position}</p>
+        <p><strong>所属：</strong>${data.affiliation}</p>
+        <p class="tags"><strong>関連プロジェクト：</strong>${data.relatedProjects}</p>
+        <p class="tags"><strong>エリア：</strong>${data.areas}</p>
+        <p><a href="${data.url}" target="_blank">サイトリンク</a></p>
+        <p>${data.comment}</p>
+        <button class="edit-btn">保存</button>
+        <button class="delete-btn">削除</button>
+      `;
+      // 更新
+      card.querySelector('.edit-btn').addEventListener('click', async () => {
+        const updated = { ...data, relatedProjects: data.relatedProjects, areas: data.areas };
+        await set(child(projectsRef, key), updated);
+        alert('更新しました');
+      });
+      // 削除
+      card.querySelector('.delete-btn').addEventListener('click', async () => {
+        if (confirm('削除しますか？')) {
+          await remove(child(projectsRef, key));
+          card.remove();
+        }
+      });
+      list.prepend(card);
+    }
+  </script>
+</body>
+</html>
