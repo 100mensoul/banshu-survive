@@ -194,3 +194,59 @@
       };
     });
 
+// 🔍 検索処理
+searchBtn.addEventListener('click', () => {
+  const keyword = searchKeyword.value.trim();
+  if (!keyword) {
+    alert('キーワードを入力してください');
+    return;
+  }
+
+  const filtered = masterData.filter(p =>
+    [p.realName, p.comment, p.position, p.affiliation, ...p.freeTags, ...p.relatedProjects, ...p.areas].some(field =>
+      typeof field === 'string' ? field.includes(keyword) : false
+    )
+  );
+
+  renderFilteredCards(filtered, keyword);
+});
+
+// 🧹 検索解除
+resetBtn.addEventListener('click', () => {
+  searchKeyword.value = '';
+  renderCards();
+});
+
+// フィルタ結果のレンダリング
+function renderFilteredCards(data, keyword) {
+  listContainer.innerHTML = `<p>「${keyword}」でつながったヒメジン</p>`;
+  if (data.length === 0) {
+    listContainer.innerHTML += `<p>該当するヒメジンは見つかりませんでした。</p>`;
+    return;
+  }
+  data.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    if (p.fixedTag) {
+      const cls = p.fixedTag === '播州人' ? 'bg-banshu' : p.fixedTag === 'NBT' ? 'bg-nbt' : 'bg-tosama';
+      card.classList.add(cls);
+    }
+    const tm = new Date(p.updatedAt).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    let html = `<strong>更新：</strong>${tm}<br><strong>実名：</strong>${p.realName}<br><strong>コメント：</strong>${p.comment}<details><summary>詳細</summary>`;
+    html += `<p><strong>肩書き：</strong>${p.position||'―'}</p><p><strong>所属：</strong>${p.affiliation||'―'}</p><p><strong>固定タグ：</strong>${p.fixedTag||'―'}</p>`;
+    [['自由タグ', 'freeTags'], ['関連プロジェクト','relatedProjects'], ['エリア','areas']].forEach(([label, key]) => {
+      html += `<p><strong>${label}：</strong>${(p[key]||[]).map(t=>`<span class="tag">${t}</span>`).join('')||'―'}</p>`;
+    });
+    [['サイト情報','sites'], ['関係性','relations']].forEach(([label, key]) => {
+      html += `<details><summary>${label}</summary>`;
+      p[key].forEach(item => {
+        if (key === 'sites') html += `<p>${item.desc||''}：<a href="${item.url}" target="_blank">${item.url}</a></p>`;
+        else html += `<p>・${item.name||''}：${item.detail||''}</p>`;
+      });
+      html += `</details>`;
+    });
+    html += `<p><strong>公開：</strong>${p.isPublic?'公開':'非公開'}</p></details>`;
+    listContainer.appendChild(card);
+    card.innerHTML = html;
+  });
+}
