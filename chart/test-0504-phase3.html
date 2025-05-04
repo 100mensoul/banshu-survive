@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登場人物管理（Firebase保存版 Phase3）</title>
+
+  <!-- Firebase v8 SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    /* ベース */
+    body { font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; margin: 1rem; background: #fefef0; color: #333; }
+    h1 { text-align: center; margin-bottom: 1rem; }
+    form { display: flex; flex-direction: column; gap: 0.75rem; max-width: 600px; margin: 0 auto 2rem; }
+    input, textarea, select, button { padding: 0.5rem; font-size: 1rem; border-radius: 6px; }
+    input, textarea, select { border: 1px solid #ccc; }
+    .btn { background: #4caf50; color: #fff; border: none; cursor: pointer; }
+    .add-btn { background: #81c784; }
+    button { width: auto; }
+
+    /* モーダル */
+    #detailsModal { background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; }
+    #detailsModal:not(.hidden) { display: flex; align-items: center; justify-content: center; }
+    .modal-content {
+      position: relative;
+      background: #fff; padding: 1rem; border-radius: 8px;
+      width: 90%; max-width: 500px; max-height: 90%; overflow: auto;
+    }
+    .modal-close {
+      position: absolute; top: 0.5rem; right: 0.5rem;
+      background: transparent; border: none; font-size: 1.5rem; cursor: pointer;
+    }
+    .modal-content > input,
+    .modal-content > textarea,
+    .modal-content > select,
+    .modal-content > label,
+    .modal-content > button:not(.modal-close) {
+      display: block; width: 100%; margin-bottom: 0.75rem; box-sizing: border-box;
+    }
+    .section-label { font-weight: bold; margin: 1rem 0 0.5rem; }
+    .siteInfo-entry, .relation-entry { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem; }
+
+    /* カード */
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 8px;
+      padding: 1rem; margin: 1rem auto; max-width: 600px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    }
+    .tag { display: inline-block; color: #00695c; padding: 0.3rem 0.7rem;
+      border-radius: 12px; font-size: 0.85rem; margin: 0.2rem;
+    }
+    .bg-banshu { background: #fff9c4 !important; }
+    .bg-nbt    { background: #e8f5e9 !important; }
+    .bg-tosama { background: #f3e5f5 !important; }
+  </style>
+</head>
+<body>
+  <h1>登場人物管理（Firebase保存版 Phase3）</h1>
+
+  <form id="person-form" data-edit-key="">
+    <input type="text" id="realName" placeholder="実名（非公開）" required />
+    <textarea id="comment" rows="2" placeholder="一言コメント" required></textarea>
+    <button type="button" id="showDetails" class="btn">詳細を記入する</button>
+    <button type="submit" class="btn">登録する</button>
+  </form>
+
+  <!-- 詳細入力モーダル -->
+  <div id="detailsModal" class="hidden">
+    <div class="modal-content">
+      <button type="button" class="modal-close" id="closeDetails">×</button>
+      <input type="text" id="roleName" placeholder="役名（公開）" />
+      <input type="text" id="position" placeholder="肩書き・役割" />
+      <input type="text" id="affiliation" placeholder="所属" />
+      <input type="text" id="relatedProjects" placeholder="関連プロジェクト（カンマ区切り）" />
+      <input type="text" id="areas" placeholder="エリア（カンマ区切り）" />
+
+      <div class="section-label">サイト情報リスト</div>
+      <div id="siteInfos-container">
+        <div class="siteInfo-entry">
+          <input type="url" class="siteInfo-url" placeholder="URL" />
+          <input type="text" class="siteInfo-desc" placeholder="説明（公式HPなど）" />
+        </div>
+      </div>
+      <button type="button" id="add-siteInfo" class="btn add-btn">サイト情報を追加</button>
+
+      <div class="section-label">関係性リスト</div>
+      <div id="relations-container">
+        <div class="relation-entry">
+          <input type="text" class="relation-name" placeholder="相手名" />
+          <input type="text" class="relation-detail" placeholder="エピソード" />
+        </div>
+      </div>
+      <button type="button" id="add-relation" class="btn add-btn">関係性を追加</button>
+
+      <div class="section-label">タグ</div>
+      <select id="fixedTag">
+        <option value="">固定タグを選択</option>
+        <option value="播州人">播州人</option>
+        <option value="NBT">NBT</option>
+        <option value="外様">外様</option>
+      </select>
+      <input type="text" id="tags" list="tagSuggestions" placeholder="自由タグ（カンマ区切り）" />
+      <datalist id="tagSuggestions"></datalist>
+      <label><input type="checkbox" id="isPublic" /> 公開する</label>
+      <button type="button" id="saveDetails" class="btn">詳細を保存</button>
+    </div>
+  </div>
+
+  <div id="person-list"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Firebase 初期化
+      const cfg = {
+        apiKey: "AIzaSyC6YRajLSSBQQszeaxhSNdj6zs_0-jcXlc",
+        authDomain: "banshu-5100b.firebaseapp.com",
+        databaseURL: "https://banshu-5100b-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "banshu-5100b",
+        storageBucket: "banshu-5100b.appspot.com",
+        messagingSenderId: "178397472277",
+        appId: "1:178397472277:web:edc9cb8bb9096b605cd01c"
+      };
+      firebase.initializeApp(cfg);
+      const refDB = firebase.database().ref("testcharacters_phase2");
+
+      // DOM取得
+      const form           = document.getElementById('person-form');
+      const showBtn        = document.getElementById('showDetails');
+      const closeBtn       = document.getElementById('closeDetails');
+      const saveBtn        = document.getElementById('saveDetails');
+      const modal          = document.getElementById('detailsModal');
+      const siteContainer  = document.getElementById('siteInfos-container');
+      const addSiteBtn     = document.getElementById('add-siteInfo');
+      const relContainer   = document.getElementById('relations-container');
+      const addRelBtn      = document.getElementById('add-relation');
+      const listContainer  = document.getElementById('person-list');
+      let masterData = [];
+
+      // モーダル表示/非表示
+      showBtn .addEventListener('click', () => modal.classList.remove('hidden'));
+      closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+      saveBtn .addEventListener('click', () => modal.classList.add('hidden'));
+
+      // 行追加
+      addSiteBtn.addEventListener('click', () => {
+        const d = document.createElement('div'); d.className = 'siteInfo-entry';
+        d.innerHTML = `<input type="url" class="siteInfo-url" placeholder="URL">
+                       <input type="text" class="siteInfo-desc" placeholder="説明（公式HPなど）">`;
+        siteContainer.appendChild(d);
+      });
+      addRelBtn.addEventListener('click', () => {
+        const d = document.createElement('div'); d.className = 'relation-entry';
+        d.innerHTML = `<input type="text" class="relation-name" placeholder="相手名">
+                       <input type="text" class="relation-detail" placeholder="エピソード">`;
+        relContainer.appendChild(d);
+      });
+
+      // フォーム送信
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        const data = {
+          realName:        document.getElementById('realName').value.trim(),
+          comment:         document.getElementById('comment').value.trim(),
+          roleName:        document.getElementById('roleName').value.trim(),
+          position:        document.getElementById('position').value.trim(),
+          affiliation:     document.getElementById('affiliation').value.trim(),
+          fixedTag:        document.getElementById('fixedTag').value,
+          freeTags:        document.getElementById('tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+          relatedProjects: document.getElementById('relatedProjects').value.split(',').map(t=>t.trim()).filter(Boolean),
+          areas:           document.getElementById('areas').value.split(',').map(t=>t.trim()).filter(Boolean),
+          sites:           [],
+          relations:       [],
+          isPublic:        document.getElementById('isPublic').checked,
+          updatedAt:       Date.now()
+        };
+        console.log('Submit data (Phase2):', data);
+        siteContainer.querySelectorAll('.siteInfo-entry').forEach(ent => {
+          const url = ent.querySelector('.siteInfo-url').value.trim();
+          const desc= ent.querySelector('.siteInfo-desc').value.trim();
+          if (url||desc) data.sites.push({url,desc});
+        });
+        relContainer.querySelectorAll('.relation-entry').forEach(ent => {
+          const name= ent.querySelector('.relation-name').value.trim();
+          const detail=ent.querySelector('.relation-detail').value.trim();
+          if (name||detail) data.relations.push({name,detail});
+        });
+        const key = form.dataset.editKey;
+        if (key) { refDB.child(key).set(data); console.log('Updated Phase2:',key); form.dataset.editKey=''; }
+        else { const newRef=refDB.push(); newRef.set(data); console.log('Pushed Phase2 key:',newRef.key); }
+        form.reset(); modal.classList.add('hidden');
+      });
+
+      // リアルタイム取得
+      refDB.on('value', snap => {
+        masterData=[];
+        snap.forEach(c=> masterData.push({...c.val(),_key:c.key}));
+        masterData.sort((a,b)=>b.updatedAt-a.updatedAt);
+        console.log('Phase2 データ:', masterData);
+        renderCards();
+      });
+
+      function renderCards(){
+        listContainer.innerHTML='';
+        masterData.forEach(p=>{
+          const card=document.createElement('div'); card.className='card';
+          if(p.fixedTag) card.classList.add(p.fixedTag==='播州人'?'bg-banshu':p.fixedTag==='NBT'?'bg-nbt':'bg-tosama');
+          const tm=new Date(p.updatedAt).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+          let html=`<strong>更新：</strong>${tm}<br><strong>実名：</strong>${p.realName}<br><strong>コメント：</strong>${p.comment}`;
+          html+=`<details><summary>詳細</summary>`;
+          [['役名',p.roleName],['肩書き',p.position],['所属',p.affiliation],['固定タグ',p.fixedTag]].forEach(([l,v])=> html+=`<p><strong>${l}：</strong>${v||'―'}</p>`);
+          [['自由タグ',p.freeTags],['関連プロジェクト',p.relatedProjects],['エリア',p.areas]].forEach(([l,v])=> html+=`<p><strong>${l}：</strong>${(v||[]).map(t=>`<span class="tag">${t}</span>`).join('')||'―'}</p>`);
+          [['サイト情報',p.sites],['関係性',p.relations]].forEach(([l,v])=>{
+            html+=`<details><summary>${l}</summary>`;
+            v.forEach(item=>{
+              if(l==='サイト情報') html+=`<p>${item.desc||''}: <a href="${item.url}" target="_blank">${item.url}</a></p>`;
+              else html+=`<p>・${item.name||''}：${item.detail||''}</p>`;
+            }); html+=`</details>`;
+          });
+          html+=`<p><strong>公開：</strong>${p.isPublic?'公開':'非公開'}</p>`;
+          html+=`<button onclick="editPerson('${p._key}')" class="btn">編集</button> <button onclick="deletePerson('${p._key}')" class="btn">削除</button></details>`;
+          card.innerHTML=html; listContainer.appendChild(card);
+        });
+      }
+
+      window.editPerson=key=>{
+        const p=masterData.find(x=>x._key===key);
+        form.dataset.editKey=key;
+        showBtn.click();
+        ['realName','comment','roleName','position','affiliation','relatedProjects','areas'].forEach(id=>document.getElementById(id).value=p[id]||'');
+        document.getElementById('fixedTag').value=p.fixedTag;
+        document.getElementById('tags').value=(p.freeTags||[]).join(', ');
+        document.getElementById('isPublic').checked=p.isPublic;
+        siteContainer.innerHTML=''; p.sites.forEach(s=>{ const d=document.createElement('div'); d.className='siteInfo-entry'; d.innerHTML=`<input type="url" class="siteInfo-url" value="${s.url||''}"><input type="text" class="siteInfo-desc" value="${s.desc||''}">`; siteContainer.appendChild(d);});
+        relContainer.innerHTML=''; p.relations.forEach(r=>{ const d=document.createElement('div'); d.className='relation-entry'; d.innerHTML=`<input type="text" class="relation-name" value="${r.name||''}"><input type="text" class="relation-detail" value="${r.detail||''}">`; relContainer.appendChild(d);});
+      };
+      window.deletePerson=key=>{ if(confirm('削除しますか？')) refDB.child(key).remove(); };
+    });
+  </script>
+</body>
+</html>
