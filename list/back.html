@@ -5,7 +5,7 @@
   <title>ヒメラボ（Hime Lab）｜播州サバイブ リサーチログ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ★ 最低限の見た目だけ戻してあります。お好みで調整してください ★ -->
+  <!-- ★ 見た目は前回と同じ。順序のみ変更 ★ -->
   <style>
     body { font-family:"Hiragino Kaku Gothic ProN",sans-serif; margin:1rem; background:#fffde7; color:#333; }
     h1   { text-align:center; font-size:2rem; margin-bottom:1rem; }
@@ -32,22 +32,26 @@
 
   <!-- 入力フォーム -->
   <form id="form">
+    <!-- ★ ① プロジェクト名（必須） -->
+    <label for="nameInput">施設名・プロジェクト名<span style="color:#e53935">*</span></label>
+    <input type="text" id="nameInput" name="name" placeholder="施設名・プロジェクト名" required>
+
+    <!-- ★ ② 所在地 -->
+    <label for="locationInput">所在地（例：長野県信濃町）</label>
+    <input type="text" id="locationInput" name="location" placeholder="所在地（例：長野県信濃町）">
+
+    <!-- ★ ③ 固定タグ -->
     <label for="fixedTag">固定タグ</label>
-    <select id="fixedTag" name="fixedTag" required>
+    <select id="fixedTag" name="fixedTag">
       <option value="">選択してください</option>
       <option>プロジェクト</option><option>団体・組織</option><option>企業</option>
       <option>個人活動</option><option>公共施設</option><option>道の駅</option>
     </select>
 
+    <!-- ★ ④ 自由タグ -->
     <label for="freeTagInput">自由タグ（#付）</label>
     <input list="freeTagList" id="freeTagInput" name="freeTagInput" placeholder="#職人">
     <datalist id="freeTagList"></datalist>
-
-    <label for="nameInput">施設名・プロジェクト名</label>
-    <input type="text" id="nameInput" name="name" placeholder="施設名・プロジェクト名" required>
-
-    <label for="locationInput">所在地（例：長野県信濃町）</label>
-    <input type="text" id="locationInput" name="location" placeholder="所在地（例：長野県信濃町）" required>
 
     <button type="button" id="openDetails">詳細を入力</button>
     <button type="submit">追加</button>
@@ -73,8 +77,6 @@
 
   <!-- ★ ここにカードが挿入されるエリア ★ -->
   <div id="projectList"></div>
-
-
 
   <script type="module" src="./js/main.js"></script>
 </body>
