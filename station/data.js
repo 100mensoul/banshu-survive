@@ -5,7 +5,7 @@ const michinoekiAwards = [
     tagline: "黒豆と栗の都へようこそ",
     description: "黒豆と栗スイーツの宝庫。地元農家との連携とPOPの温かさが光る。",
     featured_item: "黒豆モンブラン・丹波地酒",
-    image: "https://placehold.jp/300x200.png?text=味夢の里"
+    image: "kyotanba01.png"
     album: "https://photos.app.goo.gl/example_album1",
     link: "https://ajimunosato.com/"
   },
