@@ -1,7 +1,7 @@
 const michinoekiAwards = [
   {
     name: "道の駅 丹波 味夢の里",
-    award: "最優秀地域密着賞",
+    award: "最優秀商品開発賞",
     tagline: "黒豆と栗の都へようこそ",
     description: "黒豆と栗スイーツの宝庫。地元農家との連携とPOPの温かさが光る。",
     featured_item: "黒豆モンブラン・丹波地酒",
