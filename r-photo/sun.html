@@ -124,3 +124,46 @@
       <a href="sun/sun03.jpg" data-lightbox="sun"><img src="sun/sun03.jpg" alt="sun3"></a>
     </div>
   </div>
+  
+    <script src="https://cdn.jsdelivr.net/npm/lightbox2@2/dist/js/lightbox.min.js"></script>
+  <script>
+    const logo = document.getElementById('logoContainer');
+    let isHidden = false;
+    let isReversed = false;
+    let scrollTimeout;
+
+    function hideLogo() {
+      if (!isHidden) {
+        logo.classList.add('hidden');
+        isHidden = true;
+      }
+    }
+
+    function showLogo() {
+      logo.classList.remove('hidden');
+      if (!isReversed) {
+        logo.classList.add('logo-reverse');
+        isReversed = true;
+      }
+      isHidden = false;
+    }
+
+    function resetScrollTimer() {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        showLogo();
+      }, 5000); // 5秒静止で復活
+    }
+
+    window.addEventListener('scroll', () => {
+      hideLogo();
+      resetScrollTimer();
+    });
+
+    // 初期設定：ロゴ表示
+    document.addEventListener('DOMContentLoaded', () => {
+      showLogo();
+    });
+  </script>
+</body>
+</html>
