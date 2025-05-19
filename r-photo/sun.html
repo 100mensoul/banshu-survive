@@ -137,12 +137,14 @@
 
     function hideLogo() {
       if (!isHidden) {
+        logo.classList.remove('smooth-in'); // ← 消える時は短い
         logo.classList.add('hidden');
         isHidden = true;
       }
     }
 
     function showLogo() {
+      logo.classList.add('smooth-in'); // ← 出る時は長く
       logo.classList.remove('hidden');
       if (!isReversed) {
         logo.classList.add('logo-reverse');
