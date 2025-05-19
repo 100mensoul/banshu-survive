@@ -9,7 +9,8 @@
       margin: 0;
       padding: 0;
       height: 100%;
-      background: linear-gradient(to bottom, #dfe7ea 0%, #f5f7f9 50%, #dfe7ea 100%);
+      background: linear-gradient(to bottom, rgba(230, 240, 245, 0.8) 0%, rgba(255, 255, 255, 0.9) 40%, rgba(230, 240, 245, 0.8) 100%);
+      background-repeat: no-repeat;
       font-family: 'Helvetica Neue', 'Arial', sans-serif;
       color: #111;
     }
@@ -17,15 +18,16 @@
     .container {
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: flex-start;
       height: 100vh;
-      padding: 2rem;
+      padding: 3rem 2rem;
       box-sizing: border-box;
     }
 
     .heading {
-      margin-bottom: 2rem;
+      margin-top: 2rem;
+      margin-bottom: 5rem;
     }
 
     .title {
@@ -40,8 +42,9 @@
       content: 'Where Things Appear';
       display: block;
       transform: scaleY(-1);
-      opacity: 0.25;
-      margin-top: 0.3em;
+      opacity: 0.2;
+      margin-top: 0.4em;
+      filter: blur(1px);
     }
 
     .nav-item {
