@@ -249,12 +249,16 @@
       e.preventDefault();
       const src = this.getAttribute('href');
       const text = this.getAttribute('data-caption') || '';
+      const dateText = this.getAttribute('data-date') || '';
       modalImage.src = src;
       caption.textContent = text;
+      date.textContent = dateText; 
       modal.classList.add('active'); // ← display: flex → class制御に変更
       document.body.classList.add('modal-open');
     });
   });
+
+
 
   modal.addEventListener('click', function(e) {
     if (e.target === modal || e.target === caption) {
