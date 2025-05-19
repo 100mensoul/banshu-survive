@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Sun | R Photo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/lightbox2@2/dist/css/lightbox.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f7f8f8;
+      font-family: 'Helvetica Neue', 'Arial', sans-serif;
+      color: #111;
+    }
+
+    header {
+      padding: 2rem 1.5rem 1rem;
+    }
+
+    .project-title {
+      font-size: 1.5rem;
+      font-weight: normal;
+      margin: 0;
+    }
+
+    .project-year {
+      font-size: 1rem;
+      color: #666;
+      margin-top: 0.2rem;
+    }
+
+    .gallery {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .photo-block {
+      max-width: 1000px;
+      width: 100%;
+      margin-bottom: 3rem;
+    }
+
+    .photo-block a img {
+      width: 100%;
+      height: auto;
+      display: block;
+      cursor: zoom-in;
+    }
+
+    /* ロゴ表示領域 */
+    .logo-container {
+      position: fixed;
+      top: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+
+    .logo-R {
+      font-size: 2.5rem;
+      line-height: 1;
+      font-weight: bold;
+      font-family: Arial, sans-serif;
+    }
+
+    .logo-R-top {
+      color: black;
+      transition: color 0.3s;
+    }
+
+    .logo-R-bottom {
+      transform: scaleY(-1);
+      color: gray;
+      transition: color 0.3s;
+    }
+
+    .logo-container.hidden {
+      opacity: 0;
+    }
+
+    .logo-reverse .logo-R-top {
+      color: white;
+    }
+
+    .logo-reverse .logo-R-bottom {
+      color: black;
+    }
+
+    @media (max-width: 600px) {
+      .logo-R {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- ロゴ -->
+  <div class="logo-container" id="logoContainer">
+    <div class="logo-R logo-R-top">R</div>
+    <div class="logo-R logo-R-bottom">R</div>
+  </div>
+
+  <header>
+    <h1 class="project-title">Sun</h1>
+    <div class="project-year">2023–</div>
+  </header>
+
+  <div class="gallery">
+    <div class="photo-block">
+      <a href="sun/sun01.jpg" data-lightbox="sun"><img src="sun/sun01.jpg" alt="sun1"></a>
+    </div>
+    <div class="photo-block">
+      <a href="sun/sun02.jpg" data-lightbox="sun"><img src="sun/sun02.jpg" alt="sun2"></a>
+    </div>
+    <div class="photo-block">
+      <a href="sun/sun03.jpg" data-lightbox="sun"><img src="sun/sun03.jpg" alt="sun3"></a>
+    </div>
+  </div>
