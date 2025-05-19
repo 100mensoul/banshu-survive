@@ -2,75 +2,81 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>サンフォト（太陽の部屋）</title>
+  <title>SUN PHOTO - R</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      background: #000;
-      color: #fff;
-      font-family: 'Arial', sans-serif;
       margin: 0;
+      padding: 0;
+      background: #fff;
+      font-family: 'Helvetica Neue', 'Arial', sans-serif;
+      color: #111;
     }
+
     header {
-      background: #222;
-      padding: 1rem;
-      text-align: center;
-      font-size: 1.4rem;
       position: sticky;
       top: 0;
+      background: #fff;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-bottom: 1px solid #ddd;
+      z-index: 10;
     }
-    .back {
-      margin: 0.5rem;
-      text-align: left;
-    }
-    .back a {
-      color: #0ff;
+
+    header a {
       text-decoration: none;
+      color: #111;
     }
+
     .gallery {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
-      padding: 1rem;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
     }
-    .photo {
-      width: 280px;
-      border: 2px solid #333;
-      border-radius: 8px;
-      overflow: hidden;
-      background: #111;
-    }
-    .photo img {
+
+    .photo-block {
+      max-width: 1000px;
       width: 100%;
+      margin-bottom: 4rem;
+    }
+
+    .photo-block img {
+      width: 100%;
+      height: auto;
       display: block;
     }
+
     .caption {
-      padding: 0.5rem;
-      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #666;
       text-align: center;
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="back"><a href="rphoto.html">← 戻る</a></div>
-    サンフォト（太陽の部屋）
+    <a href="rphoto.html">← R PHOTO</a>
   </header>
 
-  <section class="gallery">
-    <div class="photo">
-      <img src="sun/sun01.jpg" alt="サンフォト1">
-      <div class="caption">朝日の稜線</div>
+  <div class="gallery">
+    <div class="photo-block">
+      <img src="sun/sun01.jpg" alt="朝日の光">
+      <div class="caption">朝日の光</div>
     </div>
-    <div class="photo">
-      <img src="sun/sun02.jpg" alt="サンフォト2">
-      <div class="caption">午後の強い光</div>
+
+    <div class="photo-block">
+      <img src="sun/sun02.jpg" alt="高く昇る太陽">
+      <div class="caption">高く昇る太陽</div>
     </div>
-    <div class="photo">
-      <img src="sun/sun03.jpg" alt="サンフォト3">
-      <div class="caption">沈みゆく夕日</div>
+
+    <div class="photo-block">
+      <img src="sun/sun03.jpg" alt="夕暮れの輪郭">
+      <div class="caption">夕暮れの輪郭</div>
     </div>
-    <!-- 写真をここに追加 -->
-  </section>
+
+    <!-- 必要に応じて追加 -->
+  </div>
 </body>
 </html>
