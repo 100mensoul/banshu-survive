@@ -239,17 +239,19 @@
       const text = this.getAttribute('data-caption') || '';
       modalImage.src = src;
       caption.textContent = text;
-      modal.style.display = 'flex';
+      modal.classList.add('active'); // ← display: flex → class制御に変更
       document.body.classList.add('modal-open');
     });
   });
 
   modal.addEventListener('click', function(e) {
     if (e.target === modal || e.target === caption) {
-      modal.style.display = 'none';
+      modal.classList.remove('active'); // ← 非表示もクラスで制御
       document.body.classList.remove('modal-open');
     }
   });
+  
+  
   </script>
 </body>
 </html>
