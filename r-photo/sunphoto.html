@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>サンフォト（太陽の部屋）</title>
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+    }
+    header {
+      background: #222;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.4rem;
+      position: sticky;
+      top: 0;
+    }
+    .back {
+      margin: 0.5rem;
+      text-align: left;
+    }
+    .back a {
+      color: #0ff;
+      text-decoration: none;
+    }
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .photo {
+      width: 280px;
+      border: 2px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #111;
+    }
+    .photo img {
+      width: 100%;
+      display: block;
+    }
+    .caption {
+      padding: 0.5rem;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="back"><a href="rphoto.html">← 戻る</a></div>
+    サンフォト（太陽の部屋）
+  </header>
+
+  <section class="gallery">
+    <div class="photo">
+      <img src="sun/sun01.jpg" alt="サンフォト1">
+      <div class="caption">朝日の稜線</div>
+    </div>
+    <div class="photo">
+      <img src="sun/sun02.jpg" alt="サンフォト2">
+      <div class="caption">午後の強い光</div>
+    </div>
+    <div class="photo">
+      <img src="sun/sun03.jpg" alt="サンフォト3">
+      <div class="caption">沈みゆく夕日</div>
+    </div>
+    <!-- 写真をここに追加 -->
+  </section>
+</body>
+</html>
