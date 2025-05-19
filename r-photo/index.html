@@ -10,12 +10,14 @@
       padding: 0;
       height: 100%;
       background: linear-gradient(to bottom,
-        #f9fcfe 0%,     /* 上：ほぼ白 */
-        #e6f0f7 20%,    /* 薄い青 */
-        #d4e4ef 50%,    /* ややグレーがかった青 */
-        #c2d8e4 80%,    /* 深めの水色 */
-        #b5cddc 100%    /* 下：反射面の深さ */
-      );
+           #ffffff 0%,        /* 上部：白で光の反射を強調 */
+            #e0f1f9 15%,       /* 淡いブルー（明るい水色） */
+            #c2d8e4 35%,       /* 青みが増す */
+            #a5c0d3 55%,       /* 深みと鏡感（灰×青） */
+            #7ba3bb 75%,       /* 鏡のような寒色系 */
+            #5f8499 100%       /* 最下部：深く暗い水面の底色 */
+    );
+
       background-blend-mode: screen;
       backdrop-filter: blur(4px);
       font-family: 'Helvetica Neue', 'Arial', sans-serif;
