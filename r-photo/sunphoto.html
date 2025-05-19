@@ -2,81 +2,75 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>SUN PHOTO - R</title>
+  <title>Sun | R Photo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/lightbox2@2/dist/css/lightbox.min.css" rel="stylesheet">
   <style>
     body {
       margin: 0;
       padding: 0;
-      background: #fff;
+      background: #f7f8f8;
       font-family: 'Helvetica Neue', 'Arial', sans-serif;
       color: #111;
     }
 
     header {
-      position: sticky;
-      top: 0;
-      background: #fff;
-      padding: 1rem 2rem;
-      font-size: 1rem;
-      border-bottom: 1px solid #ddd;
-      z-index: 10;
+      padding: 2rem 1.5rem 1rem;
     }
 
-    header a {
-      text-decoration: none;
-      color: #111;
+    .project-title {
+      font-size: 1.5rem;
+      font-weight: normal;
+      margin: 0;
+    }
+
+    .project-year {
+      font-size: 1rem;
+      color: #666;
+      margin-top: 0.2rem;
     }
 
     .gallery {
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem 1rem;
+      padding: 1rem;
     }
 
     .photo-block {
       max-width: 1000px;
       width: 100%;
-      margin-bottom: 4rem;
+      margin-bottom: 3rem;
     }
 
-    .photo-block img {
+    .photo-block a img {
       width: 100%;
       height: auto;
       display: block;
-    }
-
-    .caption {
-      margin-top: 0.5rem;
-      font-size: 0.85rem;
-      color: #666;
-      text-align: center;
+      cursor: zoom-in;
     }
   </style>
 </head>
 <body>
+
   <header>
-    <a href="rphoto.html">← R PHOTO</a>
+    <h1 class="project-title">Sun</h1>
+    <div class="project-year">2023–</div>
   </header>
 
   <div class="gallery">
     <div class="photo-block">
-      <img src="sun/sun01.jpg" alt="朝日の光">
-      <div class="caption">朝日の光</div>
+      <a href="sun/sun01.jpg" data-lightbox="sun"><img src="sun/sun01.jpg" alt="sun1"></a>
     </div>
-
     <div class="photo-block">
-      <img src="sun/sun02.jpg" alt="高く昇る太陽">
-      <div class="caption">高く昇る太陽</div>
+      <a href="sun/sun02.jpg" data-lightbox="sun"><img src="sun/sun02.jpg" alt="sun2"></a>
     </div>
-
     <div class="photo-block">
-      <img src="sun/sun03.jpg" alt="夕暮れの輪郭">
-      <div class="caption">夕暮れの輪郭</div>
+      <a href="sun/sun03.jpg" data-lightbox="sun"><img src="sun/sun03.jpg" alt="sun3"></a>
     </div>
-
-    <!-- 必要に応じて追加 -->
+    <!-- 他の写真も同様に追加 -->
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/lightbox2@2/dist/js/lightbox.min.js"></script>
 </body>
 </html>
