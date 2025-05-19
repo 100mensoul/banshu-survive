@@ -218,6 +218,30 @@
     logo.classList.remove('logo-reverse'); // ✅ 必ず reverse を外しておく
     logo.classList.remove('hidden'); // 表示だけにする
 });
+
+  const modal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+  const caption = document.getElementById('imageCaption');
+  const triggers = document.querySelectorAll('.modal-trigger');
+
+  triggers.forEach(trigger => {
+    trigger.addEventListener('click', function(e) {
+      e.preventDefault();
+      const src = this.getAttribute('href');
+      const text = this.getAttribute('data-caption') || '';
+      modalImage.src = src;
+      caption.textContent = text;
+      modal.style.display = 'flex';
+      document.body.classList.add('modal-open');
+    });
+  });
+
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal || e.target === caption) {
+      modal.style.display = 'none';
+      document.body.classList.remove('modal-open');
+    }
+  });
   </script>
   <div id="imageModal">
     <img id="modalImage" src="" alt="">
