@@ -161,8 +161,9 @@
 
     // 初期設定：ロゴ表示
     document.addEventListener('DOMContentLoaded', () => {
-      showLogo();
-    });
+    logo.classList.remove('logo-reverse'); // ✅ 必ず reverse を外しておく
+    logo.classList.remove('hidden'); // 表示だけにする
+});
   </script>
 </body>
 </html>
