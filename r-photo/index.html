@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Rフォト見本市</title>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      padding: 1rem;
+      background: #222;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 1rem;
+      gap: 1rem;
+      justify-content: center;
+    }
+    .thumb {
+      width: 220px;
+      border: 2px solid #444;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #000;
+      transition: transform 0.2s;
+    }
+    .thumb:hover {
+      transform: scale(1.03);
+    }
+    .thumb img {
+      width: 100%;
+      display: block;
+    }
+    .caption {
+      padding: 0.5rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .caption a {
+      color: #0ff;
+      text-decoration: none;
+    }
+    .caption a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header>Rフォト 見本市</header>
+  <section class="gallery">
+    <div class="thumb">
+      <a href="sunphoto.html">
+        <img src="sun/sun01.jpg" alt="太陽写真1">
+      </a>
+      <div class="caption">
+        <strong>サンフォト</strong><br>
+        <a href="sunphoto.html">→もっと見る</a>
+      </div>
+    </div>
+    <!-- ここに他テーマがあれば追加 -->
+  </section>
+</body>
+</html>
