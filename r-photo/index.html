@@ -2,71 +2,72 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Rフォト見本市</title>
+  <title>R PHOTO</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      background: #111;
-      color: #fff;
-      font-family: 'Arial', sans-serif;
+    html, body {
       margin: 0;
       padding: 0;
+      background-color: #7c9ba0; /* くすんだブルー */
+      font-family: 'Helvetica Neue', 'Arial', sans-serif;
+      color: #111;
     }
-    header {
-      padding: 1rem;
-      background: #222;
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-    .gallery {
+
+    .container {
       display: flex;
-      flex-wrap: wrap;
-      padding: 1rem;
-      gap: 1rem;
+      flex-direction: column;
+      align-items: flex-start;
       justify-content: center;
+      height: 100vh;
+      padding: 2rem;
+      box-sizing: border-box;
     }
-    .thumb {
-      width: 220px;
-      border: 2px solid #444;
-      border-radius: 6px;
-      overflow: hidden;
-      background: #000;
-      transition: transform 0.2s;
+
+    .heading {
+      font-size: 1rem;
+      line-height: 1.5;
+      margin-bottom: 2rem;
     }
-    .thumb:hover {
-      transform: scale(1.03);
-    }
-    .thumb img {
-      width: 100%;
+
+    .heading strong {
       display: block;
+      font-size: 1.1rem;
     }
-    .caption {
-      padding: 0.5rem;
-      text-align: center;
-      font-size: 0.9rem;
-    }
-    .caption a {
-      color: #0ff;
+
+    .nav-item {
+      font-size: 2.2rem;
+      line-height: 3rem;
+      margin-bottom: 0.5rem;
       text-decoration: none;
+      color: #111;
+      transition: opacity 0.2s ease;
     }
-    .caption a:hover {
-      text-decoration: underline;
+
+    .nav-item:hover {
+      opacity: 0.6;
+    }
+
+    @media (max-width: 600px) {
+      .nav-item {
+        font-size: 1.8rem;
+        line-height: 2.5rem;
+      }
     }
   </style>
 </head>
 <body>
-  <header>Rフォト 見本市</header>
-  <section class="gallery">
-    <div class="thumb">
-      <a href="sunphoto.html">
-        <img src="sun/sun01.jpg" alt="太陽写真1">
-      </a>
-      <div class="caption">
-        <strong>サンフォト</strong><br>
-        <a href="sunphoto.html">→もっと見る</a>
-      </div>
+  <div class="container">
+    <div class="heading">
+      <div>R Photo</div>
+      <strong>Catalogue Raisonné</strong>
+      <div>2025</div>
     </div>
-    <!-- ここに他テーマがあれば追加 -->
-  </section>
+
+    <a class="nav-item" href="sunphoto.html">SUN</a>
+    <a class="nav-item" href="waterphoto.html">WATER</a>
+    <a class="nav-item" href="placephoto.html">PLACE</a>
+    <a class="nav-item" href="naturephoto.html">NATURE</a>
+    <a class="nav-item" href="flowerphoto.html">FLOWER</a>
+  </div>
 </body>
 </html>
