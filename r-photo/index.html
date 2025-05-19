@@ -2,13 +2,14 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>R PHOTO</title>
+  <title>Where Things Appear</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background-color: #7c9ba0; /* くすんだブルー */
+      height: 100%;
+      background: linear-gradient(to bottom, #dfe7ea 0%, #f5f7f9 50%, #dfe7ea 100%);
       font-family: 'Helvetica Neue', 'Arial', sans-serif;
       color: #111;
     }
@@ -16,22 +17,31 @@
     .container {
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
       justify-content: center;
+      align-items: flex-start;
       height: 100vh;
       padding: 2rem;
       box-sizing: border-box;
     }
 
     .heading {
-      font-size: 1rem;
-      line-height: 1.5;
       margin-bottom: 2rem;
     }
 
-    .heading strong {
+    .title {
+      font-size: 2rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      line-height: 1.2;
+      position: relative;
+    }
+
+    .title::after {
+      content: 'Where Things Appear';
       display: block;
-      font-size: 1.1rem;
+      transform: scaleY(-1);
+      opacity: 0.25;
+      margin-top: 0.3em;
     }
 
     .nav-item {
@@ -58,9 +68,7 @@
 <body>
   <div class="container">
     <div class="heading">
-      <div>R Photo</div>
-      <strong>Catalogue Raisonné</strong>
-      <div>2025</div>
+      <div class="title">Where Things Appear</div>
     </div>
 
     <a class="nav-item" href="sunphoto.html">SUN</a>
