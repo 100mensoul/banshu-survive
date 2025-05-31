@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>福本不動産 - ヒメモリの地マップ</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .map-container {
+            position: relative;
+            height: 80vh;
+            margin: 2rem;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 250px;
+        }
+
+        .legend h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .legend-item:hover {
+            background: rgba(52, 152, 219, 0.1);
+            transform: translateX(5px);
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .apartment { background: #e74c3c; }
+        .tenant { background: #f39c12; }
+        .land { background: #27ae60; }
+        .development { background: #9b59b6; }
+
+        .custom-popup .leaflet-popup-content-wrapper {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .custom-popup .leaflet-popup-content {
+            margin: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .custom-popup .leaflet-popup-tip {
+            background: #667eea;
+        }
+
+        .popup-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 8px;
+        }
+
+        .popup-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin: 8px 0;
+            font-weight: bold;
+        }
+
+        .status-active { background: #27ae60; }
+        .status-planned { background: #f39c12; }
+        .status-vacant { background: #95a5a6; }
+
+        .popup-detail {
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .legend {
+                position: relative;
+                margin: 1rem;
+                top: 0;
+                right: 0;
+            }
+            
+            .map-container {
+                margin: 1rem;
+                height: 70vh;
+            }
+            
+            .header {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.2rem;
+            z-index: 2000;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>福本不動産 - ヒメモリの地</h1>
+        <p>姫路市花田町 上原田・飾東・小川エリアの物件マップ</p>
+    </div>
+
+    <div class="map-container">
+        <div class="loading" id="loading">マップを読み込み中...</div>
+        <div id="map"></div>
+        
+        <div class="legend">
+            <h3>📍 物件情報</h3>
+            <div class="legend-item">
+                <div class="legend-color apartment"></div>
+                <span>アパート</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color tenant"></div>
+                <span>テナント</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color land"></div>
+                <span>農地・田んぼ</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color development"></div>
+                <span>開発予定地</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 地図の初期化（Simple CRSを使用して独自座標系で作成）
+        const map = L.map('map', {
+            crs: L.CRS.Simple,
+            minZoom: 0,
+            maxZoom: 4,
+            center: [300, 400],
+            zoom: 1,
+            zoomControl: true,
+            attributionControl: false
+        });
+
+        // 読み込み完了時にローディングを非表示
+        setTimeout(function() {
+            document.getElementById('loading').style.display = 'none';
+        }, 500);
+
+        // 背景地図の作成（SVGベース）
+        const mapBounds = [[0, 0], [600, 800]];
+        
+        // 背景色の設定
+        map.getContainer().style.background = '#f0f8ff';
+
+        // 道路レイヤーの作成
+        const roads = [
+            // 県道372号線（メイン道路）
+            L.polyline([[250, 50], [250, 750]], {
+                color: '#ffa500',
+                weight: 8,
+                opacity: 0.8
+            }).bindTooltip('県道372号線', {permanent: false}),
+            
+            // その他の道路
+            L.polyline([[100, 200], [500, 200]], {
+                color: '#808080',
+                weight: 4,
+                opacity: 0.6
+            }),
+            L.polyline([[150, 100], [400, 400]], {
+                color: '#808080',
+                weight: 3,
+                opacity: 0.6
+            }),
+            L.polyline([[300, 150], [600, 300]], {
+                color: '#808080',
+                weight: 3,
+                opacity: 0.6
+            })
+        ];
+
+        // 河川の作成
+        const rivers = [
+            L.polyline([[200, 100], [300, 200], [400, 180], [500, 250]], {
+                color: '#4a90e2',
+                weight: 4,
+                opacity: 0.7,
+                dashArray: '5, 5'
+            }).bindTooltip('天川', {permanent: false})
+        ];
+
+        // 道路と河川をマップに追加
+        roads.forEach(road => road.addTo(map));
+        rivers.forEach(river => river.addTo(map));
+
+        // 物件データ
+        const properties = [
+            {
+                id: 1,
+                name: 'アパート1（ツインピークス）',
+                type: 'apartment',
+                position: [300, 200],
+                status: 'planned',
+                details: {
+                    description: '福本荘と福寿荘の2棟からなるアパート',
+                    residents: '現在2組が居住',
+                    condition: '老朽化が進んでいる',
+                    plan: '改築予定（建築士と計画中）',
+                    priority: '目下のメイン推進プロジェクト'
+                }
+            },
+            {
+                id: 2,
+                name: 'アパート2（野路菊）',
+                type: 'apartment',
+                position: [200, 350],
+                status: 'vacant',
+                details: {
+                    description: '入り組んだ場所にあるアパート',
+                    condition: '特に活用予定なし',
+                    location: '立地が不便'
+                }
+            },
+            {
+                id: 3,
+                name: 'テナント1（旧サムエ）',
+                type: 'tenant',
+                position: [350, 180],
+                status: 'planned',
+                details: {
+                    description: '現在空きテナント',
+                    plan: '新規に美容院が入居予定',
+                    status_detail: '契約準備中'
+                }
+            },
+            {
+                id: 4,
+                name: 'テナント2（アローム）',
+                type: 'tenant',
+                position: [280, 300],
+                status: 'active',
+                details: {
+                    description: '就労事業所',
+                    business: 'お弁当屋さんアローム',
+                    operation: '現在営業中'
+                }
+            },
+            {
+                id: 5,
+                name: '上原田北側の土地',
+                type: 'development',
+                position: [400, 150],
+                status: 'planned',
+                details: {
+                    description: '県道372号線北側、上原田交差点東側',
+                    current_use: '田んぼ（農業用地）',
+                    situation: '関東の工場が有馬不動産と交渉中',
+                    progress: '8-9割話が決まっている状況',
+                    note: 'ローソンの隣の土地'
+                }
+            },
+            {
+                id: 6,
+                name: '上原田南側の土地',
+                type: 'land',
+                position: [400, 250],
+                status: 'active',
+                details: {
+                    description: '県道372号線南側の農業用地',
+                    current_use: '田んぼ（今年も田植えを実施）',
+                    ownership: '13家ほどが所有',
+                    deal: '8割が貸し、2割が売り',
+                    negotiation: 'ダイワハウス、京都の不動産会社が交渉中'
+                }
+            },
+            {
+                id: 7,
+                name: '道の駅建設予定地',
+                type: 'development',
+                position: [500, 200],
+                status: 'planned',
+                details: {
+                    description: '花田IC東側、天川沿いの敷地',
+                    status_detail: '姫路市が土地を購入済み',
+                    schedule: '令和7年7月にプロポーザル受付開始予定',
+                    method: 'DBO方式（設計・建築・運営を民間委託）',
+                    features: '車両休憩、農作物販売、防災拠点、役所出張機能'
+                }
+            }
+        ];
+
+        // カスタムアイコンの作成
+        function createCustomIcon(type, status) {
+            const colors = {
+                apartment: '#e74c3c',
+                tenant: '#f39c12',
+                land: '#27ae60',
+                development: '#9b59b6'
+            };
+
+            const icons = {
+                apartment: '🏠',
+                tenant: '🏪',
+                land: '🌾',
+                development: '🏗️'
+            };
+
+            const borderColor = status === 'active' ? '#27ae60' : 
+                               status === 'planned' ? '#f39c12' : '#95a5a6';
+
+            return L.divIcon({
+                html: `
+                    <div style="
+                        background: ${colors[type]};
+                        width: 35px;
+                        height: 35px;
+                        border-radius: 50%;
+                        border: 3px solid ${borderColor};
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 16px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                        transition: all 0.3s ease;
+                        cursor: pointer;
+                    ">${icons[type]}</div>
+                `,
+                className: 'custom-marker',
+                iconSize: [35, 35],
+                iconAnchor: [17, 17]
+            });
+        }
+
+        // ポップアップコンテンツの作成
+        function createPopupContent(property) {
+            const statusMap = {
+                active: { text: '運営中', class: 'status-active' },
+                planned: { text: '計画中', class: 'status-planned' },
+                vacant: { text: '空室', class: 'status-vacant' }
+            };
+
+            const status = statusMap[property.status];
+            
+            let detailsHtml = '';
+            Object.entries(property.details).forEach(([key, value]) => {
+                const labelMap = {
+                    description: '概要',
+                    residents: '居住状況',
+                    condition: '状態',
+                    plan: '計画',
+                    priority: '優先度',
+                    business: '事業内容',
+                    operation: '運営状況',
+                    current_use: '現在の用途',
+                    situation: '状況',
+                    progress: '進捗',
+                    note: '備考',
+                    ownership: '所有状況',
+                    deal: '取引形態',
+                    negotiation: '交渉状況',
+                    status_detail: '詳細',
+                    schedule: 'スケジュール',
+                    method: '実施方式',
+                    features: '機能',
+                    location: '立地'
+                };
+
+                const label = labelMap[key] || key;
+                detailsHtml += `
+                    <div class="popup-detail">
+                        <strong>${label}:</strong> ${value}
+                    </div>
+                `;
+            });
+
+            return `
+                <div class="popup-title">${property.name}</div>
+                <div class="popup-status ${status.class}">${status.text}</div>
+                ${detailsHtml}
+            `;
+        }
+
+        // マーカーの作成と追加
+        properties.forEach(property => {
+            const marker = L.marker(property.position, {
+                icon: createCustomIcon(property.type, property.status)
+            }).addTo(map);
+
+            marker.bindPopup(createPopupContent(property), {
+                maxWidth: 350,
+                className: 'custom-popup'
+            });
+
+            // ホバー効果
+            marker.on('mouseover', function() {
+                this.getElement().style.transform = 'scale(1.2)';
+                this.getElement().style.zIndex = '1000';
+            });
+
+            marker.on('mouseout', function() {
+                this.getElement().style.transform = 'scale(1)';
+                this.getElement().style.zIndex = '100';
+            });
+        });
+
+        // 地図の範囲を設定
+        map.fitBounds([[50, 50], [550, 750]]);
+
+        // 地図にタイトルを追加
+        const titleControl = L.control({position: 'topleft'});
+        titleControl.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'map-title');
+            div.innerHTML = `
+                <div style="
+                    background: rgba(255,255,255,0.9);
+                    padding: 10px 15px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    font-weight: bold;
+                    color: #2c3e50;
+                ">
+                    🗺️ ヒメモリの地 - 福本不動産マップ
+                </div>
+            `;
+            return div;
+        };
+        titleControl.addTo(map);
+
+        // 情報パネルの追加
+        const infoControl = L.control({position: 'bottomleft'});
+        infoControl.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'info-panel');
+            div.innerHTML = `
+                <div style="
+                    background: rgba(255,255,255,0.95);
+                    padding: 15px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    max-width: 300px;
+                    font-size: 12px;
+                    line-height: 1.4;
+                ">
+                    <strong>📍 マップの使い方</strong><br>
+                    • アイコンをクリックで詳細表示<br>
+                    • マウスホイールでズーム<br>
+                    • ドラッグで地図移動<br>
+                    <br>
+                    <strong>🏗️ 主要プロジェクト</strong><br>
+                    • ツインピークス改築計画<br>
+                    • 道の駅建設プロジェクト<br>
+                    • 上原田土地開発
+                </div>
+            `;
+            return div;
+        };
+        infoControl.addTo(map);
+
+        console.log('福本不動産マップが正常に読み込まれました');
+    </script>
+</body>
+</html>
