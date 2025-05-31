@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>花田IC周辺マップ</title>
+  <style>
+    body {
+      margin: 0;
+      background: #eee;
+      font-family: sans-serif;
+    }
+    .map-container {
+      position: relative;
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #fff;
+      overflow: hidden;
+    }
+    .map-container img.bg {
+      position: absolute;
+      width: 100%;
+      height: auto;
+      z-index: 0;
+      mix-blend-mode: multiply;
+      opacity: 0.6;
+    }
+    .map-container svg {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: auto;
+    }
+    .popup {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 1rem 1.5rem;
+      border: 1px solid #ccc;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .popup h2 {
+      margin-top: 0;
+    }
+    .popup-close {
+      cursor: pointer;
+      margin-top: 1rem;
+      color: #0077cc;
+    }
+    .overlay {
+      display: none;
+      position: fixed;
+      z-index: 9;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="map-container">
+    <img class="bg" src="bg-midjourney.jpg" alt="背景" />
+    <object type="image/svg+xml" data="hanadaic_map_traced.svg" class="svg-map"></object>
+  </div>
+
+  <div class="overlay" onclick="closePopup()"></div>
+  <div class="popup" id="popup">
+    <h2 id="popup-title">地点名</h2>
+    <p id="popup-description">ここに説明が入ります。</p>
+    <div class="popup-close" onclick="closePopup()">閉じる</div>
+  </div>
+
+  <script>
+    // SVG読み込み後、動的にポップアップ設定を追加
+    document.querySelector("object").addEventListener("load", function () {
+      const svgDoc = this.contentDocument;
+      const svgRoot = svgDoc.documentElement;
+
+      const spots = {
+        "spot1": { title: "福本荘", desc: "アパート1-1：老朽化中、改築予定" },
+        "spot2": { title: "アローム", desc: "お弁当屋さんとして活用中" }
+        // 他のスポットも必要に応じて追加
+      };
+
+      for (const id in spots) {
+        const el = svgDoc.getElementById(id);
+        if (el) {
+          el.style.cursor = "pointer";
+          el.addEventListener("click", () => {
+            document.getElementById("popup-title").textContent = spots[id].title;
+            document.getElementById("popup-description").textContent = spots[id].desc;
+            document.querySelector(".overlay").style.display = "block";
+            document.getElementById("popup").style.display = "block";
+          });
+        }
+      }
+    });
+
+    function closePopup() {
+      document.querySelector(".overlay").style.display = "none";
+      document.getElementById("popup").style.display = "none";
+    }
+  </script>
+</body>
+</html>
