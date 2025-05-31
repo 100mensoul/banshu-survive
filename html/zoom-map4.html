@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ズームマップ｜播州サバイブ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      background-color: #fff;
+      color: #222;
+    }
+    .map-container {
+      position: relative;
+      max-width: 1000px;
+      margin: 2rem auto;
+    }
+    .map-container img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .pin {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background-color: #88c999;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 5px rgba(0,0,0,0.4);
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 1rem;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      position: relative;
+    }
+    .modal-content img.thumbnail {
+      width: 100%;
+      height: auto;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    .close {
+      color: #aaa;
+      position: absolute;
+      top: 10px;
+      right: 16px;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .modal-header {
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: #558855;
+      margin-bottom: 0.5rem;
+    }
+    .modal-body p {
+      margin: 0.3rem 0;
+    }
+    .map-link, .photo-link {
+      display: inline-block;
+      margin-top: 0.3rem;
+      color: #337755;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="map-container">
+    <img src="../images/IMG_1838.jpg" alt="ズーム地図">
+
+    <!-- ピン①：上原田交差点 -->
+    <div class="pin" style="left: 32%; top: 42%;" onclick="openModal('modal1')"></div>
+
+    <!-- ピン②：コネクトポイント（有馬不動産） -->
+    <div class="pin" style="left: 50%; top: 35%;" onclick="openModal('modal2')"></div>
+
+    <!-- ピン③：田んぼエリア（県道372の南側） -->
+    <div class="pin" style="left: 48%; top: 57%;" onclick="openModal('modal3')"></div>
+    
+    <!-- ピン④：水路ポイント -->
+    <div class="pin" style="left: 35%; top: 45%;" onclick="openModal('modal4')"></div>
+  </div>
+
+  <!-- モーダル①：上原田交差点 -->
+  <div id="modal1" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('modal1')">✖️</span>
+      <img src="../images/sample-thumbnail.jpg" alt="上原田交差点写真" class="thumbnail">
+      <div class="modal-header">ヒメジンネーム：ズームテストポイント</div>
+      <div class="modal-body">
+        <p><strong>現在の呼称：</strong>上原田交差点</p>
+        <p><strong>住所：</strong>兵庫県姫路市花田町上原田</p>
+        <p><a href="https://maps.app.goo.gl/XXXXXX" target="_blank" class="map-link">▶ Googleマップで見る</a></p>
+        <p><strong>説明：</strong>播州サバイブの要所となる交差点。花田ICにも近く、交通の要所。</p>
+        <p><a href="https://photos.app.goo.gl/YYYYYY" target="_blank" class="photo-link">▶ 詳細を見る</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- モーダル②：コネクトポイント -->
+  <div id="modal2" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('modal2')">✖️</span>
+      <img src="../images/arima.jpg" alt="有馬不動産敷地" class="thumbnail">
+      <div class="modal-header">ヒメジンネーム：コネクトポイント</div>
+      <div class="modal-body">
+        <p><strong>現在の呼称：</strong>有馬不動産敷地</p>
+        <p><strong>住所：</strong>兵庫県姫路市花田町</p>
+        <p><a href="https://maps.app.goo.gl/ZZZZZZ" target="_blank" class="map-link">▶ Googleマップで見る</a></p>
+        <p><strong>説明：</strong>県道372を挟んで北、将来のプロジェクト接続拠点を構想中のエリア。</p>
+        <p><a href="https://photos.app.goo.gl/WWWWWW" target="_blank" class="photo-link">▶ 詳細を見る</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- モーダル③：田んぼエリア -->
+  <div id="modal3" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('modal3')">✖️</span>
+      <img src="../images/minami.jpg" alt="田んぼの風景" class="thumbnail">
+      <div class="modal-header">ヒメジンネーム：フォークノード</div>
+      <div class="modal-body">
+        <p><strong>現在の呼称：</strong>花田の田園地帯</p>
+        <p><strong>住所：</strong>兵庫県姫路市花田町</p>
+        <p><a href="https://maps.app.goo.gl/TTTTTT" target="_blank" class="map-link">▶ Googleマップで見る</a></p>
+        <p><strong>説明：</strong>一面に田んぼが広がり、四季折々の風景を感じられる重要な撮影ポイント。</p>
+        <p><a href="https://photos.app.goo.gl/QQQQQQ" target="_blank" class="photo-link">▶ 詳細を見る</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- モーダル④：水路ポイント -->
+  <div id="modal4" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('modal4')">✖️</span>
+      <img src="../images/suiro.jpg" alt="水路写真" class="thumbnail">
+      <div class="modal-header">ヒメジンネーム：水の道（仮）</div>
+      <div class="modal-body">
+        <p><strong>現在の呼称：</strong>上原田交差点南東・水路エリア</p>
+        <p><strong>住所：</strong>兵庫県姫路市花田町</p>
+        <p><a href="https://maps.app.goo.gl/AAAAAA" target="_blank" class="map-link">▶ Googleマップで見る</a></p>
+        <p><strong>説明：</strong>歴史ある水路が走るエリア。地域の水循環や農とのつながりを感じさせる。</p>
+        <p><a href="https://photos.app.goo.gl/BBBBBB" target="_blank" class="photo-link">▶ 詳細を見る</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openModal(id) {
+      document.getElementById(id).style.display = 'block';
+    }
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+  </script>
+</body>
+</html>
