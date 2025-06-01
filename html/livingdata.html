@@ -577,7 +577,7 @@
             <!-- Google Map埋め込み - 上原田交差点 -->
             <div class="map-container">
                 <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3283.8234567890123!2d134.6234567!3d34.8234567!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x355534e1234abcde%3A0x1234567890abcdef!2z5LiK5Y6f55Sw5Lqk5beu54K5!5e0!3m2!1sja!2sjp!4v1635123456789!5m2!1sja!2sjp"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3283.791234567!2d134.6234567!3d34.8234567!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3555327b1234abcd%3A0x9876543210fedcba!2z5LiK5Y6f55Sw5Lqk5beu54K5!5e0!3m2!1sja!2sjp!4v1635123456789!5m2!1sja!2sjp"
                     allowfullscreen="" 
                     loading="lazy" 
                     referrerpolicy="no-referrer-when-downgrade">
@@ -606,29 +606,6 @@
                     <div class="feature-icon">🏪</div>
                     <h3>道の駅開発予定</h3>
                     <p>2025年7月公募開始予定。姫路市初の道の駅として地域の新たな核となる可能性。観光と地域経済の活性化が期待される。</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- データ可視化セクション -->
-        <div class="analytics-section">
-            <div class="analytics-header">
-                <h2>エリア分析</h2>
-                <div class="chart-toggle">
-                    <button class="active" onclick="showChart('distribution')">分布</button>
-                    <button onclick="showChart('potential')">ポテンシャル</button>
-                    <button onclick="showChart('accessibility')">アクセス</button>
-                </div>
-            </div>
-            
-            <div class="charts-grid">
-                <div class="chart-container">
-                    <div class="chart-title">種別構成</div>
-                    <canvas id="typeChart" class="chart-canvas"></canvas>
-                </div>
-                <div class="chart-container">
-                    <div class="chart-title">開発ポテンシャル</div>
-                    <canvas id="potentialChart" class="chart-canvas"></canvas>
                 </div>
             </div>
         </div>
@@ -946,116 +923,10 @@
 
         // チャート初期化
         function initCharts() {
-            // 種別構成チャート
-            const typeCtx = document.getElementById('typeChart').getContext('2d');
-            const typeData = getTypeDistribution();
-            charts.typeChart = new Chart(typeCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: typeData.labels,
-                    datasets: [{
-                        data: typeData.values,
-                        backgroundColor: ['#a4b89a', '#8fa285', '#7a9270', '#6b7d6f'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true,
-                                font: {
-                                    family: 'Noto Sans JP'
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // 開発ポテンシャルチャート（散布図）
-            const potentialCtx = document.getElementById('potentialChart').getContext('2d');
-            const potentialData = getPotentialData();
-            charts.potentialChart = new Chart(potentialCtx, {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: '開発ポテンシャル',
-                        data: potentialData,
-                        backgroundColor: function(context) {
-                            const point = context.parsed;
-                            // アクセス性が良くて面積が大きいほど濃い色
-                            const score = (100 - point.y) * 0.01 + (point.x / 20000) * 0.5;
-                            const alpha = Math.min(0.3 + score, 1);
-                            return `rgba(164, 184, 154, ${alpha})`;
-                        },
-                        borderColor: '#a4b89a',
-                        borderWidth: 2,
-                        pointRadius: function(context) {
-                            // 面積に比例して点のサイズを変更
-                            const point = context.parsed;
-                            return Math.max(6, Math.min(20, point.x / 1000));
-                        }
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                title: function(context) {
-                                    const index = context[0].dataIndex;
-                                    return locationData[index].name;
-                                },
-                                label: function(context) {
-                                    const index = context.dataIndex;
-                                    const item = locationData[index];
-                                    return [
-                                        `面積: ${item.area.toLocaleString()}m²`,
-                                        `花田ICまで: ${item.accessibility.hanedaIC}分`,
-                                        `姫路駅まで: ${item.accessibility.himejiStation}分`
-                                    ];
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: '面積 (m²)'
-                            },
-                            beginAtZero: true
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'アクセス性 (花田ICまでの時間)',
-                                
-                            },
-                            reverse: true, // 時間が短いほど上に表示
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
+            // チャート機能は削除済み
         }
 
-        // 開発ポテンシャルデータ取得
-        function getPotentialData() {
-            return locationData.map(item => ({
-                x: item.area,
-                y: item.accessibility.hanedaIC
-            }));
-        }
+        // 開発ポテンシャルデータ取得（削除済み）
 
         // 種別分布データ取得
         function getTypeDistribution() {
@@ -1358,15 +1229,7 @@
             window.open(url, '_blank');
         }
 
-        // チャート表示切り替え
-        function showChart(type) {
-            const buttons = document.querySelectorAll('.chart-toggle button');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            // ここで異なるチャートタイプの実装
-            console.log('チャート切り替え:', type);
-        }
+        // チャート表示切り替え（削除済み）
 
         // CSV出力
         function exportSelected() {
