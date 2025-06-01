@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>たべるために、生きている - 姫路グルメポータル</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #faf8f6 0%, #f0ede8 100%);
+            min-height: 100vh;
+            color: #3a3a3a;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 60px 40px;
+            border-radius: 24px;
+            text-align: center;
+            margin-bottom: 40px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(58, 58, 58, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(218, 165, 32, 0.1) 0%, transparent 70%);
+            animation: shimmer 6s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.3; transform: rotate(0deg); }
+            50% { opacity: 0.6; transform: rotate(180deg); }
+        }
+
+        .header h1 {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 3.5rem;
+            color: #8B4513;
+            margin-bottom: 16px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header .subtitle {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 1.2rem;
+            color: #DAA520;
+            margin-bottom: 20px;
+            font-weight: 300;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 32px;
+            font-weight: 400;
+            position: relative;
+            z-index: 2;
+        }
+
+        .princess-quote {
+            background: linear-gradient(135deg, #fff9e6, #ffeaa7);
+            padding: 20px 30px;
+            border-radius: 16px;
+            margin: 20px 0;
+            border-left: 4px solid #DAA520;
+            font-style: italic;
+            color: #8B4513;
+            position: relative;
+            z-index: 2;
+        }
+
+        .princess-quote::before {
+            content: '👸';
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(58, 58, 58, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .search-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: #8B4513;
+            font-size: 0.95rem;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 16px 20px;
+            border: 2px solid #e6ddd4;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #fafaf8;
+            color: #3a3a3a;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #DAA520;
+            box-shadow: 0 0 0 4px rgba(218, 165, 32, 0.1);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #DAA520, #B8860B);
+            color: white;
+            box-shadow: 0 4px 16px rgba(218, 165, 32, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #B8860B, #DAA520);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(218, 165, 32, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f1eb;
+            color: #8B4513;
+            border: 2px solid #e6ddd4;
+        }
+
+        .btn-secondary:hover {
+            background: #e6ddd4;
+            transform: translateY(-2px);
+        }
+
+        .view-toggle {
+            display: flex;
+            background: #f5f1eb;
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .view-toggle button {
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            color: #8B4513;
+            font-weight: 400;
+        }
+
+        .view-toggle button.active {
+            background: #DAA520;
+            color: white;
+            box-shadow: 0 2px 8px rgba(218, 165, 32, 0.3);
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 32px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(58, 58, 58, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 32px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #fafaf8, #f5f1eb);
+            border-radius: 16px;
+            border: 1px solid rgba(218, 165, 32, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: #DAA520;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: #8B4513;
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 32px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(58, 58, 58, 0.08);
+            transition: all 0.4s ease;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            overflow: hidden;
+        }
+
+        .card.closed {
+            opacity: 0.6;
+            background: rgba(100, 100, 100, 0.1);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 60px rgba(58, 58, 58, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: #8B4513;
+            margin-bottom: 8px;
+            letter-spacing: 0.01em;
+        }
+
+        .card-address {
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        .card-type {
+            background: linear-gradient(135deg, #DAA520, #B8860B);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(218, 165, 32, 0.3);
+        }
+
+        .card-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 400;
+        }
+
+        .info-value {
+            font-weight: 500;
+            color: #3a3a3a;
+            font-size: 0.95rem;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tag {
+            background: rgba(218, 165, 32, 0.1);
+            color: #8B4513;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 400;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e6ddd4;
+        }
+
+        .btn-small {
+            padding: 12px 24px;
+            font-size: 0.9rem;
+        }
+
+        .photo-upload {
+            margin-top: 16px;
+            padding: 16px;
+            border: 2px dashed #DAA520;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .photo-upload:hover {
+            background: rgba(218, 165, 32, 0.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(58, 58, 58, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 80px rgba(58, 58, 58, 0.15);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e6ddd4;
+        }
+
+        .modal-header h2 {
+            font-size: 1.6rem;
+            color: #8B4513;
+            font-weight: 500;
+        }
+
+        .close {
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #8B4513;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .detail-section {
+            background: #fafaf8;
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(218, 165, 32, 0.2);
+        }
+
+        .detail-section h3 {
+            color: #8B4513;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .detail-section .info-item {
+            margin-bottom: 16px;
+        }
+
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .photo-item {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .list-view {
+            display: none;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(58, 58, 58, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .list-view table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .list-view th,
+        .list-view td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid #e6ddd4;
+        }
+
+        .list-view th {
+            background: #f5f1eb;
+            font-weight: 500;
+            color: #8B4513;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .header {
+                padding: 40px 24px;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .search-filters {
+                grid-template-columns: 1fr;
+            }
+            
+            .gallery {
+                grid-template-columns: 1fr;
+            }
+            
+            .card-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>たべるために、生きている</h1>
+            <div class="subtitle">世界を味わうために</div>
+            <p>美味しいものに目がないお姫様に家老がオススメする姫路グルメガイド</p>
+            
+            <div class="princess-quote">
+                「家老よ、今日はどこで美味しいものを食べられるのじゃ？」
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalSpots">12</div>
+                    <div class="stat-label">総店舗数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="cuisineTypes">6</div>
+                    <div class="stat-label">料理ジャンル</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="photosCount">0</div>
+                    <div class="stat-label">投稿写真数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="visitedCount">0</div>
+                    <div class="stat-label">行ったお店</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="search-filters">
+                <div class="filter-group">
+                    <label for="cuisineFilter">料理ジャンル</label>
+                    <select id="cuisineFilter">
+                        <option value="">すべて</option>
+                        <option value="純和食">純和食</option>
+                        <option value="和食">和食</option>
+                        <option value="洋食">洋食</option>
+                        <option value="中華">中華</option>
+                        <option value="アジア料理">アジア料理</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="priceFilter">金額帯</label>
+                    <select id="priceFilter">
+                        <option value="">すべて</option>
+                        <option value="~5000">〜5,000円</option>
+                        <option value="5000-10000">5,000〜10,000円</option>
+                        <option value="10000+">10,000円〜</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="volumeFilter">量</label>
+                    <select id="volumeFilter">
+                        <option value="">すべて</option>
+                        <option value="軽め">軽め</option>
+                        <option value="しっかり">しっかり</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="searchInput">キーワード検索</label>
+                    <input type="text" id="searchInput" placeholder="店名、料理名で検索">
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="exportVisited()">行った店リストをCSV出力</button>
+                <button class="btn btn-secondary" onclick="clearVisited()">記録クリア</button>
+                <div class="view-toggle">
+                    <button class="active" id="galleryBtn" onclick="setView('gallery')">カード</button>
+                    <button id="listBtn" onclick="setView('list')">リスト</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="gallery" id="gallery">
+            <!-- カードはJavaScriptで動的生成 -->
+        </div>
+
+        <!-- リストビュー -->
+        <div class="list-view" id="listView">
+            <table>
+                <thead>
+                    <tr>
+                        <th>店名</th>
+                        <th>ジャンル</th>
+                        <th>金額帯</th>
+                        <th>アクセス</th>
+                        <th>営業時間</th>
+                        <th>駐車場</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="listTableBody">
+                    <!-- データはJavaScriptで動的生成 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 詳細モーダル -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">詳細情報</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modalBody">
+                <!-- 詳細情報はJavaScriptで動的生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 写真投稿モーダル -->
+    <div id="photoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>写真を投稿</h2>
+                <span class="close" onclick="closePhotoModal()">&times;</span>
+            </div>
+            <div class="photo-upload" onclick="uploadPhoto()">
+                <p>📸 写真をアップロード</p>
+                <p style="font-size: 0.9rem; color: #666; margin-top: 8px;">クリックして写真を選択</p>
+            </div>
+            <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="handlePhotoUpload(event)">
+        </div>
+    </div>
+
+    <script>
+        // サンプルデータ - 姫路の夜のお店
+        const restaurantData = [
+            {
+                id: 1,
+                name: "うどん屋ばく",
+                category: "純和食",
+                subcategory: "うどん",
+                address: "姫路市内",
+                priceRange: "~5000",
+                volume: "しっかり",
+                orderStyle: "アラカルト",
+                parking: "有り（10台）",
+                access: "姫路駅から徒歩15分",
+                hours: "11:00-21:00",
+                closed: "火曜日",
+                phone: "079-XXX-XXXX",
+                website: "",
+                instagram: "",
+                googleMaps: "",
+                memo: "コシのある手打ちうどんが自慢。出汁が絶品。",
+                tags: ["うどん", "手打ち", "出汁", "駅近"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 2,
+                name: "ピッコロシチリア",
+                category: "洋食",
+                subcategory: "イタリアン",
+                address: "姫路市内",
+                priceRange: "5000-10000",
+                volume: "しっかり",
+                orderStyle: "コース",
+                parking: "有り（5台）",
+                access: "姫路駅から車で10分",
+                hours: "18:00-23:00",
+                closed: "月曜日",
+                phone: "079-XXX-XXXX",
+                website: "",
+                instagram: "",
+                googleMaps: "",
+                memo: "本格的なシチリア料理。シェフのこだわりが光る。",
+                tags: ["イタリアン", "シチリア", "コース", "本格"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 3,
+                name: "福田葡萄酒店",
+                category: "洋食",
+                subcategory: "フレンチ",
+                address: "姫路市内",
+                priceRange: "10000+",
+                volume: "しっかり",
+                orderStyle: "コース",
+                parking: "有り（3台）",
+                access: "姫路駅から車で15分",
+                hours: "18:00-22:00",
+                closed: "日曜日",
+                phone: "079-XXX-XXXX",
+                website: "",
+                instagram: "",
+                googleMaps: "",
+                memo: "ワインと料理のペアリングが素晴らしい。",
+                tags: ["フレンチ", "ワイン", "ペアリング", "高級"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 4,
+                name: "エグレット",
+                category: "洋食",
+                subcategory: "フュージョン",
+                address: "姫路市内",
+                priceRange: "5000-10000",
+                volume: "しっかり",
+                orderStyle: "アラカルト",
+                parking: "無し",
+                access: "姫路駅から徒歩5分",
+                hours: "17:30-24:00",
+                closed: "不定休",
+                phone: "079-XXX-XXXX",
+                website: "",
+                instagram: "",
+                googleMaps: "",
+                memo: "創作料理とクラフトビールが楽しめる。",
+                tags: ["フュージョン", "創作", "クラフトビール", "駅近"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 5,
+                name: "焼肉 牛角",
+                category: "和食",
+                subcategory: "焼肉",
+                address: "姫路市内",
+                priceRange: "~5000",
+                volume: "しっかり",
+                orderStyle: "アラカルト",
+                parking: "有り（20台）",
+                access: "姫路駅から車で8分",
+                hours: "17:00-24:00",
+                closed: "なし",
+                phone: "079-XXX-XXXX",
+                website: "",
+                instagram: "",
+                googleMaps: "",
+                memo: "リーズナブルで美味しい焼肉。家族連れにも人気。",
+                tags: ["焼肉", "リーズナブル", "家族", "駐車場"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 6,
+                name: "中華料理 龍王",
+                category: "中華",
+                subcategory: "中華全般",
+                address: "姫路市内",
+                priceRange: "~5000",
+                volume: "しっかり",
+                orderStyle: "アラカルト",
+                parking: "有り（15台）",
+                access: "姫路駅から車で12分",
+                hours: "11:30-14:30, 17:30-22:00",
+                closed: "木曜日",
+                phone: "079-XXX-XXXX",
+                website: "",
+                instagram: "",
+                googleMaps: "",
+                memo: "本格的な中華料理。特に麻婆豆腐が絶品。",
+                tags: ["中華", "麻婆豆腐", "本格", "駐車場"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 7,
+                name: "タイ料理 バンコク",
+                category: "アジア料理",
+                subcategory: "タイ料理",
+                address: "姫路市内",
+                priceRange: "~5000",
+                volume: "軽め",
+                orderStyle: "アラカルト",
+                parking: "有り（8台）",
+                access: "姫路駅から徒歩20分",
+                hours: "11:30-14:00, 17:30-22:30",
+                closed: "月曜日",
+                phone: "079-XXX-XXXX",
+                website: "",
+                instagram: "",
+                googleMaps: "",
+                memo: "本場の味が楽しめる。トムヤムクンが人気。",
+                tags: ["タイ料理", "トムヤムクン", "本場", "スパイシー"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 8,
+                name: "そば処 姫路庵",
+                category: "純和食",
+                subcategory: "そば",
+                address: "姫路市内",
+                priceRange: "~5000",
+                volume: "軽め",
+                orderStyle: "アラカルト",
+                parking: "有り（6台）",
+                access: "姫路駅から車で20分",
+                hours: "11:00-15:00, 17:00-21:00",
+                closed: "水曜日",
+                phone: "079-XXX-XXXX",
+                website: "",
+                instagram: "",
+                googleMaps: "",
+                memo: "手打ちそばと季節の天ぷらが美味しい。",
+                tags: ["そば", "手打ち", "天ぷら", "季節"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 9,
+                name: "居酒屋 瓢箪",
+                category: "和食",
+                subcategory: "居酒屋",
+                address: "姫路市内",
+                priceRange: "~5000",
+                volume: "しっかり",
+                orderStyle: "アラカルト",
+                parking: "無し",
+                access: "姫路駅から徒歩3分",
+                hours: "17:00-24:00",
+                closed: "日曜日",
+                phone: "079-XXX-XXXX",
+                website: "",
+                instagram: "",
+                googleMaps: "",
+                memo: "地元の常連さんで賑わう隠れ家的居酒屋。",
+                tags: ["居酒屋", "地元", "隠れ家", "駅近"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 10,
+                name: "ステーキハウス 但馬",
+                category: "洋食",
+                subcategory: "ステーキ",
+                address: "姫路市内",
+                priceRange: "10000+",
+                volume: "しっかり",
+                orderStyle: "コース",
+                parking: "有り（12台）",
+                access: "姫路駅から車で18分",
+                hours: "17:30-22:00",
+                closed: "火曜日",
+                phone: "079-XXX-XXXX",
+                website: "",
+                instagram: "",
+                googleMaps: "",
+                memo: "但馬牛を使った極上のステーキが味わえる。",
+                tags: ["ステーキ", "但馬牛", "高級", "極上"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 11,
+                name: "インド料理 ガンガー",
+                category: "アジア料理",
+                subcategory: "インド料理",
+                address: "姫路市内",
+                priceRange: "~5000",
+                volume: "しっかり",
+                orderStyle: "アラカルト",
+                parking: "有り（10台）",
+                access: "姫路駅から車で14分",
+                hours: "11:30-14:30, 17:30-22:30",
+                closed: "なし",
+                phone: "079-XXX-XXXX",
+                website: "",
+                instagram: "",
+                googleMaps: "",
+                memo: "本格的なインドカレーとナンが絶品。",
+                tags: ["インド料理", "カレー", "ナン", "本格"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 12,
+                name: "お好み焼き みっちゃん",
+                category: "和食",
+                subcategory: "粉物",
+                address: "姫路市内",
+                priceRange: "~5000",
+                volume: "しっかり",
+                orderStyle: "アラカルト",
+                parking: "有り（5台）",
+                access: "姫路駅から徒歩10分",
+                hours: "17:00-23:00",
+                closed: "月曜日",
+                phone: "079-XXX-XXXX",
+                website: "",
+                instagram: "",
+                googleMaps: "",
+                memo: "昔ながらの関西風お好み焼き。ソースが自家製。",
+                tags: ["お好み焼き", "関西風", "自家製ソース", "昔ながら"],
+                photos: [],
+                visited: false,
+                isOpen: false // 休日の例
+            }
+        ];
+
+        let filteredData = [...restaurantData];
+        let currentView = 'gallery';
+        let visitedRestaurants = new Set();
+        let uploadedPhotos = [];
+
+        // ページ初期化
+        function init() {
+            loadVisitedData();
+            renderView();
+            setupEventListeners();
+            updateStats();
+        }
+
+        // イベントリスナー設定
+        function setupEventListeners() {
+            document.getElementById('cuisineFilter').addEventListener('change', applyFilters);
+            document.getElementById('priceFilter').addEventListener('change', applyFilters);
+            document.getElementById('volumeFilter').addEventListener('change', applyFilters);
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+        }
+
+        // 訪問データ読み込み
+        function loadVisitedData() {
+            // 実際の実装では、データベースから読み込み
+            // ここではメモリ内で管理
+        }
+
+        // ビュー表示
+        function renderView() {
+            if (currentView === 'gallery') {
+                renderGallery();
+            } else {
+                renderList();
+            }
+        }
+
+        // ギャラリー表示
+        function renderGallery() {
+            const gallery = document.getElementById('gallery');
+            gallery.style.display = 'grid';
+            document.getElementById('listView').style.display = 'none';
+            
+            gallery.innerHTML = '';
+            filteredData.forEach(item => {
+                const card = createCard(item);
+                gallery.appendChild(card);
+            });
+        }
+
+        // リスト表示
+        function renderList() {
+            document.getElementById('gallery').style.display = 'none';
+            const listView = document.getElementById('listView');
+            listView.style.display = 'block';
+            
+            const tbody = document.getElementById('listTableBody');
+            tbody.innerHTML = '';
+            
+            filteredData.forEach(item => {
+                const row = createListRow(item);
+                tbody.appendChild(row);
+            });
+        }
+
+        // カード作成
+        function createCard(item) {
+            const card = document.createElement('div');
+            card.className = `card ${!item.isOpen ? 'closed' : ''}`;
+            
+            const visitedBadge = visitedRestaurants.has(item.id) ? '<span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">行った!</span>' : '';
+            
+            card.innerHTML = `
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">${item.name} ${visitedBadge}</div>
+                        <div class="card-address">${item.address}</div>
+                    </div>
+                    <div class="card-type">${item.subcategory}</div>
+                </div>
+                <div class="tags">
+                    ${item.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                </div>
+                <div class="card-info">
+                    <div class="info-item">
+                        <div class="info-label">金額帯</div>
+                        <div class="info-value">${getPriceLabel(item.priceRange)}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">量</div>
+                        <div class="info-value">${item.volume}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">アクセス</div>
+                        <div class="info-value">${item.access}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">営業時間</div>
+                        <div class="info-value">${item.hours}</div>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn btn-primary btn-small" onclick="showDetail(${item.id})">詳細を見る</button>
+                    <button class="btn btn-secondary btn-small" onclick="markAsVisited(${item.id})">${visitedRestaurants.has(item.id) ? '行った記録削除' : '行った!'}</button>
+                </div>
+            `;
+            return card;
+        }
+
+        // リスト行作成
+        function createListRow(item) {
+            const row = document.createElement('tr');
+            row.className = !item.isOpen ? 'closed' : '';
+            
+            const visitedBadge = visitedRestaurants.has(item.id) ? '✓' : '';
+            
+            row.innerHTML = `
+                <td>${item.name} ${visitedBadge}</td>
+                <td>${item.subcategory}</td>
+                <td>${getPriceLabel(item.priceRange)}</td>
+                <td>${item.access}</td>
+                <td>${item.hours}</td>
+                <td>${item.parking}</td>
+                <td>
+                    <button class="btn btn-primary btn-small" onclick="showDetail(${item.id})">詳細</button>
+                    <button class="btn btn-secondary btn-small" onclick="markAsVisited(${item.id})">${visitedRestaurants.has(item.id) ? '削除' : '行った'}</button>
+                </td>
+            `;
+            return row;
+        }
+
+        // 金額ラベル取得
+        function getPriceLabel(priceRange) {
+            const labels = {
+                '~5000': '〜5,000円',
+                '5000-10000': '5,000〜10,000円',
+                '10000+': '10,000円〜'
+            };
+            return labels[priceRange] || priceRange;
+        }
+
+        // フィルター適用
+        function applyFilters() {
+            const cuisineFilter = document.getElementById('cuisineFilter').value;
+            const priceFilter = document.getElementById('priceFilter').value;
+            const volumeFilter = document.getElementById('volumeFilter').value;
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+
+            filteredData = restaurantData.filter(item => {
+                if (cuisineFilter && item.category !== cuisineFilter) return false;
+                if (priceFilter && item.priceRange !== priceFilter) return false;
+                if (volumeFilter && item.volume !== volumeFilter) return false;
+
+                if (searchText) {
+                    const searchableText = `${item.name} ${item.subcategory} ${item.tags.join(' ')} ${item.memo}`.toLowerCase();
+                    if (!searchableText.includes(searchText)) return false;
+                }
+
+                return true;
+            });
+
+            renderView();
+            updateStats();
+        }
+
+        // 訪問マーク
+        function markAsVisited(id) {
+            if (visitedRestaurants.has(id)) {
+                visitedRestaurants.delete(id);
+            } else {
+                visitedRestaurants.add(id);
+            }
+            renderView();
+            updateStats();
+        }
+
+        // 統計情報更新
+        function updateStats() {
+            const cuisineTypes = new Set(restaurantData.map(r => r.category)).size;
+            
+            document.getElementById('totalSpots').textContent = filteredData.length;
+            document.getElementById('cuisineTypes').textContent = cuisineTypes;
+            document.getElementById('photosCount').textContent = uploadedPhotos.length;
+            document.getElementById('visitedCount').textContent = visitedRestaurants.size;
+        }
+
+        // 詳細表示
+        function showDetail(id) {
+            const item = restaurantData.find(item => item.id === id);
+            if (!item) return;
+
+            document.getElementById('modalTitle').textContent = item.name;
+            document.getElementById('modalBody').innerHTML = `
+                <div class="detail-grid">
+                    <div class="detail-section">
+                        <h3>基本情報</h3>
+                        <div class="info-item">
+                            <div class="info-label">ジャンル</div>
+                            <div class="info-value">${item.category} > ${item.subcategory}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">住所</div>
+                            <div class="info-value">${item.address}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">電話番号</div>
+                            <div class="info-value">${item.phone}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">営業時間</div>
+                            <div class="info-value">${item.hours}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">定休日</div>
+                            <div class="info-value">${item.closed}</div>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h3>アクセス・予約</h3>
+                        <div class="info-item">
+                            <div class="info-label">アクセス</div>
+                            <div class="info-value">${item.access}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">駐車場</div>
+                            <div class="info-value">${item.parking}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">金額帯</div>
+                            <div class="info-value">${getPriceLabel(item.priceRange)}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">頼み方</div>
+                            <div class="info-value">${item.orderStyle}</div>
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <button class="btn btn-primary" onclick="makeReservation(${item.id})">予約・お問い合わせ</button>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h3>家老のメモ</h3>
+                        <p>${item.memo}</p>
+                        <div class="tags" style="margin-top: 16px;">
+                            ${item.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h3>写真・記録</h3>
+                        <button class="btn btn-secondary" onclick="openPhotoModal(${item.id})" style="margin-bottom: 16px;">写真を投稿</button>
+                        <div class="photos-grid">
+                            ${item.photos.length > 0 ? 
+                                item.photos.map(photo => `<div class="photo-item">${photo}</div>`).join('') :
+                                '<div class="photo-item">写真がまだありません</div>'
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detailModal').style.display = 'block';
+        }
+
+        // 予約システム
+        function makeReservation(id) {
+            const item = restaurantData.find(item => item.id === id);
+            if (!item) return;
+
+            // 電話番号や予約専用LINEに遷移
+            if (item.phone && item.phone !== '') {
+                window.open(`tel:${item.phone}`, '_self');
+            } else {
+                alert('お電話でのご予約をお願いいたします。');
+            }
+        }
+
+        // 写真投稿モーダル
+        function openPhotoModal(restaurantId) {
+            window.currentRestaurantId = restaurantId;
+            document.getElementById('photoModal').style.display = 'block';
+        }
+
+        function closePhotoModal() {
+            document.getElementById('photoModal').style.display = 'none';
+        }
+
+        function uploadPhoto() {
+            document.getElementById('photoInput').click();
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // 実際の実装では、サーバーにアップロード
+            const photoData = {
+                id: uploadedPhotos.length + 1,
+                restaurantId: window.currentRestaurantId,
+                filename: file.name,
+                timestamp: new Date()
+            };
+
+            uploadedPhotos.push(photoData);
+            
+            // 該当レストランの写真配列に追加
+            const restaurant = restaurantData.find(r => r.id === window.currentRestaurantId);
+            if (restaurant) {
+                restaurant.photos.push(`📸 ${file.name}`);
+            }
+
+            updateStats();
+            closePhotoModal();
+            alert('写真をアップロードしました！');
+        }
+
+        // モーダル閉じる
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        // CSV出力
+        function exportVisited() {
+            if (visitedRestaurants.size === 0) {
+                alert('まだ行った店がありません。');
+                return;
+            }
+
+            const visitedData = restaurantData.filter(item => visitedRestaurants.has(item.id));
+            const csvContent = convertToCSV(visitedData);
+            downloadCSV(csvContent, '行った店リスト.csv');
+        }
+
+        // CSV変換
+        function convertToCSV(data) {
+            const headers = [
+                '店名', 'ジャンル', 'サブカテゴリ', '住所', '金額帯', '量', '頼み方',
+                'アクセス', '営業時間', '定休日', '駐車場', '電話番号', 'メモ'
+            ];
+
+            const rows = data.map(item => [
+                item.name,
+                item.category,
+                item.subcategory,
+                item.address,
+                getPriceLabel(item.priceRange),
+                item.volume,
+                item.orderStyle,
+                item.access,
+                item.hours,
+                item.closed,
+                item.parking,
+                item.phone,
+                item.memo
+            ]);
+
+            return [headers, ...rows].map(row => 
+                row.map(field => `"${field}"`).join(',')
+            ).join('\n');
+        }
+
+        // CSVダウンロード
+        function downloadCSV(content, filename) {
+            const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 記録クリア
+        function clearVisited() {
+            if (confirm('行った店の記録をすべてクリアしますか？')) {
+                visitedRestaurants.clear();
+                renderView();
+                updateStats();
+            }
+        }
+
+        // 表示切り替え
+        function setView(viewType) {
+            const galleryBtn = document.getElementById('galleryBtn');
+            const listBtn = document.getElementById('listBtn');
+            
+            galleryBtn.classList.remove('active');
+            listBtn.classList.remove('active');
+            
+            if (viewType === 'gallery') {
+                galleryBtn.classList.add('active');
+                currentView = 'gallery';
+            } else {
+                listBtn.classList.add('active');
+                currentView = 'list';
+            }
+            
+            renderView();
+        }
+
+        // ページロード時の初期化
+        document.addEventListener('DOMContentLoaded', init);
+
+        // モーダル外クリックで閉じる
+        window.addEventListener('click', function(event) {
+            const detailModal = document.getElementById('detailModal');
+            const photoModal = document.getElementById('photoModal');
+            
+            if (event.target === detailModal) {
+                closeModal();
+            }
+            if (event.target === photoModal) {
+                closePhotoModal();
+            }
+        });
+    </script>
+</body>
+</html>
