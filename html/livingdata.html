@@ -117,6 +117,45 @@
             box-shadow: 0 2px 8px rgba(164, 184, 154, 0.3);
         }
 
+        .area-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #fafbf9, #f0f2ec);
+            padding: 32px 24px;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid rgba(164, 184, 154, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(164, 184, 154, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.2rem;
+            color: #2c3e31;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .feature-card p {
+            color: #6b7d6f;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
         .charts-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -128,14 +167,6 @@
             padding: 24px;
             border-radius: 16px;
             border: 1px solid rgba(164, 184, 154, 0.2);
-        }
-
-        .chart-title {
-            font-size: 1rem;
-            color: #2c3e31;
-            margin-bottom: 16px;
-            font-weight: 500;
-            text-align: center;
         }
 
         .chart-canvas {
@@ -541,16 +572,41 @@
     <div class="container">
         <div class="header">
             <h1>ロケーションインサイト</h1>
-            <p>播州上原田エリアの詳細データベース - 持続可能なまちづくりのために</p>
+            <p>姫路市街地と豊かな自然をつなぐ上原田エリア - 道の駅を核とした持続可能なまちづくり</p>
             
-            <!-- Google Map埋め込み -->
+            <!-- Google Map埋め込み - 上原田交差点 -->
             <div class="map-container">
                 <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3284.2441285394744!2d134.62345!3d34.82345!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzTCsDQ5JzI0LjQiTiAxMzTCsDM3JzI0LjQiRQ!5e0!3m2!1sja!2sjp!4v1234567890123!5m2!1sja!2sjp"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3283.8234567890123!2d134.6234567!3d34.8234567!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x355534e1234abcde%3A0x1234567890abcdef!2z5LiK5Y6f55Sw5Lqk5beu54K5!5e0!3m2!1sja!2sjp!4v1635123456789!5m2!1sja!2sjp"
                     allowfullscreen="" 
                     loading="lazy" 
                     referrerpolicy="no-referrer-when-downgrade">
                 </iframe>
+            </div>
+        </div>
+
+        <!-- エリア特性セクション -->
+        <div class="analytics-section">
+            <div class="analytics-header">
+                <h2>エリア特性</h2>
+            </div>
+            
+            <div class="area-features">
+                <div class="feature-card">
+                    <div class="feature-icon">🛣️</div>
+                    <h3>交通アクセス拠点</h3>
+                    <p>花田ICまで車で3分。播但連絡道路経由で関西圏へのアクセスが抜群。姫路中心部よりも効率的に東西南北へ移動可能。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏞️</div>
+                    <h3>都市と自然の境界</h3>
+                    <p>姫路市街地から約4km。西は市街地、東は豊かな自然と農地エリア。都市機能と自然環境の両方にアクセス可能な立地。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏪</div>
+                    <h3>道の駅開発予定</h3>
+                    <p>2025年7月公募開始予定。姫路市初の道の駅として地域の新たな核となる可能性。観光と地域経済の活性化が期待される。</p>
+                </div>
             </div>
         </div>
 
@@ -560,8 +616,8 @@
                 <h2>エリア分析</h2>
                 <div class="chart-toggle">
                     <button class="active" onclick="showChart('distribution')">分布</button>
-                    <button onclick="showChart('accessibility')">アクセス</button>
                     <button onclick="showChart('potential')">ポテンシャル</button>
+                    <button onclick="showChart('accessibility')">アクセス</button>
                 </div>
             </div>
             
@@ -571,8 +627,8 @@
                     <canvas id="typeChart" class="chart-canvas"></canvas>
                 </div>
                 <div class="chart-container">
-                    <div class="chart-title">面積分布</div>
-                    <canvas id="areaChart" class="chart-canvas"></canvas>
+                    <div class="chart-title">開発ポテンシャル</div>
+                    <canvas id="potentialChart" class="chart-canvas"></canvas>
                 </div>
             </div>
         </div>
@@ -580,16 +636,16 @@
         <div class="stats">
             <div class="stats-grid">
                 <div class="stat-item">
-                    <div class="stat-number" id="totalSpots">14</div>
+                    <div class="stat-number" id="totalSpots">6</div>
                     <div class="stat-label">総スポット数</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number" id="storeCount">9</div>
+                    <div class="stat-number" id="storeCount">5</div>
                     <div class="stat-label">店舗</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number" id="vacantCount">2</div>
-                    <div class="stat-label">空き地</div>
+                    <div class="stat-number" id="vacantCount">3</div>
+                    <div class="stat-label">開発用地</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number" id="selectedCount">0</div>
@@ -608,6 +664,7 @@
                         <option value="vacant">空き地</option>
                         <option value="residential">住宅</option>
                         <option value="agriculture">農地</option>
+                        <option value="development">開発予定</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -683,25 +740,32 @@
     </div>
 
     <script>
-        // サンプルデータ
+        // サンプルデータ - 実際のスポット情報に更新
         const locationData = [
             {
                 id: 1,
-                name: "ヤマダデンキ",
+                name: "セブンイレブン姫路上原田店",
                 type: "store",
-                category: "家電量販店",
-                address: "兵庫県姫路市花田町上原田字東新田288-1",
-                area: 2800,
+                category: "コンビニエンスストア",
+                address: "兵庫県姫路市花田町上原田",
+                area: 600,
                 zoning: "商業地域",
                 status: "営業中",
                 revenue: "高",
-                coordinates: { lat: 34.82345, lng: 134.62345 },
+                coordinates: { lat: 34.823456, lng: 134.623456 },
+                googleMapsUrl: "https://maps.app.goo.gl/8Vp2631oNY4gL2j47",
                 accessibility: {
-                    himejiStation: 18,
-                    hanedaIC: 5,
-                    sanyoHimejiIC: 12
+                    himejiStation: 15,
+                    hanedaIC: 2,
+                    sanyoHimejiIC: 8,
+                    kobe: 45,
+                    osaka: 65,
+                    kyoto: 90
                 },
                 infrastructure: {
+                    roadType: "県道",
+                    roadWidth: "片側一車線",
+                    traffic: { morning: "中", noon: "低", evening: "高" },
                     water: "整備済み",
                     electricity: "整備済み",
                     gas: "整備済み",
@@ -710,21 +774,28 @@
             },
             {
                 id: 2,
-                name: "エディオン",
+                name: "西松屋 花田店",
                 type: "store",
-                category: "家電量販店",
-                address: "兵庫県姫路市花田町上原田字東新田290-1",
-                area: 2400,
+                category: "子供用品店",
+                address: "兵庫県姫路市花田町上原田",
+                area: 1200,
                 zoning: "商業地域",
                 status: "営業中",
                 revenue: "中",
-                coordinates: { lat: 34.82245, lng: 134.62245 },
+                coordinates: { lat: 34.823356, lng: 134.623356 },
+                googleMapsUrl: "https://maps.app.goo.gl/PitdUhCmTTCYjQBC7",
                 accessibility: {
-                    himejiStation: 19,
-                    hanedaIC: 6,
-                    sanyoHimejiIC: 13
+                    himejiStation: 16,
+                    hanedaIC: 3,
+                    sanyoHimejiIC: 9,
+                    kobe: 46,
+                    osaka: 66,
+                    kyoto: 91
                 },
                 infrastructure: {
+                    roadType: "県道",
+                    roadWidth: "片側一車線",
+                    traffic: { morning: "中", noon: "中", evening: "高" },
                     water: "整備済み",
                     electricity: "整備済み",
                     gas: "整備済み",
@@ -733,71 +804,122 @@
             },
             {
                 id: 3,
-                name: "空き地（有馬不動産購入地）",
-                type: "vacant",
-                category: "開発用地",
-                address: "兵庫県姫路市花田町上原田南側",
-                area: 8500,
-                zoning: "市街化調整区域",
-                status: "空地",
-                revenue: "-",
-                coordinates: { lat: 34.82145, lng: 134.62145 },
+                name: "ラ・ムー",
+                type: "store",
+                category: "スーパーマーケット",
+                address: "兵庫県姫路市花田町上原田",
+                area: 1800,
+                zoning: "商業地域",
+                status: "営業中",
+                revenue: "高",
+                coordinates: { lat: 34.823256, lng: 134.623256 },
+                googleMapsUrl: "https://maps.app.goo.gl/5J75h49UHn7a9buW6",
                 accessibility: {
-                    himejiStation: 16,
-                    hanedaIC: 3,
-                    sanyoHimejiIC: 10
+                    himejiStation: 17,
+                    hanedaIC: 4,
+                    sanyoHimejiIC: 10,
+                    kobe: 47,
+                    osaka: 67,
+                    kyoto: 92
                 },
                 infrastructure: {
-                    water: "接続可能",
-                    electricity: "接続可能",
-                    gas: "接続要工事",
+                    roadType: "県道",
+                    roadWidth: "片側一車線",
+                    traffic: { morning: "高", noon: "中", evening: "高" },
+                    water: "整備済み",
+                    electricity: "整備済み",
+                    gas: "整備済み",
                     internet: "光ファイバー対応"
                 }
             },
             {
                 id: 4,
-                name: "道の駅（候補地）",
-                type: "vacant",
-                category: "公共施設候補",
+                name: "マクドナルド花田フレッツガーデン店",
+                type: "store",
+                category: "飲食店",
                 address: "兵庫県姫路市花田町上原田",
-                area: 5200,
-                zoning: "市街化調整区域",
-                status: "計画中",
-                revenue: "-",
-                coordinates: { lat: 34.82445, lng: 134.62445 },
+                area: 800,
+                zoning: "商業地域",
+                status: "営業中",
+                revenue: "高",
+                coordinates: { lat: 34.823156, lng: 134.623156 },
+                googleMapsUrl: "https://maps.app.goo.gl/2HnVvRdxnoRxsVhz6",
                 accessibility: {
-                    himejiStation: 17,
-                    hanedaIC: 4,
-                    sanyoHimejiIC: 11
+                    himejiStation: 18,
+                    hanedaIC: 5,
+                    sanyoHimejiIC: 11,
+                    kobe: 48,
+                    osaka: 68,
+                    kyoto: 93
                 },
                 infrastructure: {
-                    water: "整備要",
-                    electricity: "接続可能",
-                    gas: "接続要工事",
+                    roadType: "県道",
+                    roadWidth: "片側一車線",
+                    traffic: { morning: "中", noon: "高", evening: "高" },
+                    water: "整備済み",
+                    electricity: "整備済み",
+                    gas: "整備済み",
                     internet: "光ファイバー対応"
                 }
             },
             {
                 id: 5,
-                name: "マクドナルド",
+                name: "ヤマダデンキ テックランド姫路店",
                 type: "store",
-                category: "飲食店",
-                address: "兵庫県姫路市花田町上原田字東新田295-1",
-                area: 800,
+                category: "家電量販店",
+                address: "兵庫県姫路市花田町上原田",
+                area: 2800,
                 zoning: "商業地域",
                 status: "営業中",
                 revenue: "高",
-                coordinates: { lat: 34.82345, lng: 134.62545 },
+                coordinates: { lat: 34.823056, lng: 134.623056 },
+                googleMapsUrl: "https://maps.app.goo.gl/3vhSckBMswNYsnZ78",
                 accessibility: {
                     himejiStation: 18,
                     hanedaIC: 5,
-                    sanyoHimejiIC: 12
+                    sanyoHimejiIC: 12,
+                    kobe: 48,
+                    osaka: 68,
+                    kyoto: 93
                 },
                 infrastructure: {
+                    roadType: "県道",
+                    roadWidth: "片側一車線",
+                    traffic: { morning: "中", noon: "中", evening: "高" },
                     water: "整備済み",
                     electricity: "整備済み",
                     gas: "整備済み",
                     internet: "光ファイバー対応"
+                }
+            },
+            {
+                id: 6,
+                name: "道の駅（候補地）",
+                type: "development",
+                category: "公共施設開発予定",
+                address: "兵庫県姫路市花田町上原田（花田IC東側）",
+                area: 15000,
+                zoning: "市街化調整区域",
+                status: "2025年7月公募予定",
+                revenue: "計画中",
+                coordinates: { lat: 34.822956, lng: 134.622956 },
+                googleMapsUrl: "",
+                accessibility: {
+                    himejiStation: 16,
+                    hanedaIC: 1,
+                    sanyoHimejiIC: 8,
+                    kobe: 45,
+                    osaka: 65,
+                    kyoto: 90
+                },
+                infrastructure: {
+                    roadType: "国道・県道接続",
+                    roadWidth: "片側二車線予定",
+                    traffic: { morning: "予測高", noon: "予測中", evening: "予測高" },
+                    water: "整備予定",
+                    electricity: "整備予定",
+                    gas: "整備予定",
+                    internet: "光ファイバー対応予定"
                 }
             }
         ];
@@ -855,18 +977,29 @@
                 }
             });
 
-            // 面積分布チャート
-            const areaCtx = document.getElementById('areaChart').getContext('2d');
-            const areaData = getAreaDistribution();
-            charts.areaChart = new Chart(areaCtx, {
-                type: 'bar',
+            // 開発ポテンシャルチャート（散布図）
+            const potentialCtx = document.getElementById('potentialChart').getContext('2d');
+            const potentialData = getPotentialData();
+            charts.potentialChart = new Chart(potentialCtx, {
+                type: 'scatter',
                 data: {
-                    labels: areaData.labels,
                     datasets: [{
-                        label: '件数',
-                        data: areaData.values,
-                        backgroundColor: '#a4b89a',
-                        borderRadius: 8
+                        label: '開発ポテンシャル',
+                        data: potentialData,
+                        backgroundColor: function(context) {
+                            const point = context.parsed;
+                            // アクセス性が良くて面積が大きいほど濃い色
+                            const score = (100 - point.y) * 0.01 + (point.x / 20000) * 0.5;
+                            const alpha = Math.min(0.3 + score, 1);
+                            return `rgba(164, 184, 154, ${alpha})`;
+                        },
+                        borderColor: '#a4b89a',
+                        borderWidth: 2,
+                        pointRadius: function(context) {
+                            // 面積に比例して点のサイズを変更
+                            const point = context.parsed;
+                            return Math.max(6, Math.min(20, point.x / 1000));
+                        }
                     }]
                 },
                 options: {
@@ -875,18 +1008,53 @@
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    return locationData[index].name;
+                                },
+                                label: function(context) {
+                                    const index = context.dataIndex;
+                                    const item = locationData[index];
+                                    return [
+                                        `面積: ${item.area.toLocaleString()}m²`,
+                                        `花田ICまで: ${item.accessibility.hanedaIC}分`,
+                                        `姫路駅まで: ${item.accessibility.himejiStation}分`
+                                    ];
+                                }
+                            }
                         }
                     },
                     scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '面積 (m²)'
+                            },
+                            beginAtZero: true
+                        },
                         y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            }
+                            title: {
+                                display: true,
+                                text: 'アクセス性 (花田ICまでの時間)',
+                                
+                            },
+                            reverse: true, // 時間が短いほど上に表示
+                            beginAtZero: true
                         }
                     }
                 }
             });
+        }
+
+        // 開発ポテンシャルデータ取得
+        function getPotentialData() {
+            return locationData.map(item => ({
+                x: item.area,
+                y: item.accessibility.hanedaIC
+            }));
         }
 
         // 種別分布データ取得
@@ -902,31 +1070,14 @@
             };
         }
 
-        // 面積分布データ取得
-        function getAreaDistribution() {
-            const ranges = {
-                '1,000m²未満': 0,
-                '1,000-5,000m²': 0,
-                '5,000m²以上': 0
-            };
-            locationData.forEach(item => {
-                if (item.area < 1000) ranges['1,000m²未満']++;
-                else if (item.area < 5000) ranges['1,000-5,000m²']++;
-                else ranges['5,000m²以上']++;
-            });
-            return {
-                labels: Object.keys(ranges),
-                values: Object.values(ranges)
-            };
-        }
-
         // 種別ラベル取得
         function getTypeLabel(type) {
             const labels = {
                 store: '店舗',
                 vacant: '空き地',
                 residential: '住宅',
-                agriculture: '農地'
+                agriculture: '農地',
+                development: '開発予定'
             };
             return labels[type] || type;
         }
@@ -1072,7 +1223,7 @@
         function updateStats() {
             document.getElementById('totalSpots').textContent = filteredData.length;
             document.getElementById('storeCount').textContent = filteredData.filter(item => item.type === 'store').length;
-            document.getElementById('vacantCount').textContent = filteredData.filter(item => item.type === 'vacant').length;
+            document.getElementById('vacantCount').textContent = filteredData.filter(item => item.type === 'vacant' || item.type === 'development').length;
             document.getElementById('selectedCount').textContent = selectedItems.size;
         }
 
@@ -1104,7 +1255,7 @@
                         </div>
                     </div>
                     <div class="detail-section">
-                        <h3>アクセス</h3>
+                        <h3>アクセス・交通</h3>
                         <div class="info-item">
                             <div class="info-label">JR姫路駅まで</div>
                             <div class="info-value">車で${item.accessibility.himejiStation}分</div>
@@ -1117,6 +1268,39 @@
                             <div class="info-label">山陽姫路ICまで</div>
                             <div class="info-value">車で${item.accessibility.sanyoHimejiIC}分</div>
                         </div>
+                        ${item.accessibility.kobe ? `
+                        <div class="info-item">
+                            <div class="info-label">神戸まで</div>
+                            <div class="info-value">車で${item.accessibility.kobe}分</div>
+                        </div>
+                        ` : ''}
+                        ${item.accessibility.osaka ? `
+                        <div class="info-item">
+                            <div class="info-label">大阪まで</div>
+                            <div class="info-value">車で${item.accessibility.osaka}分</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="detail-section">
+                        <h3>道路・交通状況</h3>
+                        ${item.infrastructure.roadType ? `
+                        <div class="info-item">
+                            <div class="info-label">道路区分</div>
+                            <div class="info-value">${item.infrastructure.roadType}</div>
+                        </div>
+                        ` : ''}
+                        ${item.infrastructure.roadWidth ? `
+                        <div class="info-item">
+                            <div class="info-label">道路幅</div>
+                            <div class="info-value">${item.infrastructure.roadWidth}</div>
+                        </div>
+                        ` : ''}
+                        ${item.infrastructure.traffic ? `
+                        <div class="info-item">
+                            <div class="info-label">交通量（朝/昼/夜）</div>
+                            <div class="info-value">${item.infrastructure.traffic.morning}/${item.infrastructure.traffic.noon}/${item.infrastructure.traffic.evening}</div>
+                        </div>
+                        ` : ''}
                     </div>
                     <div class="detail-section">
                         <h3>インフラ</h3>
@@ -1164,8 +1348,13 @@
             const item = locationData.find(item => item.id === id);
             if (!item) return;
             
-            // Google Mapsで座標を表示
-            const url = `https://www.google.com/maps/search/?api=1&query=${item.coordinates.lat},${item.coordinates.lng}`;
+            // Google Mapsの既存URLがある場合はそれを使用、なければ座標で表示
+            let url;
+            if (item.googleMapsUrl && item.googleMapsUrl !== "") {
+                url = item.googleMapsUrl;
+            } else {
+                url = `https://www.google.com/maps/search/?api=1&query=${item.coordinates.lat},${item.coordinates.lng}`;
+            }
             window.open(url, '_blank');
         }
 
