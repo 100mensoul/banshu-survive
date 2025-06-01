@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -57,28 +58,50 @@
 
         .header h1 {
             font-family: 'Noto Serif JP', serif;
-            font-size: 4rem;
-            color: #2c2c2c;
-            margin-bottom: 24px;
-            font-weight: 300;
-            letter-spacing: 0.08em;
+            font-size: 3.5rem;
+            color: #8B4513;
+            margin-bottom: 16px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
             position: relative;
             z-index: 2;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .header .subtitle {
             font-family: 'Noto Serif JP', serif;
-            font-size: 1.3rem;
-            color: #8B4513;
-            margin-bottom: 40px;
+            font-size: 1.2rem;
+            color: #DAA520;
+            margin-bottom: 20px;
+            font-weight: 300;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 32px;
             font-weight: 400;
             position: relative;
             z-index: 2;
-            line-height: 1.8;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
+        }
+
+        .princess-quote {
+            background: linear-gradient(135deg, #fff9e6, #ffeaa7);
+            padding: 20px 30px;
+            border-radius: 16px;
+            margin: 20px 0;
+            border-left: 4px solid #DAA520;
+            font-style: italic;
+            color: #8B4513;
+            position: relative;
+            z-index: 2;
+        }
+
+        .princess-quote::before {
+            content: '👸';
+            font-size: 1.5rem;
+            margin-right: 10px;
         }
 
         .controls {
@@ -522,6 +545,7 @@
     <div class="container">
         <div class="header">
             <h1>たべるために、生きている</h1>
+            <div class="subtitle">世界を味わうために</div>
             <div class="subtitle">料理を通して食材を知り、産地に思いを馳せ、この世界とつながる旅へ</div>
         </div>
 
