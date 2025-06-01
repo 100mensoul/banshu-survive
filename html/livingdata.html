@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>播州ロケーションインサイト</title>
+    <title>ロケーションインサイト - 播州上原田</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -12,54 +14,149 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #f8f9f1 0%, #e8e9e0 100%);
             min-height: 100vh;
-            color: #333;
+            color: #2c3e31;
+            line-height: 1.6;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 40px 20px;
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 60px 40px;
+            border-radius: 24px;
             text-align: center;
-            margin-bottom: 30px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(44, 62, 49, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.9);
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-weight: 700;
+            font-size: 3rem;
+            color: #2c3e31;
+            margin-bottom: 16px;
+            font-weight: 300;
+            letter-spacing: 0.02em;
         }
 
         .header p {
-            color: #7f8c8d;
+            color: #6b7d6f;
             font-size: 1.1rem;
+            margin-bottom: 32px;
+            font-weight: 400;
+        }
+
+        .map-container {
+            width: 100%;
+            height: 300px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(44, 62, 49, 0.1);
+            margin-top: 20px;
+        }
+
+        .map-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .analytics-section {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(44, 62, 49, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .analytics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .analytics-header h2 {
+            font-size: 1.5rem;
+            color: #2c3e31;
+            font-weight: 400;
+        }
+
+        .chart-toggle {
+            display: flex;
+            background: #f0f2ec;
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .chart-toggle button {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            color: #6b7d6f;
+            font-weight: 400;
+        }
+
+        .chart-toggle button.active {
+            background: #a4b89a;
+            color: white;
+            box-shadow: 0 2px 8px rgba(164, 184, 154, 0.3);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .chart-container {
+            background: #fafbf9;
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(164, 184, 154, 0.2);
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            color: #2c3e31;
+            margin-bottom: 16px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .chart-canvas {
+            max-height: 280px;
         }
 
         .controls {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(44, 62, 49, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.9);
         }
 
         .search-filters {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
         }
 
         .filter-group {
@@ -68,163 +165,260 @@
         }
 
         .filter-group label {
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #2c3e50;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: #2c3e31;
+            font-size: 0.95rem;
         }
 
         .filter-group select,
         .filter-group input {
-            padding: 12px;
-            border: 2px solid #e1e8ed;
-            border-radius: 8px;
+            padding: 16px 20px;
+            border: 2px solid #e8eae2;
+            border-radius: 12px;
             font-size: 1rem;
-            transition: border-color 0.3s ease;
+            transition: all 0.3s ease;
+            background: #fafbf9;
+            color: #2c3e31;
         }
 
         .filter-group select:focus,
         .filter-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #a4b89a;
+            box-shadow: 0 0 0 4px rgba(164, 184, 154, 0.1);
         }
 
         .action-buttons {
             display: flex;
-            gap: 15px;
+            gap: 16px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .btn {
-            padding: 12px 24px;
+            padding: 16px 32px;
             border: none;
-            border-radius: 8px;
-            font-weight: 600;
+            border-radius: 12px;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
             font-size: 1rem;
+            font-family: inherit;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: #a4b89a;
             color: white;
+            box-shadow: 0 4px 16px rgba(164, 184, 154, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #8fa285;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(164, 184, 154, 0.4);
         }
 
         .btn-secondary {
-            background: #f8f9fa;
-            color: #495057;
-            border: 2px solid #dee2e6;
+            background: #f0f2ec;
+            color: #6b7d6f;
+            border: 2px solid #e8eae2;
         }
 
-        .btn:hover {
+        .btn-secondary:hover {
+            background: #e8eae2;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
         .view-toggle {
             display: flex;
-            background: #f8f9fa;
-            border-radius: 8px;
+            background: #f0f2ec;
+            border-radius: 12px;
             padding: 4px;
+            gap: 4px;
         }
 
         .view-toggle button {
-            padding: 8px 16px;
+            padding: 12px 20px;
             border: none;
             background: transparent;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
+            font-size: 0.95rem;
+            color: #6b7d6f;
+            font-weight: 400;
         }
 
         .view-toggle button.active {
-            background: #667eea;
+            background: #a4b89a;
             color: white;
+            box-shadow: 0 2px 8px rgba(164, 184, 154, 0.3);
+        }
+
+        .stats {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 32px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(44, 62, 49, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 32px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #fafbf9, #f0f2ec);
+            border-radius: 16px;
+            border: 1px solid rgba(164, 184, 154, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: #a4b89a;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: #6b7d6f;
+            font-size: 0.9rem;
+            font-weight: 400;
         }
 
         .gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 32px;
+        }
+
+        .list-view {
+            display: none;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(44, 62, 49, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .list-view table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .list-view th,
+        .list-view td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid #e8eae2;
+        }
+
+        .list-view th {
+            background: #f0f2ec;
+            font-weight: 500;
+            color: #2c3e31;
         }
 
         .card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 25px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 40px rgba(44, 62, 49, 0.08);
+            transition: all 0.4s ease;
             position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.9);
         }
 
         .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 60px rgba(44, 62, 49, 0.12);
         }
 
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 15px;
+            margin-bottom: 24px;
         }
 
         .card-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 5px;
+            font-size: 1.4rem;
+            font-weight: 500;
+            color: #2c3e31;
+            margin-bottom: 8px;
+            letter-spacing: 0.01em;
+        }
+
+        .card-address {
+            color: #6b7d6f;
+            font-size: 0.9rem;
+            font-weight: 400;
         }
 
         .card-type {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #a4b89a, #8fa285);
             color: white;
-            padding: 4px 12px;
+            padding: 8px 16px;
             border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
+            font-size: 0.85rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(164, 184, 154, 0.3);
         }
 
         .card-info {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 20px;
+            margin-bottom: 28px;
         }
 
         .info-item {
             display: flex;
             flex-direction: column;
+            gap: 4px;
         }
 
         .info-label {
             font-size: 0.85rem;
-            color: #7f8c8d;
-            margin-bottom: 3px;
+            color: #6b7d6f;
+            font-weight: 400;
         }
 
         .info-value {
-            font-weight: 600;
-            color: #2c3e50;
+            font-weight: 500;
+            color: #2c3e31;
+            font-size: 0.95rem;
         }
 
         .card-actions {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e1e8ed;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e8eae2;
         }
 
         .btn-small {
-            padding: 8px 16px;
+            padding: 12px 24px;
             font-size: 0.9rem;
         }
 
         .checkbox {
             position: absolute;
-            top: 15px;
-            left: 15px;
+            top: 20px;
+            left: 20px;
+            width: 20px;
+            height: 20px;
+            accent-color: #a4b89a;
         }
 
         .modal {
@@ -234,8 +428,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
+            background: rgba(44, 62, 49, 0.7);
+            backdrop-filter: blur(8px);
             z-index: 1000;
         }
 
@@ -245,82 +439,76 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: white;
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 600px;
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 700px;
             width: 90%;
-            max-height: 80vh;
+            max-height: 85vh;
             overflow-y: auto;
+            box-shadow: 0 20px 80px rgba(44, 62, 49, 0.15);
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e8eae2;
+        }
+
+        .modal-header h2 {
+            font-size: 1.6rem;
+            color: #2c3e31;
+            font-weight: 500;
         }
 
         .close {
-            font-size: 24px;
+            font-size: 28px;
             cursor: pointer;
-            color: #7f8c8d;
+            color: #6b7d6f;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #2c3e31;
         }
 
         .detail-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 32px;
         }
 
         .detail-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
+            background: #fafbf9;
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(164, 184, 154, 0.2);
         }
 
         .detail-section h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
+            color: #2c3e31;
+            margin-bottom: 20px;
             font-size: 1.1rem;
+            font-weight: 500;
         }
 
-        .stats {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #667eea;
-        }
-
-        .stat-label {
-            color: #7f8c8d;
-            font-size: 0.9rem;
+        .detail-section .info-item {
+            margin-bottom: 16px;
         }
 
         @media (max-width: 768px) {
             .container {
-                padding: 10px;
+                padding: 20px 15px;
+            }
+            
+            .header {
+                padding: 40px 24px;
             }
             
             .header h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
             }
             
             .search-filters {
@@ -338,14 +526,55 @@
             .detail-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>播州ロケーションインサイト</h1>
-            <p>上原田エリアの詳細データベース - 持続可能なまちづくりのために</p>
+            <h1>ロケーションインサイト</h1>
+            <p>播州上原田エリアの詳細データベース - 持続可能なまちづくりのために</p>
+            
+            <!-- Google Map埋め込み -->
+            <div class="map-container">
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3284.2441285394744!2d134.62345!3d34.82345!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzTCsDQ5JzI0LjQiTiAxMzTCsDM3JzI0LjQiRQ!5e0!3m2!1sja!2sjp!4v1234567890123!5m2!1sja!2sjp"
+                    allowfullscreen="" 
+                    loading="lazy" 
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+            </div>
+        </div>
+
+        <!-- データ可視化セクション -->
+        <div class="analytics-section">
+            <div class="analytics-header">
+                <h2>エリア分析</h2>
+                <div class="chart-toggle">
+                    <button class="active" onclick="showChart('distribution')">分布</button>
+                    <button onclick="showChart('accessibility')">アクセス</button>
+                    <button onclick="showChart('potential')">ポテンシャル</button>
+                </div>
+            </div>
+            
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">種別構成</div>
+                    <canvas id="typeChart" class="chart-canvas"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">面積分布</div>
+                    <canvas id="areaChart" class="chart-canvas"></canvas>
+                </div>
+            </div>
         </div>
 
         <div class="stats">
@@ -409,14 +638,34 @@
                 <button class="btn btn-primary" onclick="exportSelected()">選択項目をCSV出力</button>
                 <button class="btn btn-secondary" onclick="clearSelection()">選択解除</button>
                 <div class="view-toggle">
-                    <button class="active" onclick="setView('gallery')">ギャラリー</button>
-                    <button onclick="setView('list')">リスト</button>
+                    <button class="active" id="galleryBtn" onclick="setView('gallery')">ギャラリー</button>
+                    <button id="listBtn" onclick="setView('list')">リスト</button>
                 </div>
             </div>
         </div>
 
         <div class="gallery" id="gallery">
             <!-- カードはJavaScriptで動的生成 -->
+        </div>
+
+        <!-- リストビュー -->
+        <div class="list-view" id="listView">
+            <table>
+                <thead>
+                    <tr>
+                        <th>選択</th>
+                        <th>名称</th>
+                        <th>種別</th>
+                        <th>面積</th>
+                        <th>姫路駅まで</th>
+                        <th>状態</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="listTableBody">
+                    <!-- データはJavaScriptで動的生成 -->
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -441,11 +690,12 @@
                 name: "ヤマダデンキ",
                 type: "store",
                 category: "家電量販店",
-                address: "兵庫県姫路市花田町上原田",
+                address: "兵庫県姫路市花田町上原田字東新田288-1",
                 area: 2800,
                 zoning: "商業地域",
                 status: "営業中",
                 revenue: "高",
+                coordinates: { lat: 34.82345, lng: 134.62345 },
                 accessibility: {
                     himejiStation: 18,
                     hanedaIC: 5,
@@ -463,11 +713,12 @@
                 name: "エディオン",
                 type: "store",
                 category: "家電量販店",
-                address: "兵庫県姫路市花田町上原田",
+                address: "兵庫県姫路市花田町上原田字東新田290-1",
                 area: 2400,
                 zoning: "商業地域",
                 status: "営業中",
                 revenue: "中",
+                coordinates: { lat: 34.82245, lng: 134.62245 },
                 accessibility: {
                     himejiStation: 19,
                     hanedaIC: 6,
@@ -490,6 +741,7 @@
                 zoning: "市街化調整区域",
                 status: "空地",
                 revenue: "-",
+                coordinates: { lat: 34.82145, lng: 134.62145 },
                 accessibility: {
                     himejiStation: 16,
                     hanedaIC: 3,
@@ -512,6 +764,7 @@
                 zoning: "市街化調整区域",
                 status: "計画中",
                 revenue: "-",
+                coordinates: { lat: 34.82445, lng: 134.62445 },
                 accessibility: {
                     himejiStation: 17,
                     hanedaIC: 4,
@@ -529,11 +782,12 @@
                 name: "マクドナルド",
                 type: "store",
                 category: "飲食店",
-                address: "兵庫県姫路市花田町上原田",
+                address: "兵庫県姫路市花田町上原田字東新田295-1",
                 area: 800,
                 zoning: "商業地域",
                 status: "営業中",
                 revenue: "高",
+                coordinates: { lat: 34.82345, lng: 134.62545 },
                 accessibility: {
                     himejiStation: 18,
                     hanedaIC: 5,
@@ -550,11 +804,14 @@
 
         let filteredData = [...locationData];
         let selectedItems = new Set();
+        let currentView = 'gallery';
+        let charts = {};
 
         // ページ初期化
         function init() {
-            renderGallery();
+            renderView();
             setupEventListeners();
+            initCharts();
         }
 
         // イベントリスナー設定
@@ -565,17 +822,151 @@
             document.getElementById('searchInput').addEventListener('input', applyFilters);
         }
 
+        // チャート初期化
+        function initCharts() {
+            // 種別構成チャート
+            const typeCtx = document.getElementById('typeChart').getContext('2d');
+            const typeData = getTypeDistribution();
+            charts.typeChart = new Chart(typeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: typeData.labels,
+                    datasets: [{
+                        data: typeData.values,
+                        backgroundColor: ['#a4b89a', '#8fa285', '#7a9270', '#6b7d6f'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    family: 'Noto Sans JP'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 面積分布チャート
+            const areaCtx = document.getElementById('areaChart').getContext('2d');
+            const areaData = getAreaDistribution();
+            charts.areaChart = new Chart(areaCtx, {
+                type: 'bar',
+                data: {
+                    labels: areaData.labels,
+                    datasets: [{
+                        label: '件数',
+                        data: areaData.values,
+                        backgroundColor: '#a4b89a',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 種別分布データ取得
+        function getTypeDistribution() {
+            const types = {};
+            locationData.forEach(item => {
+                const typeLabel = getTypeLabel(item.type);
+                types[typeLabel] = (types[typeLabel] || 0) + 1;
+            });
+            return {
+                labels: Object.keys(types),
+                values: Object.values(types)
+            };
+        }
+
+        // 面積分布データ取得
+        function getAreaDistribution() {
+            const ranges = {
+                '1,000m²未満': 0,
+                '1,000-5,000m²': 0,
+                '5,000m²以上': 0
+            };
+            locationData.forEach(item => {
+                if (item.area < 1000) ranges['1,000m²未満']++;
+                else if (item.area < 5000) ranges['1,000-5,000m²']++;
+                else ranges['5,000m²以上']++;
+            });
+            return {
+                labels: Object.keys(ranges),
+                values: Object.values(ranges)
+            };
+        }
+
+        // 種別ラベル取得
+        function getTypeLabel(type) {
+            const labels = {
+                store: '店舗',
+                vacant: '空き地',
+                residential: '住宅',
+                agriculture: '農地'
+            };
+            return labels[type] || type;
+        }
+
+        // ビュー表示
+        function renderView() {
+            if (currentView === 'gallery') {
+                renderGallery();
+            } else {
+                renderList();
+            }
+            updateStats();
+        }
+
         // ギャラリー表示
         function renderGallery() {
             const gallery = document.getElementById('gallery');
+            gallery.style.display = 'grid';
+            document.getElementById('listView').style.display = 'none';
+            
             gallery.innerHTML = '';
-
             filteredData.forEach(item => {
                 const card = createCard(item);
                 gallery.appendChild(card);
             });
+        }
 
-            updateStats();
+        // リスト表示
+        function renderList() {
+            document.getElementById('gallery').style.display = 'none';
+            const listView = document.getElementById('listView');
+            listView.style.display = 'block';
+            
+            const tbody = document.getElementById('listTableBody');
+            tbody.innerHTML = '';
+            
+            filteredData.forEach(item => {
+                const row = createListRow(item);
+                tbody.appendChild(row);
+            });
         }
 
         // カード作成
@@ -587,7 +978,7 @@
                 <div class="card-header">
                     <div>
                         <div class="card-title">${item.name}</div>
-                        <div class="info-label">${item.address}</div>
+                        <div class="card-address">${item.address}</div>
                     </div>
                     <div class="card-type">${item.category}</div>
                 </div>
@@ -617,6 +1008,24 @@
             return card;
         }
 
+        // リスト行作成
+        function createListRow(item) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="checkbox" onchange="toggleSelection(${item.id})" ${selectedItems.has(item.id) ? 'checked' : ''}></td>
+                <td>${item.name}</td>
+                <td>${getTypeLabel(item.type)}</td>
+                <td>${item.area.toLocaleString()}m²</td>
+                <td>車で${item.accessibility.himejiStation}分</td>
+                <td>${item.status}</td>
+                <td>
+                    <button class="btn btn-primary btn-small" onclick="showDetail(${item.id})">詳細</button>
+                    <button class="btn btn-secondary btn-small" onclick="showOnMap(${item.id})">地図</button>
+                </td>
+            `;
+            return row;
+        }
+
         // フィルター適用
         function applyFilters() {
             const typeFilter = document.getElementById('typeFilter').value;
@@ -625,23 +1034,19 @@
             const searchText = document.getElementById('searchInput').value.toLowerCase();
 
             filteredData = locationData.filter(item => {
-                // 種別フィルター
                 if (typeFilter && item.type !== typeFilter) return false;
 
-                // 面積フィルター
                 if (areaFilter) {
                     const [min, max] = areaFilter.split('-').map(v => v === '+' ? Infinity : parseInt(v) || 0);
                     if (item.area < min || (max !== Infinity && item.area >= max)) return false;
                 }
 
-                // 距離フィルター
                 if (distanceFilter) {
                     const [min, max] = distanceFilter.split('-').map(v => v === '+' ? Infinity : parseInt(v) || 0);
                     if (item.accessibility.himejiStation < min || 
                         (max !== Infinity && item.accessibility.himejiStation >= max)) return false;
                 }
 
-                // キーワード検索
                 if (searchText) {
                     const searchableText = `${item.name} ${item.address} ${item.category}`.toLowerCase();
                     if (!searchableText.includes(searchText)) return false;
@@ -650,7 +1055,7 @@
                 return true;
             });
 
-            renderGallery();
+            renderView();
         }
 
         // アイテム選択切り替え
@@ -756,8 +1161,22 @@
 
         // 地図で表示
         function showOnMap(id) {
-            // 既存のマップページに遷移
-            window.open(`zoom-map-4.html#spot-${id}`, '_blank');
+            const item = locationData.find(item => item.id === id);
+            if (!item) return;
+            
+            // Google Mapsで座標を表示
+            const url = `https://www.google.com/maps/search/?api=1&query=${item.coordinates.lat},${item.coordinates.lng}`;
+            window.open(url, '_blank');
+        }
+
+        // チャート表示切り替え
+        function showChart(type) {
+            const buttons = document.querySelectorAll('.chart-toggle button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // ここで異なるチャートタイプの実装
+            console.log('チャート切り替え:', type);
         }
 
         // CSV出力
@@ -782,7 +1201,7 @@
 
             const rows = data.map(item => [
                 item.name,
-                item.type,
+                getTypeLabel(item.type),
                 item.category,
                 item.address,
                 item.area,
@@ -818,25 +1237,28 @@
         // 選択解除
         function clearSelection() {
             selectedItems.clear();
-            const checkboxes = document.querySelectorAll('.checkbox');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach(cb => cb.checked = false);
             updateStats();
         }
 
         // 表示切り替え
         function setView(viewType) {
-            const buttons = document.querySelectorAll('.view-toggle button');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // ここで実際の表示切り替えを実装
-            if (viewType === 'list') {
-                // リスト表示の実装
-                console.log('リスト表示に切り替え');
+            const galleryBtn = document.getElementById('galleryBtn');
+            const listBtn = document.getElementById('listBtn');
+            
+            galleryBtn.classList.remove('active');
+            listBtn.classList.remove('active');
+            
+            if (viewType === 'gallery') {
+                galleryBtn.classList.add('active');
+                currentView = 'gallery';
             } else {
-                // ギャラリー表示の実装
-                console.log('ギャラリー表示に切り替え');
+                listBtn.classList.add('active');
+                currentView = 'list';
             }
+            
+            renderView();
         }
 
         // ページロード時の初期化
