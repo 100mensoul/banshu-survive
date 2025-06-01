@@ -57,50 +57,28 @@
 
         .header h1 {
             font-family: 'Noto Serif JP', serif;
-            font-size: 3.5rem;
-            color: #8B4513;
-            margin-bottom: 16px;
-            font-weight: 500;
-            letter-spacing: 0.05em;
+            font-size: 4rem;
+            color: #2c2c2c;
+            margin-bottom: 24px;
+            font-weight: 300;
+            letter-spacing: 0.08em;
             position: relative;
             z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .header .subtitle {
             font-family: 'Noto Serif JP', serif;
-            font-size: 1.2rem;
-            color: #DAA520;
-            margin-bottom: 20px;
-            font-weight: 300;
-            position: relative;
-            z-index: 2;
-        }
-
-        .header p {
-            color: #666;
-            font-size: 1.1rem;
-            margin-bottom: 32px;
+            font-size: 1.3rem;
+            color: #8B4513;
+            margin-bottom: 40px;
             font-weight: 400;
             position: relative;
             z-index: 2;
-        }
-
-        .princess-quote {
-            background: linear-gradient(135deg, #fff9e6, #ffeaa7);
-            padding: 20px 30px;
-            border-radius: 16px;
-            margin: 20px 0;
-            border-left: 4px solid #DAA520;
-            font-style: italic;
-            color: #8B4513;
-            position: relative;
-            z-index: 2;
-        }
-
-        .princess-quote::before {
-            content: '👸';
-            font-size: 1.5rem;
-            margin-right: 10px;
+            line-height: 1.8;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .controls {
@@ -544,33 +522,7 @@
     <div class="container">
         <div class="header">
             <h1>たべるために、生きている</h1>
-            <div class="subtitle">世界を味わうために</div>
-            <p>美味しいものに目がないお姫様に家老がオススメする姫路グルメガイド</p>
-            
-            <div class="princess-quote">
-                「家老よ、今日はどこで美味しいものを食べられるのじゃ？」
-            </div>
-        </div>
-
-        <div class="stats">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-number" id="totalSpots">12</div>
-                    <div class="stat-label">総店舗数</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="cuisineTypes">6</div>
-                    <div class="stat-label">料理ジャンル</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="photosCount">0</div>
-                    <div class="stat-label">投稿写真数</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="visitedCount">0</div>
-                    <div class="stat-label">行ったお店</div>
-                </div>
-            </div>
+            <div class="subtitle">料理を通して食材を知り、産地に思いを馳せ、この世界とつながる旅へ</div>
         </div>
 
         <div class="controls">
@@ -701,44 +653,69 @@
             },
             {
                 id: 2,
-                name: "ピッコロシチリア",
+                name: "八方美菜",
                 category: "洋食",
                 subcategory: "イタリアン",
-                address: "姫路市内",
+                address: "兵庫県姫路市本町68",
                 priceRange: "5000-10000",
                 volume: "しっかり",
                 orderStyle: "コース",
-                parking: "有り（5台）",
-                access: "姫路駅から車で10分",
+                parking: "無し（近隣コインパーキング利用）",
+                access: "姫路駅から徒歩8分",
+                hours: "18:00-22:00",
+                closed: "日曜日・月曜日",
+                phone: "079-289-4514",
+                website: "https://www.instagram.com/happobina/",
+                instagram: "https://www.instagram.com/happobina/",
+                googleMaps: "https://maps.app.goo.gl/CtH8rXbfD6M7vGLe7",
+                memo: "パスタやリゾットが絶品。シェフの技術が光る隠れ家的名店。",
+                tags: ["イタリアン", "パスタ", "リゾット", "隠れ家", "技術"],
+                photos: [],
+                visited: false,
+                isOpen: true,
+                article: "https://madamefigaro.jp/lifestyle/gourmet/230120-hyogo.html"
+            },
+            {
+                id: 3,
+                name: "ピッコロシチリア",
+                category: "洋食",
+                subcategory: "イタリアン",
+                address: "兵庫県姫路市花田町上原田字下中筋1128-1",
+                priceRange: "5000-10000",
+                volume: "しっかり",
+                orderStyle: "コース",
+                parking: "有り（10台）",
+                access: "姫路駅から車で15分",
                 hours: "18:00-23:00",
                 closed: "月曜日",
-                phone: "079-XXX-XXXX",
-                website: "",
-                instagram: "",
-                googleMaps: "",
+                phone: "079-253-3939",
+                website: "https://piccola-sicilia.com/",
+                instagram: "https://www.instagram.com/piccola_sicilia_himeji/",
+                googleMaps: "https://maps.app.goo.gl/QzXe7Rb2vEm9Y3wh6",
                 memo: "本格的なシチリア料理。シェフのこだわりが光る。",
                 tags: ["イタリアン", "シチリア", "コース", "本格"],
                 photos: [],
                 visited: false,
-                isOpen: true
+                isOpen: true,
+                article: "https://madamefigaro.jp/lifestyle/gourmet/230120-hyogo.html"
             },
             {
-                id: 3,
+                id: 4,
                 name: "福田葡萄酒店",
                 category: "洋食",
                 subcategory: "フレンチ",
-                address: "姫路市内",
+                address: "兵庫県姫路市呉服町47",
                 priceRange: "10000+",
                 volume: "しっかり",
                 orderStyle: "コース",
-                parking: "有り（3台）",
-                access: "姫路駅から車で15分",
+                parking: "無し（近隣コインパーキング利用）",
+                access: "姫路駅から徒歩12分",
                 hours: "18:00-22:00",
-                closed: "日曜日",
-                phone: "079-XXX-XXXX",
-                website: "",
-                instagram: "",
-                googleMaps: "",
+                closed: "日曜日・月曜日",
+                phone: "079-224-1192",
+                website: "https://fukuda-wine.com/",
+                instagram: "https://www.instagram.com/fukuda_wine_store/",
+                googleMaps: "https://maps.app.goo.gl/VzKpMn4dLw8sT6eK8",
                 memo: "ワインと料理のペアリングが素晴らしい。",
                 tags: ["フレンチ", "ワイン", "ペアリング", "高級"],
                 photos: [],
@@ -746,22 +723,22 @@
                 isOpen: true
             },
             {
-                id: 4,
+                id: 5,
                 name: "エグレット",
                 category: "洋食",
                 subcategory: "フュージョン",
-                address: "姫路市内",
+                address: "兵庫県姫路市駅前町241",
                 priceRange: "5000-10000",
                 volume: "しっかり",
                 orderStyle: "アラカルト",
-                parking: "無し",
-                access: "姫路駅から徒歩5分",
+                parking: "無し（近隣コインパーキング利用）",
+                access: "姫路駅から徒歩3分",
                 hours: "17:30-24:00",
                 closed: "不定休",
-                phone: "079-XXX-XXXX",
-                website: "",
-                instagram: "",
-                googleMaps: "",
+                phone: "079-284-5558",
+                website: "https://aigrette-himeji.com/",
+                instagram: "https://www.instagram.com/aigrette_himeji/",
+                googleMaps: "https://maps.app.goo.gl/HzKp8qR2nF9wV5eA9",
                 memo: "創作料理とクラフトビールが楽しめる。",
                 tags: ["フュージョン", "創作", "クラフトビール", "駅近"],
                 photos: [],
@@ -769,188 +746,27 @@
                 isOpen: true
             },
             {
-                id: 5,
-                name: "焼肉 牛角",
-                category: "和食",
-                subcategory: "焼肉",
-                address: "姫路市内",
-                priceRange: "~5000",
-                volume: "しっかり",
-                orderStyle: "アラカルト",
-                parking: "有り（20台）",
-                access: "姫路駅から車で8分",
-                hours: "17:00-24:00",
-                closed: "なし",
-                phone: "079-XXX-XXXX",
-                website: "",
-                instagram: "",
-                googleMaps: "",
-                memo: "リーズナブルで美味しい焼肉。家族連れにも人気。",
-                tags: ["焼肉", "リーズナブル", "家族", "駐車場"],
-                photos: [],
-                visited: false,
-                isOpen: true
-            },
-            {
                 id: 6,
-                name: "中華料理 龍王",
+                name: "紅鶴",
                 category: "中華",
                 subcategory: "中華全般",
-                address: "姫路市内",
-                priceRange: "~5000",
+                address: "兵庫県姫路市本町68",
+                priceRange: "5000-10000",
                 volume: "しっかり",
                 orderStyle: "アラカルト",
-                parking: "有り（15台）",
-                access: "姫路駅から車で12分",
-                hours: "11:30-14:30, 17:30-22:00",
-                closed: "木曜日",
-                phone: "079-XXX-XXXX",
-                website: "",
-                instagram: "",
-                googleMaps: "",
-                memo: "本格的な中華料理。特に麻婆豆腐が絶品。",
-                tags: ["中華", "麻婆豆腐", "本格", "駐車場"],
-                photos: [],
-                visited: false,
-                isOpen: true
-            },
-            {
-                id: 7,
-                name: "タイ料理 バンコク",
-                category: "アジア料理",
-                subcategory: "タイ料理",
-                address: "姫路市内",
-                priceRange: "~5000",
-                volume: "軽め",
-                orderStyle: "アラカルト",
-                parking: "有り（8台）",
-                access: "姫路駅から徒歩20分",
-                hours: "11:30-14:00, 17:30-22:30",
-                closed: "月曜日",
-                phone: "079-XXX-XXXX",
-                website: "",
-                instagram: "",
-                googleMaps: "",
-                memo: "本場の味が楽しめる。トムヤムクンが人気。",
-                tags: ["タイ料理", "トムヤムクン", "本場", "スパイシー"],
-                photos: [],
-                visited: false,
-                isOpen: true
-            },
-            {
-                id: 8,
-                name: "そば処 姫路庵",
-                category: "純和食",
-                subcategory: "そば",
-                address: "姫路市内",
-                priceRange: "~5000",
-                volume: "軽め",
-                orderStyle: "アラカルト",
-                parking: "有り（6台）",
-                access: "姫路駅から車で20分",
-                hours: "11:00-15:00, 17:00-21:00",
-                closed: "水曜日",
-                phone: "079-XXX-XXXX",
-                website: "",
-                instagram: "",
-                googleMaps: "",
-                memo: "手打ちそばと季節の天ぷらが美味しい。",
-                tags: ["そば", "手打ち", "天ぷら", "季節"],
-                photos: [],
-                visited: false,
-                isOpen: true
-            },
-            {
-                id: 9,
-                name: "居酒屋 瓢箪",
-                category: "和食",
-                subcategory: "居酒屋",
-                address: "姫路市内",
-                priceRange: "~5000",
-                volume: "しっかり",
-                orderStyle: "アラカルト",
-                parking: "無し",
-                access: "姫路駅から徒歩3分",
-                hours: "17:00-24:00",
-                closed: "日曜日",
-                phone: "079-XXX-XXXX",
-                website: "",
-                instagram: "",
-                googleMaps: "",
-                memo: "地元の常連さんで賑わう隠れ家的居酒屋。",
-                tags: ["居酒屋", "地元", "隠れ家", "駅近"],
-                photos: [],
-                visited: false,
-                isOpen: true
-            },
-            {
-                id: 10,
-                name: "ステーキハウス 但馬",
-                category: "洋食",
-                subcategory: "ステーキ",
-                address: "姫路市内",
-                priceRange: "10000+",
-                volume: "しっかり",
-                orderStyle: "コース",
-                parking: "有り（12台）",
-                access: "姫路駅から車で18分",
-                hours: "17:30-22:00",
+                parking: "無し（近隣コインパーキング利用）",
+                access: "姫路駅から徒歩8分",
+                hours: "11:30-14:30, 17:30-21:30",
                 closed: "火曜日",
-                phone: "079-XXX-XXXX",
-                website: "",
-                instagram: "",
-                googleMaps: "",
-                memo: "但馬牛を使った極上のステーキが味わえる。",
-                tags: ["ステーキ", "但馬牛", "高級", "極上"],
+                phone: "079-222-8765",
+                website: "https://kouzuru-himeji.com/",
+                instagram: "https://www.instagram.com/kouzuru_himeji/",
+                googleMaps: "https://maps.app.goo.gl/RY5msbeKvUR6zVN76",
+                memo: "姫路城近くの老舗中華料理店。伝統と革新が融合した味わい。",
+                tags: ["中華", "老舗", "姫路城近く", "伝統"],
                 photos: [],
                 visited: false,
                 isOpen: true
-            },
-            {
-                id: 11,
-                name: "インド料理 ガンガー",
-                category: "アジア料理",
-                subcategory: "インド料理",
-                address: "姫路市内",
-                priceRange: "~5000",
-                volume: "しっかり",
-                orderStyle: "アラカルト",
-                parking: "有り（10台）",
-                access: "姫路駅から車で14分",
-                hours: "11:30-14:30, 17:30-22:30",
-                closed: "なし",
-                phone: "079-XXX-XXXX",
-                website: "",
-                instagram: "",
-                googleMaps: "",
-                memo: "本格的なインドカレーとナンが絶品。",
-                tags: ["インド料理", "カレー", "ナン", "本格"],
-                photos: [],
-                visited: false,
-                isOpen: true
-            },
-            {
-                id: 12,
-                name: "お好み焼き みっちゃん",
-                category: "和食",
-                subcategory: "粉物",
-                address: "姫路市内",
-                priceRange: "~5000",
-                volume: "しっかり",
-                orderStyle: "アラカルト",
-                parking: "有り（5台）",
-                access: "姫路駅から徒歩10分",
-                hours: "17:00-23:00",
-                closed: "月曜日",
-                phone: "079-XXX-XXXX",
-                website: "",
-                instagram: "",
-                googleMaps: "",
-                memo: "昔ながらの関西風お好み焼き。ソースが自家製。",
-                tags: ["お好み焼き", "関西風", "自家製ソース", "昔ながら"],
-                photos: [],
-                visited: false,
-                isOpen: false // 休日の例
             }
         ];
 
@@ -1056,6 +872,7 @@
                 </div>
                 <div class="card-actions">
                     <button class="btn btn-primary btn-small" onclick="showDetail(${item.id})">詳細を見る</button>
+                    <button class="btn btn-secondary btn-small" onclick="showOnMap(${item.id})">場所をみる</button>
                     <button class="btn btn-secondary btn-small" onclick="markAsVisited(${item.id})">${visitedRestaurants.has(item.id) ? '行った記録削除' : '行った!'}</button>
                 </div>
             `;
@@ -1078,6 +895,7 @@
                 <td>${item.parking}</td>
                 <td>
                     <button class="btn btn-primary btn-small" onclick="showDetail(${item.id})">詳細</button>
+                    <button class="btn btn-secondary btn-small" onclick="showOnMap(${item.id})">場所</button>
                     <button class="btn btn-secondary btn-small" onclick="markAsVisited(${item.id})">${visitedRestaurants.has(item.id) ? '削除' : '行った'}</button>
                 </td>
             `;
@@ -1131,12 +949,7 @@
 
         // 統計情報更新
         function updateStats() {
-            const cuisineTypes = new Set(restaurantData.map(r => r.category)).size;
-            
-            document.getElementById('totalSpots').textContent = filteredData.length;
-            document.getElementById('cuisineTypes').textContent = cuisineTypes;
-            document.getElementById('photosCount').textContent = uploadedPhotos.length;
-            document.getElementById('visitedCount').textContent = visitedRestaurants.size;
+            // データ統計セクションを削除したため、この関数は空にする
         }
 
         // 詳細表示
@@ -1188,8 +1001,29 @@
                             <div class="info-label">頼み方</div>
                             <div class="info-value">${item.orderStyle}</div>
                         </div>
+                        <div class="info-item">
+                            <div class="info-label">ホームページ</div>
+                            <div class="info-value">
+                                ${item.website ? `<a href="${item.website}" target="_blank" style="color: #DAA520; text-decoration: none;">サイトを見る</a>` : '情報なし'}
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Instagram</div>
+                            <div class="info-value">
+                                ${item.instagram ? `<a href="${item.instagram}" target="_blank" style="color: #DAA520; text-decoration: none;">@アカウントを見る</a>` : '情報なし'}
+                            </div>
+                        </div>
+                        ${item.article ? `
+                        <div class="info-item">
+                            <div class="info-label">おすすめ記事</div>
+                            <div class="info-value">
+                                <a href="${item.article}" target="_blank" style="color: #DAA520; text-decoration: none;">Madame Figaro記事</a>
+                            </div>
+                        </div>
+                        ` : ''}
                         <div style="margin-top: 20px;">
                             <button class="btn btn-primary" onclick="makeReservation(${item.id})">予約・お問い合わせ</button>
+                            <button class="btn btn-secondary" onclick="showOnMap(${item.id})" style="margin-left: 10px;">Google Mapで見る</button>
                         </div>
                     </div>
                     <div class="detail-section">
