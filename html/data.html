@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字で見る上原田 | 花田町上原田地区統計データ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            margin-right: 15px;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .stat-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .big-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .stat-description {
+            color: #666;
+            font-size: 1rem;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .data-list {
+            list-style: none;
+            margin-top: 15px;
+        }
+
+        .data-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .data-list li:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .data-value {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .section-title {
+            color: white;
+            font-size: 2rem;
+            margin: 40px 0 20px 0;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .source-info {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .source-title {
+            color: white;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .source-link {
+            display: block;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .source-link:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .chart-placeholder {
+            height: 200px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .stat-card {
+                padding: 20px;
+            }
+            
+            .big-number {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>数字で見る上原田</h1>
+            <p class="subtitle">花田町上原田地区の統計データ</p>
+        </header>
+
+        <h2 class="section-title">📊 人口・世帯データ</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-title">総人口</div>
+                </div>
+                <div class="big-number">1,416</div>
+                <div class="stat-description">約1,416人が上原田地区に居住</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">🏠</div>
+                    <div class="stat-title">世帯数</div>
+                </div>
+                <div class="big-number">575</div>
+                <div class="stat-description">575世帯が上原田地区に存在</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">📐</div>
+                    <div class="stat-title">面積</div>
+                </div>
+                <div class="big-number">0.67</div>
+                <div class="stat-description">面積は約0.67㎢（67ヘクタール）</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-title">人口密度</div>
+                </div>
+                <div class="big-number">2,113</div>
+                <div class="stat-description">1㎢あたり約2,113人（1,416÷0.67）</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">👪</div>
+                    <div class="stat-title">平均世帯人員</div>
+                </div>
+                <div class="big-number">2.46</div>
+                <div class="stat-description">1世帯あたり約2.46人（1,416÷575）</div>
+            </div>
+        </div>
+
+        <h2 class="section-title">🚗 交通インフラデータ</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">🛣️</div>
+                    <div class="stat-title">主要道路</div>
+                </div>
+                <ul class="data-list">
+                    <li>
+                        <span class="data-label">国道2号線</span>
+                        <span class="data-value">主要幹線道路</span>
+                    </li>
+                    <li>
+                        <span class="data-label">県道372号線</span>
+                        <span class="data-value">県道</span>
+                    </li>
+                    <li>
+                        <span class="data-label">県道397号線</span>
+                        <span class="data-value">県道</span>
+                    </li>
+                    <li>
+                        <span class="data-label">社街道（旧372）</span>
+                        <span class="data-value">旧道</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">🚌</div>
+                    <div class="stat-title">公共交通</div>
+                </div>
+                <div class="chart-placeholder">
+                    公共交通データ収集中
+                </div>
+                <div class="stat-description">
+                    バス路線、最寄り駅へのアクセス情報等
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">🚲</div>
+                    <div class="stat-title">交通アクセス</div>
+                </div>
+                <div class="chart-placeholder">
+                    アクセシビリティ分析データ
+                </div>
+                <div class="stat-description">
+                    徒歩・自転車・自動車でのアクセス性分析
+                </div>
+            </div>
+        </div>
+
+        <h2 class="section-title">🏢 施設・インフラデータ</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">🏪</div>
+                    <div class="stat-title">商業施設</div>
+                </div>
+                <div class="chart-placeholder">
+                    商業施設数データ収集中
+                </div>
+                <div class="stat-description">
+                    コンビニ、スーパー、商店等の分布
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">🏥</div>
+                    <div class="stat-title">医療・福祉施設</div>
+                </div>
+                <div class="chart-placeholder">
+                    医療施設データ収集中
+                </div>
+                <div class="stat-description">
+                    病院、診療所、介護施設等
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">🎓</div>
+                    <div class="stat-title">教育施設</div>
+                </div>
+                <div class="chart-placeholder">
+                    教育施設データ収集中
+                </div>
+                <div class="stat-description">
+                    学校、塾、図書館等の分布
+                </div>
+            </div>
+        </div>
+
+        <div class="source-info">
+            <div class="source-title">📋 データソース</div>
+            <a href="https://geoshape.ex.nii.ac.jp/ka/resource/28/282011140.html" class="source-link" target="_blank">
+                🔗 国立情報学研究所 地形情報システム
+            </a>
+            <a href="https://www.e-stat.go.jp/gis/statmap-search?page=1&type=2&aggregateUnitForBoundary=A&toukeiCode=00200521" class="source-link" target="_blank">
+                🔗 政府統計総合窓口「e-Stat」地図で見る統計（統計GIS）
+            </a>
+            <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; margin-top: 15px;">
+                ※ より正確な最新情報については、e-Statの統計GISで最新のDID区域をご確認ください。
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 簡単なアニメーション効果
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.stat-card');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry, index) => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.style.opacity = '1';
+                            entry.target.style.transform = 'translateY(0)';
+                        }, index * 100);
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            cards.forEach((card) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(card);
+            });
+
+            // 数字カウントアップ効果
+            const bigNumbers = document.querySelectorAll('.big-number');
+            bigNumbers.forEach((number) => {
+                const finalValue = number.textContent;
+                if (!isNaN(parseFloat(finalValue))) {
+                    const targetValue = parseFloat(finalValue);
+                    let currentValue = 0;
+                    const increment = targetValue / 50;
+                    const timer = setInterval(() => {
+                        currentValue += increment;
+                        if (currentValue >= targetValue) {
+                            number.textContent = finalValue;
+                            clearInterval(timer);
+                        } else {
+                            number.textContent = Math.floor(currentValue).toLocaleString();
+                        }
+                    }, 30);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
