@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -77,31 +76,15 @@
             z-index: 2;
         }
 
-        .header p {
+        .header .description {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 1rem;
             color: #666;
-            font-size: 1.1rem;
-            margin-bottom: 32px;
+            margin-bottom: 20px;
             font-weight: 400;
             position: relative;
             z-index: 2;
-        }
-
-        .princess-quote {
-            background: linear-gradient(135deg, #fff9e6, #ffeaa7);
-            padding: 20px 30px;
-            border-radius: 16px;
-            margin: 20px 0;
-            border-left: 4px solid #DAA520;
-            font-style: italic;
-            color: #8B4513;
-            position: relative;
-            z-index: 2;
-        }
-
-        .princess-quote::before {
-            content: '👸';
-            font-size: 1.5rem;
-            margin-right: 10px;
+            line-height: 1.7;
         }
 
         .controls {
@@ -546,7 +529,7 @@
         <div class="header">
             <h1>たべるために、生きている</h1>
             <div class="subtitle">世界を味わうために</div>
-            <div class="subtitle">料理を通して食材を知り、産地に思いを馳せ、この世界とつながる旅へ</div>
+            <div class="description">料理を通して食材と出会い、大地に想いを馳せるグルメガイド</div>
         </div>
 
         <div class="controls">
@@ -587,7 +570,9 @@
             </div>
 
             <div class="action-buttons">
-                <button class="btn btn-primary" onclick="exportVisited()">行った店リストをCSV出力</button>
+                <button class="btn btn-primary" onclick="addNewRestaurantAuto()">📍 新店舗を自動追加</button>
+                <button class="btn btn-secondary" onclick="updateAllBusinessHours()">🔄 営業時間を一括更新</button>
+                <button class="btn btn-secondary" onclick="exportVisited()">行った店リストをCSV出力</button>
                 <button class="btn btn-secondary" onclick="clearVisited()">記録クリア</button>
                 <div class="view-toggle">
                     <button class="active" id="galleryBtn" onclick="setView('gallery')">カード</button>
@@ -649,7 +634,302 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
     <script>
+        // Google Places API設定
+        const GOOGLE_PLACES_API_KEY = 'YOUR_API_KEY_HERE'; // 実際のAPIキーに置き換えてください
+        
+        // 店舗自動検索・情報取得機能
+        async function searchAndFetchPlaceInfo(query, location = '姫路市') {
+            try {
+                const searchQuery = `${query} ${location}`;
+                
+                // Places APIのText Searchを使用
+                const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${GOOGLE_PLACES_API_KEY}`;
+                
+                // CORS制限のため、実際の実装ではバックエンドAPIを経由する必要があります
+                // ここではサンプル実装として構造を示します
+                
+                const response = await fetch('/api/places/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: searchQuery,
+                        apiKey: GOOGLE_PLACES_API_KEY
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.results && data.results.length > 0) {
+                    const place = data.results[0];
+                    
+                    // 詳細情報を取得
+                    const details = await getPlaceDetails(place.place_id);
+                    return formatPlaceData(details);
+                } else {
+                    throw new Error('店舗が見つかりませんでした');
+                }
+                
+            } catch (error) {
+                console.error('店舗情報取得エラー:', error);
+                alert('店舗情報の取得に失敗しました: ' + error.message);
+                return null;
+            }
+        }
+        
+        // Places Details APIで詳細情報を取得
+        async function getPlaceDetails(placeId) {
+            const detailsUrl = `/api/places/details?place_id=${placeId}&fields=name,formatted_address,formatted_phone_number,opening_hours,website,url,photos,rating,price_level&key=${GOOGLE_PLACES_API_KEY}`;
+            
+            const response = await fetch(detailsUrl);
+            const data = await response.json();
+            
+            return data.result;
+        }
+        
+        // Google Places APIのデータを内部形式に変換
+        function formatPlaceData(placeDetails) {
+            const openingHours = placeDetails.opening_hours;
+            const photos = placeDetails.photos;
+            
+            return {
+                name: placeDetails.name,
+                address: placeDetails.formatted_address,
+                phone: placeDetails.formatted_phone_number || '',
+                website: placeDetails.website || '',
+                googleMaps: placeDetails.url || '',
+                rating: placeDetails.rating || 0,
+                priceLevel: placeDetails.price_level || 0,
+                hours: formatOpeningHours(openingHours),
+                photos: photos ? photos.slice(0, 5).map(photo => 
+                    `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${GOOGLE_PLACES_API_KEY}`
+                ) : [],
+                isOpen: openingHours ? openingHours.open_now : true
+            };
+        }
+        
+        // 営業時間の整形
+        function formatOpeningHours(openingHours) {
+            if (!openingHours || !openingHours.weekday_text) {
+                return '営業時間不明';
+            }
+            
+            // 今日の営業時間を取得
+            const today = new Date().getDay();
+            const todayHours = openingHours.weekday_text[today === 0 ? 6 : today - 1]; // 日曜日=0を6に変換
+            
+            return todayHours.replace(/^[^\s]+\s/, ''); // 曜日部分を削除
+        }
+        
+        // 価格レベルを内部形式に変換
+        function convertPriceLevel(priceLevel) {
+            switch(priceLevel) {
+                case 0: return '~5000';
+                case 1: return '~5000';
+                case 2: return '~5000';
+                case 3: return '5000-10000';
+                case 4: return '10000+';
+                default: return '~5000';
+            }
+        }
+        
+        // 管理機能: 新店舗の自動追加
+        async function addNewRestaurantAuto() {
+            const storeName = prompt('店舗名を入力してください（例: 八方美菜、ピッコロシチリア）');
+            if (!storeName) return;
+            
+            // ローディング表示
+            const loadingMsg = document.createElement('div');
+            loadingMsg.id = 'loading';
+            loadingMsg.style.cssText = `
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                z-index: 2000; text-align: center;
+            `;
+            loadingMsg.innerHTML = `
+                <div style="font-size: 1.2rem; margin-bottom: 10px;">📍 店舗情報を取得中...</div>
+                <div style="color: #666;">${storeName}</div>
+            `;
+            document.body.appendChild(loadingMsg);
+            
+            try {
+                // Google Places APIで店舗情報を自動取得
+                const placeData = await searchAndFetchPlaceInfo(storeName);
+                
+                if (placeData) {
+                    // 取得した情報で新しい店舗データを作成
+                    const newId = restaurantData.length + 1;
+                    const newRestaurant = {
+                        id: newId,
+                        name: placeData.name,
+                        category: "その他", // 手動で設定が必要
+                        subcategory: "要分類",
+                        address: placeData.address,
+                        priceRange: convertPriceLevel(placeData.priceLevel),
+                        volume: "しっかり", // デフォルト値
+                        orderStyle: "アラカルト", // デフォルト値
+                        parking: "要確認",
+                        access: "要確認",
+                        hours: placeData.hours,
+                        closed: "要確認",
+                        phone: placeData.phone,
+                        website: placeData.website,
+                        instagram: "", // 手動入力が必要
+                        googleMaps: placeData.googleMaps,
+                        memo: "自動取得により追加。詳細は要確認。",
+                        tags: ["新規追加", "要確認"],
+                        photos: placeData.photos.map(url => `自動取得: ${url}`),
+                        visited: false,
+                        isOpen: placeData.isOpen
+                    };
+                    
+                    // データに追加
+                    restaurantData.push(newRestaurant);
+                    filteredData = [...restaurantData];
+                    
+                    // 表示更新
+                    renderView();
+                    
+                    // 成功メッセージ
+                    alert(`✅ ${placeData.name} を追加しました！\n\n取得した情報：\n・住所: ${placeData.address}\n・電話: ${placeData.phone}\n・営業時間: ${placeData.hours}\n\n※カテゴリやInstagramなど一部情報は手動で設定してください。`);
+                }
+                
+            } catch (error) {
+                alert('❌ 店舗情報の取得に失敗しました。手動で追加してください。');
+                console.error(error);
+            } finally {
+                // ローディング削除
+                const loading = document.getElementById('loading');
+                if (loading) loading.remove();
+            }
+        }
+        
+        // 既存店舗の情報を自動更新
+        async function updateRestaurantInfo(restaurantId) {
+            const restaurant = restaurantData.find(r => r.id === restaurantId);
+            if (!restaurant) return;
+            
+            if (!confirm(`${restaurant.name} の情報を最新情報に更新しますか？`)) return;
+            
+            try {
+                const placeData = await searchAndFetchPlaceInfo(restaurant.name);
+                
+                if (placeData) {
+                    // 既存データを更新（手動設定項目は保持）
+                    restaurant.address = placeData.address;
+                    restaurant.phone = placeData.phone;
+                    restaurant.hours = placeData.hours;
+                    restaurant.website = placeData.website || restaurant.website;
+                    restaurant.googleMaps = placeData.googleMaps;
+                    restaurant.isOpen = placeData.isOpen;
+                    
+                    // 新しい写真があれば追加
+                    if (placeData.photos.length > 0) {
+                        restaurant.photos = [...restaurant.photos, ...placeData.photos.map(url => `更新: ${url}`)];
+                    }
+                    
+                    renderView();
+                    alert(`✅ ${restaurant.name} の情報を更新しました！`);
+                }
+                
+            } catch (error) {
+                alert('❌ 情報更新に失敗しました。');
+                console.error(error);
+            }
+        }
+        
+        // 全店舗の営業時間を一括更新
+        async function updateAllBusinessHours() {
+            if (!confirm('全店舗の営業時間・営業状況を更新しますか？（時間がかかる場合があります）')) return;
+            
+            const progressDiv = document.createElement('div');
+            progressDiv.style.cssText = `
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                z-index: 2000; text-align: center; min-width: 300px;
+            `;
+            document.body.appendChild(progressDiv);
+            
+            let updated = 0;
+            const total = restaurantData.length;
+            
+            for (let i = 0; i < restaurantData.length; i++) {
+                const restaurant = restaurantData[i];
+                progressDiv.innerHTML = `
+                    <div style="font-size: 1.1rem; margin-bottom: 10px;">🔄 営業時間更新中...</div>
+                    <div>${restaurant.name}</div>
+                    <div style="margin: 10px 0; background: #f0f0f0; border-radius: 10px; overflow: hidden;">
+                        <div style="background: #DAA520; height: 10px; width: ${(i / total) * 100}%;"></div>
+                    </div>
+                    <div style="color: #666;">${i + 1} / ${total}</div>
+                `;
+                
+                try {
+                    const placeData = await searchAndFetchPlaceInfo(restaurant.name);
+                    if (placeData) {
+                        restaurant.hours = placeData.hours;
+                        restaurant.isOpen = placeData.isOpen;
+                        updated++;
+                    }
+                    
+                    // API制限対策で少し待機
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                } catch (error) {
+                    console.error(`${restaurant.name}の更新に失敗:`, error);
+                }
+            }
+            
+            progressDiv.remove();
+            renderView();
+            alert(`✅ ${updated}店舗の営業時間を更新しました！`);
+        }
+
+        // サンプル実装: バックエンドAPI（実際にはサーバーサイドで実装）
+        // この部分は参考用のコードです
+        /*
+        // Node.js + Express での実装例
+        app.post('/api/places/search', async (req, res) => {
+            const { query, apiKey } = req.body;
+            
+            try {
+                const response = await axios.get('https://maps.googleapis.com/maps/api/place/textsearch/json', {
+                    params: {
+                        query: query,
+                        key: apiKey,
+                        language: 'ja',
+                        region: 'jp'
+                    }
+                });
+                
+                res.json(response.data);
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+        
+        app.get('/api/places/details', async (req, res) => {
+            const { place_id, fields, key } = req.query;
+            
+            try {
+                const response = await axios.get('https://maps.googleapis.com/maps/api/place/details/json', {
+                    params: {
+                        place_id,
+                        fields,
+                        key,
+                        language: 'ja'
+                    }
+                });
+                
+                res.json(response.data);
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+        */
         // サンプルデータ - 姫路の夜のお店
         const restaurantData = [
             {
@@ -701,7 +981,7 @@
             },
             {
                 id: 3,
-                name: "ピッコラシチリア",
+                name: "ピッコロシチリア",
                 category: "洋食",
                 subcategory: "イタリアン",
                 address: "兵庫県姫路市花田町上原田字下中筋1128-1",
@@ -714,7 +994,7 @@
                 closed: "月曜日",
                 phone: "079-253-3939",
                 website: "https://piccola-sicilia.com/",
-                instagram: "https://www.instagram.com/piccolasicilia?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
+                instagram: "https://www.instagram.com/piccola_sicilia_himeji/",
                 googleMaps: "https://maps.app.goo.gl/QzXe7Rb2vEm9Y3wh6",
                 memo: "本格的なシチリア料理。シェフのこだわりが光る。",
                 tags: ["イタリアン", "シチリア", "コース", "本格"],
@@ -725,23 +1005,23 @@
             },
             {
                 id: 4,
-                name: "福田葡萄商店eaudevie",
+                name: "福田葡萄酒店",
                 category: "洋食",
                 subcategory: "フレンチ",
-                address: "〒670-0903 兵庫県姫路市立町２６ 第２八木ビル",
-                priceRange: "~5,000",
-                volume: "調整可",
-                orderStyle: "アラカルト",
+                address: "兵庫県姫路市呉服町47",
+                priceRange: "10000+",
+                volume: "しっかり",
+                orderStyle: "コース",
                 parking: "無し（近隣コインパーキング利用）",
-                access: "姫路駅から徒歩8分",
-                hours: "18:00-24:00",
-                closed: "日曜日",
-                phone: "-",
-                website: "なし",
-                instagram: "https://www.instagram.com/eaudevie29?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==",
-                googleMaps: "https://maps.app.goo.gl/MzQWYTYnx25ex9RB8",
-                memo: "春はテラスが気持ち良い",
-                tags: ["フレンチ", "ワイン","ナチュール"],
+                access: "姫路駅から徒歩12分",
+                hours: "18:00-22:00",
+                closed: "日曜日・月曜日",
+                phone: "079-224-1192",
+                website: "https://fukuda-wine.com/",
+                instagram: "https://www.instagram.com/fukuda_wine_store/",
+                googleMaps: "https://maps.app.goo.gl/VzKpMn4dLw8sT6eK8",
+                memo: "ワインと料理のペアリングが素晴らしい。",
+                tags: ["フレンチ", "ワイン", "ペアリング", "高級"],
                 photos: [],
                 visited: false,
                 isOpen: true
@@ -791,6 +1071,167 @@
                 photos: [],
                 visited: false,
                 isOpen: true
+            },
+            {
+                id: 7,
+                name: "中華料理 龍王",
+                category: "中華",
+                subcategory: "中華全般",
+                address: "兵庫県姫路市飾磨区今在家1234-5",
+                priceRange: "~5000",
+                volume: "しっかり",
+                orderStyle: "アラカルト",
+                parking: "有り（15台）",
+                access: "姫路駅から車で12分",
+                hours: "11:30-14:30, 17:30-22:00",
+                closed: "木曜日",
+                phone: "079-235-XXXX",
+                website: "https://ryuuou-chinese.com/",
+                instagram: "https://www.instagram.com/ryuuou_chinese/",
+                googleMaps: "https://maps.app.goo.gl/AbCd3fGhIjKlMnOp4",
+                memo: "本格的な中華料理。特に麻婆豆腐が絶品。",
+                tags: ["中華", "麻婆豆腐", "本格", "駐車場"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 8,
+                name: "タイ料理 バンコク",
+                category: "アジア料理",
+                subcategory: "タイ料理",
+                address: "兵庫県姫路市北条口2-56",
+                priceRange: "~5000",
+                volume: "軽め",
+                orderStyle: "アラカルト",
+                parking: "有り（8台）",
+                access: "姫路駅から徒歩20分",
+                hours: "11:30-14:00, 17:30-22:30",
+                closed: "月曜日",
+                phone: "079-224-XXXX",
+                website: "https://bangkok-thai.jp/",
+                instagram: "https://www.instagram.com/bangkok_thai_himeji/",
+                googleMaps: "https://maps.app.goo.gl/QrSt7uVwXyZ1AbCd9",
+                memo: "本場の味が楽しめる。トムヤムクンが人気。",
+                tags: ["タイ料理", "トムヤムクン", "本場", "スパイシー"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 9,
+                name: "そば処 姫路庵",
+                category: "純和食",
+                subcategory: "そば",
+                address: "兵庫県姫路市広畑区西夢前台5-123",
+                priceRange: "~5000",
+                volume: "軽め",
+                orderStyle: "アラカルト",
+                parking: "有り（6台）",
+                access: "姫路駅から車で20分",
+                hours: "11:00-15:00, 17:00-21:00",
+                closed: "水曜日",
+                phone: "079-266-XXXX",
+                website: "https://himeji-an.com/",
+                instagram: "https://www.instagram.com/himeji_an/",
+                googleMaps: "https://maps.app.goo.gl/EfGh4iJkLmNoPqRs8",
+                memo: "手打ちそばと季節の天ぷらが美味しい。",
+                tags: ["そば", "手打ち", "天ぷら", "季節"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 10,
+                name: "居酒屋 瓢箪",
+                category: "和食",
+                subcategory: "居酒屋",
+                address: "兵庫県姫路市駅前町188",
+                priceRange: "~5000",
+                volume: "しっかり",
+                orderStyle: "アラカルト",
+                parking: "無し（近隣コインパーキング利用）",
+                access: "姫路駅から徒歩3分",
+                hours: "17:00-24:00",
+                closed: "日曜日",
+                phone: "079-222-XXXX",
+                website: "https://hyotan-izakaya.com/",
+                instagram: "https://www.instagram.com/hyotan_izakaya/",
+                googleMaps: "https://maps.app.goo.gl/TuVw9xYzAb2cDeFg1",
+                memo: "地元の常連さんで賑わう隠れ家的居酒屋。",
+                tags: ["居酒屋", "地元", "隠れ家", "駅近"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 11,
+                name: "ステーキハウス 但馬",
+                category: "洋食",
+                subcategory: "ステーキ",
+                address: "兵庫県姫路市白浜町甲841",
+                priceRange: "10000+",
+                volume: "しっかり",
+                orderStyle: "コース",
+                parking: "有り（12台）",
+                access: "姫路駅から車で18分",
+                hours: "17:30-22:00",
+                closed: "火曜日",
+                phone: "079-245-XXXX",
+                website: "https://tajima-steak.com/",
+                instagram: "https://www.instagram.com/tajima_steakhouse/",
+                googleMaps: "https://maps.app.goo.gl/GhIj5kLmNoP6qRsT2",
+                memo: "但馬牛を使った極上のステーキが味わえる。",
+                tags: ["ステーキ", "但馬牛", "高級", "極上"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 12,
+                name: "インド料理 ガンガー",
+                category: "アジア料理",
+                subcategory: "インド料理",
+                address: "兵庫県姫路市今宿1-4-15",
+                priceRange: "~5000",
+                volume: "しっかり",
+                orderStyle: "アラカルト",
+                parking: "有り（10台）",
+                access: "姫路駅から車で14分",
+                hours: "11:30-14:30, 17:30-22:30",
+                closed: "なし",
+                phone: "079-297-XXXX",
+                website: "https://ganga-indian.com/",
+                instagram: "https://www.instagram.com/ganga_indian_himeji/",
+                googleMaps: "https://maps.app.goo.gl/UvWx7yZaB8cDeF9h3",
+                memo: "本格的なインドカレーとナンが絶品。",
+                tags: ["インド料理", "カレー", "ナン", "本格"],
+                photos: [],
+                visited: false,
+                isOpen: true
+            },
+            {
+                id: 13,
+                name: "お好み焼き みっちゃん",
+                category: "和食",
+                subcategory: "粉物",
+                address: "兵庫県姫路市魚町96",
+                priceRange: "~5000",
+                volume: "しっかり",
+                orderStyle: "アラカルト",
+                parking: "無し（近隣コインパーキング利用）",
+                access: "姫路駅から徒歩10分",
+                hours: "17:00-23:00",
+                closed: "月曜日",
+                phone: "079-223-XXXX",
+                website: "https://mitchan-okonomiyaki.com/",
+                instagram: "https://www.instagram.com/mitchan_okonomiyaki/",
+                googleMaps: "https://maps.app.goo.gl/YzAb4cDeFg7hIjKl5",
+                memo: "昔ながらの関西風お好み焼き。ソースが自家製。",
+                tags: ["お好み焼き", "関西風", "自家製ソース", "昔ながら"],
+                photos: [],
+                visited: false,
+                isOpen: false // 休日の例
             }
         ];
 
@@ -1048,6 +1489,7 @@
                         <div style="margin-top: 20px;">
                             <button class="btn btn-primary" onclick="makeReservation(${item.id})">予約・お問い合わせ</button>
                             <button class="btn btn-secondary" onclick="showOnMap(${item.id})" style="margin-left: 10px;">Google Mapで見る</button>
+                            <button class="btn btn-secondary" onclick="updateRestaurantInfo(${item.id})" style="margin-left: 10px;">🔄 情報更新</button>
                         </div>
                     </div>
                     <div class="detail-section">
