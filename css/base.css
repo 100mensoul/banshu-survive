@@ -53,21 +53,6 @@ body {
   text-align: left;
 }
 
-.dropdown-content .dropdown-heading {
-  font-size: 0.65rem;
-  letter-spacing: 0.06em;
-  color: #666;
-  padding: 0.35rem 0.65rem 0.15rem;
-  font-weight: bold;
-  pointer-events: none;
-  border-top: 1px solid #eee;
-}
-
-.dropdown-content .dropdown-heading:first-child {
-  border-top: none;
-  padding-top: 0.25rem;
-}
-
 .dropdown-content a {
   color: #333;
   padding: 0.35rem 0.65rem;
@@ -80,6 +65,51 @@ body {
 
 .dropdown-content a:hover {
   background-color: #f0f0f0;
+}
+
+/* エピソード：シーズン見出しと話数リンクの階層 */
+.dropdown-content--episodes {
+  min-width: 15.5rem;
+  max-width: 22rem;
+  padding: 0.25rem 0;
+}
+
+.dropdown-season {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.dropdown-season:last-child {
+  border-bottom: none;
+}
+
+.dropdown-content--episodes .dropdown-heading {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  color: #3d4a3d;
+  padding: 0.35rem 0.75rem 0.25rem;
+  margin: 0 0.4rem;
+  font-weight: 700;
+  pointer-events: none;
+  background: #e8efe8;
+  border-radius: 3px 3px 0 0;
+  border-left: 3px solid #5a8f5a;
+}
+
+.dropdown-content--episodes .dropdown-links {
+  margin: 0 0 0 0.5rem;
+  padding: 0.2rem 0 0.35rem 0.65rem;
+  border-left: 2px solid #c8dcc8;
+}
+
+.dropdown-content--episodes .dropdown-links a {
+  padding: 0.4rem 0.5rem 0.4rem 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.dropdown-content--episodes .dropdown-links a:hover {
+  background-color: #f0f6f0;
 }
 
 /* PC: ホバー / キーボード:focus-within / タッチ: .is-touch-open（JSで付与） */
