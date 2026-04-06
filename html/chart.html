@@ -33,12 +33,19 @@
 .chart-page .char-image {
   text-align: center;
   margin: 1rem 0;
+  /* 画面端に画像がぴったり付かないよう余白（左が「切れた」ように見えるのを緩和） */
+  padding: 0 0.75rem;
+  box-sizing: border-box;
 }
 .chart-page .char-image img {
   width: 100%;
   max-width: 800px;
   height: auto;
   vertical-align: middle;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  object-fit: contain;
 }
 .chart-himejin {
   margin-top: 2.5rem;
