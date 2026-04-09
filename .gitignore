@@ -1,0 +1,4 @@
+# Supabase（ブラウザテスト用。中身は Git に載せない）
+admin/config.local.js
+
+.DS_Store

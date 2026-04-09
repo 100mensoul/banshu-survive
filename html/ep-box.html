@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-episode-slug="ep-box">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -103,6 +103,10 @@ img {
   font-size: 0.85rem;
   font-weight: bold;
 }
+.episode-md { line-height: 1.8; }
+.episode-md p { margin-bottom: 1rem; }
+.episode-md img { width: 100%; margin: 1rem 0; border-radius: 0; }
+.episode-md strong { font-weight: bold; color: #4a7c59; }
   </style>
 </head>
 <body>
@@ -113,6 +117,7 @@ img {
       <a href="ep-3.html">第3話 →</a>
     </div>
 
+    <div id="episode-content">
     <h1>エピソード1</h1>
     <div class="sub-title">原風景を求めて</div>
     <div class="date">2025.05.03</div>
@@ -134,11 +139,14 @@ img {
     <img src="../images/scenery-4.jpg" alt="写真4">
 
     <p>そして街のどこかに、自分と“似た誰か”が存在するらしい――そんなぼんやりとした気配だけが、<strong>平尾</strong>の胸に残った。</p>
+    </div>
 
     <div class="nav">
       <a href="#">← 第0話</a>
       <a href="ep-3.html">第3話 →</a>
     </div>
   </div>
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="module" src="../js/episode-public.js"></script>
 </body>
 </html>

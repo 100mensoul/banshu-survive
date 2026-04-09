@@ -22,7 +22,7 @@
   <h1>Supabase 接続テスト</h1>
 
   <div class="box err" id="config-missing" hidden>
-    <strong>config.local.js</strong> が読めません。<code>admin/config.example.js</code> をコピーして <code>config.local.js</code> を作り、URL と anon キーを入れて再読み込みしてください。
+    <strong>接続設定</strong>がありません。<code>js/supabase-public-config.js</code> に URL と anon キーを入れてください。
   </div>
 
   <div class="box">
@@ -54,7 +54,7 @@
     <a href="../index.html">← サイトトップへ</a>
   </p>
 
-  <script src="config.local.js"></script>
+  <script src="../js/supabase-public-config.js"></script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -68,11 +68,13 @@
 
     const url = window.__SB_URL;
     const key = window.__SB_ANON_KEY;
-    const configOk = url && key && !String(url).includes('あなたのプロジェクトID');
+    const keyOk = key && String(key).trim().length > 0;
+    const urlOk = url && String(url).trim().length > 0 && !String(url).includes('あなたのプロジェクトID');
+    const configOk = urlOk && keyOk;
 
     if (!configOk) {
       missingEl.hidden = false;
-      log('config.local.js を用意し、URL と anon キーを設定してください。');
+      log('js/supabase-public-config.js に URL と anon キーを設定してください。');
     }
 
     const supabase = configOk ? createClient(url, key) : null;

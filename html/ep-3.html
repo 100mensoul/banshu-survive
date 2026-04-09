@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-episode-slug="ep-3">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -101,6 +101,10 @@ img {
   font-size: 0.85rem;
   font-weight: bold;
 }
+.episode-md { line-height: 1.8; }
+.episode-md p { margin-bottom: 1rem; }
+.episode-md img { width: 100%; margin: 1rem 0; border-radius: 0; }
+.episode-md strong { font-weight: bold; color: #4a7c59; }
   </style>
 </head>
 <body>
@@ -111,6 +115,7 @@ img {
       <a href="ep-4.html">第4話 →</a>
     </div>
 
+    <div id="episode-content">
     <h1>エピソード3</h1>
     <div class="sub-title">東京ネイティブ</div>
 
@@ -149,11 +154,14 @@ img {
 それが何を意味しているのか、本人もまだ知らない。</p>
 
     <p>東京の午後。ひとつの街の中で、ふたつの時間が流れていた。</p>
+    </div>
 
     <div class="nav">
       <a href="ep-box.html">← 第1話</a>
       <a href="ep-4.html">第4話 →</a>
     </div>
   </div>
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="module" src="../js/episode-public.js"></script>
 </body>
 </html>
