@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>エピソード管理｜播州サバイブ</title>
+  <style>
+    :root {
+      font-family: 'Hiragino Kaku Gothic ProN', system-ui, sans-serif;
+      line-height: 1.5;
+      color: #222;
+    }
+    body { margin: 0; padding: 1rem; background: #f0f2f0; }
+    h1 { font-size: 1.2rem; margin: 0 0 1rem; }
+    .err { background: #ffe8e8; border: 1px solid #e66; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
+    .ok { background: #e8f5e9; border: 1px solid #4a7c59; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
+    .toolbar a { color: #1a5fb4; }
+    button {
+      padding: 0.45rem 1rem; cursor: pointer; border-radius: 6px; border: 1px solid #333;
+      background: #fff100; font-weight: 600; font-size: 0.9rem;
+    }
+    button.secondary { background: #e8e8e8; }
+    button.danger { background: #ffcccc; border-color: #a44; }
+    label { display: block; margin-top: 0.65rem; font-size: 0.85rem; font-weight: 600; }
+    input[type="text"], input[type="number"], select, textarea {
+      width: 100%; max-width: 100%; padding: 0.45rem; margin-top: 0.2rem; box-sizing: border-box;
+      border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem;
+    }
+    textarea#body { min-height: 280px; font-family: ui-monospace, monospace; font-size: 0.88rem; }
+    .layout {
+      display: grid;
+      gap: 1rem;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    @media (min-width: 900px) {
+      .layout { grid-template-columns: 220px 1fr 1fr; align-items: start; }
+    }
+    .panel {
+      background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    #episode-list { list-style: none; padding: 0; margin: 0; max-height: 70vh; overflow-y: auto; }
+    #episode-list li {
+      margin: 0 0 0.35rem; padding: 0.5rem 0.6rem; border-radius: 6px; cursor: pointer;
+      border: 1px solid #e0e0e0; font-size: 0.85rem;
+    }
+    #episode-list li:hover { background: #f8f8e0; }
+    #episode-list li.active { background: #fff100; border-color: #333; }
+    .badge { font-size: 0.7rem; padding: 0.1rem 0.35rem; border-radius: 4px; margin-left: 0.25rem; }
+    .badge-draft { background: #eee; }
+    .badge-pub { background: #c8e6c9; }
+    .preview-content {
+      font-size: 0.95rem; line-height: 1.75; max-height: min(70vh, 640px); overflow-y: auto;
+      padding: 0.5rem; border: 1px dashed #ccc; border-radius: 6px; background: #fafafa;
+    }
+    .preview-content h1 { font-size: 1.35rem; }
+    .preview-content h2 { font-size: 1.15rem; }
+    .preview-content img { max-width: 100%; height: auto; }
+    #auth-panel label { max-width: 360px; }
+    #msg { font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+  <h1>エピソード管理（Supabase）</h1>
+
+  <div class="err" id="config-missing" hidden>
+    <strong>config.local.js</strong> がありません。<code>admin/config.example.js</code> をコピーして <code>config.local.js</code> を作成してください。
+  </div>
+
+  <div class="toolbar">
+    <a href="supabase-test.html">接続テスト</a>
+    <span>·</span>
+    <a href="../index.html">サイトトップ</a>
+  </div>
+
+  <div id="msg" class="ok" hidden></div>
+
+  <!-- ログイン -->
+  <div class="panel" id="auth-panel">
+    <strong>ログイン</strong>（編集者アカウント）
+    <label>メール<input type="email" id="email" autocomplete="username"></label>
+    <label>パスワード<input type="password" id="password" autocomplete="current-password"></label>
+    <button type="button" id="btn-signin">ログイン</button>
+    <button type="button" class="secondary" id="btn-signout">ログアウト</button>
+  </div>
+
+  <!-- メイン -->
+  <div id="app" class="layout" hidden>
+
+    <div class="panel">
+      <strong>一覧</strong>
+      <button type="button" id="btn-new" style="width:100%;margin-top:0.5rem;">＋ 新規</button>
+      <ul id="episode-list"></ul>
+    </div>
+
+    <div class="panel">
+      <strong>編集</strong>
+      <form id="form" spellcheck="true">
+        <input type="hidden" id="row-id" value="">
+        <label>slug（英数字・ハイフン）<input type="text" id="slug" required placeholder="ep-3"></label>
+        <label>シーズン<input type="number" id="season" min="0" step="1" placeholder="1"></label>
+        <label>話数<input type="number" id="episode_number" min="0" step="1" placeholder="3"></label>
+        <label>タイトル<input type="text" id="title" required placeholder="エピソード3"></label>
+        <label>サブタイトル<input type="text" id="subtitle" placeholder="東京ネイティブ"></label>
+        <label>本文（Markdown）<textarea id="md-body" placeholder="## 見出し&#10;&#10;段落…"></textarea></label>
+        <label>公開状態
+          <select id="status">
+            <option value="draft">下書き（draft）</option>
+            <option value="published">公開（published）</option>
+          </select>
+        </label>
+        <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.5rem;">
+          <button type="submit">保存</button>
+          <button type="button" class="secondary" id="btn-reload">再読込</button>
+          <button type="button" class="danger" id="btn-delete">削除…</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel">
+      <strong>プレビュー</strong>（Markdown）
+      <p style="font-size:0.8rem;color:#666;margin:0.25rem 0 0.5rem;">本文を入力すると自動で更新されます。</p>
+      <div class="preview-content" id="preview"></div>
+    </div>
+  </div>
+
+  <script src="config.local.js"></script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { marked } from 'https://esm.sh/marked@14';
+
+    marked.setOptions({ breaks: true, gfm: true });
+
+    const url = window.__SB_URL;
+    const key = window.__SB_ANON_KEY;
+    const configOk = url && key && !String(url).includes('あなたのプロジェクトID');
+
+    document.getElementById('config-missing').hidden = configOk;
+
+    if (!configOk) {
+      /* config.local.js 未設定時はここまで */
+    } else {
+    const supabase = createClient(url, key);
+
+    const authPanel = document.getElementById('auth-panel');
+    const app = document.getElementById('app');
+    const msg = document.getElementById('msg');
+    const listEl = document.getElementById('episode-list');
+    const form = document.getElementById('form');
+
+    function showMsg(text, ok) {
+      msg.textContent = text;
+      msg.className = ok ? 'ok' : 'err';
+      msg.hidden = false;
+      clearTimeout(showMsg._t);
+      showMsg._t = setTimeout(() => { msg.hidden = true; }, 6000);
+    }
+
+    function renderPreview() {
+      const raw = document.getElementById('md-body').value || '';
+      document.getElementById('preview').innerHTML = marked.parse(raw);
+    }
+
+    let debounceT;
+    document.getElementById('md-body').addEventListener('input', () => {
+      clearTimeout(debounceT);
+      debounceT = setTimeout(renderPreview, 200);
+    });
+
+    function clearForm() {
+      document.getElementById('row-id').value = '';
+      document.getElementById('slug').value = '';
+      document.getElementById('season').value = '';
+      document.getElementById('episode_number').value = '';
+      document.getElementById('title').value = '';
+      document.getElementById('subtitle').value = '';
+      document.getElementById('md-body').value = '';
+      document.getElementById('status').value = 'draft';
+      listEl.querySelectorAll('li').forEach((li) => li.classList.remove('active'));
+      renderPreview();
+    }
+
+    function fillForm(row) {
+      document.getElementById('row-id').value = row.id;
+      document.getElementById('slug').value = row.slug || '';
+      document.getElementById('season').value = row.season != null ? row.season : '';
+      document.getElementById('episode_number').value = row.episode_number != null ? row.episode_number : '';
+      document.getElementById('title').value = row.title || '';
+      document.getElementById('subtitle').value = row.subtitle || '';
+      document.getElementById('md-body').value = row.body || '';
+      document.getElementById('status').value = row.status === 'published' ? 'published' : 'draft';
+      renderPreview();
+    }
+
+    async function loadList() {
+      const { data, error } = await supabase
+        .from('episodes')
+        .select('*')
+        .order('season', { ascending: true })
+        .order('episode_number', { ascending: true })
+        .order('slug');
+
+      if (error) {
+        showMsg('一覧取得エラー: ' + error.message, false);
+        return;
+      }
+
+      listEl.innerHTML = '';
+      (data || []).forEach((row) => {
+        const li = document.createElement('li');
+        li.dataset.id = row.id;
+        const badge = row.status === 'published'
+          ? '<span class="badge badge-pub">公開</span>'
+          : '<span class="badge badge-draft">下書き</span>';
+        li.innerHTML = `<strong>${escapeHtml(row.slug)}</strong>${badge}<br><span style="opacity:.85">${escapeHtml(row.title || '')}</span>`;
+        li.addEventListener('click', () => {
+          listEl.querySelectorAll('li').forEach((x) => x.classList.remove('active'));
+          li.classList.add('active');
+          fillForm(row);
+        });
+        listEl.appendChild(li);
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    document.getElementById('btn-new').addEventListener('click', clearForm);
+
+    document.getElementById('btn-reload').addEventListener('click', async () => {
+      const id = document.getElementById('row-id').value;
+      if (!id) {
+        showMsg('行が選ばれていません（新規なら保存後に再読込できます）', false);
+        return;
+      }
+      const { data, error } = await supabase.from('episodes').select('*').eq('id', id).maybeSingle();
+      if (error || !data) {
+        showMsg('再読込エラー: ' + (error?.message || 'なし'), false);
+        return;
+      }
+      fillForm(data);
+      await loadList();
+      showMsg('再読込しました', true);
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('row-id').value.trim();
+      const seasonVal = document.getElementById('season').value;
+      const epVal = document.getElementById('episode_number').value;
+      const payload = {
+        slug: document.getElementById('slug').value.trim(),
+        title: document.getElementById('title').value.trim(),
+        subtitle: document.getElementById('subtitle').value.trim() || null,
+        body: document.getElementById('md-body').value,
+        status: document.getElementById('status').value,
+        season: seasonVal === '' ? null : parseInt(seasonVal, 10),
+        episode_number: epVal === '' ? null : parseInt(epVal, 10),
+      };
+
+      if (!payload.slug || !payload.title) {
+        showMsg('slug とタイトルは必須です', false);
+        return;
+      }
+
+      let error;
+      if (id) {
+        const res = await supabase.from('episodes').update(payload).eq('id', id);
+        error = res.error;
+      } else {
+        const res = await supabase.from('episodes').insert([payload]).select('id').single();
+        error = res.error;
+        if (!error && res.data?.id) {
+          document.getElementById('row-id').value = res.data.id;
+        }
+      }
+
+      if (error) {
+        showMsg('保存エラー: ' + error.message, false);
+        return;
+      }
+      await loadList();
+      showMsg('保存しました', true);
+    });
+
+    document.getElementById('btn-delete').addEventListener('click', async () => {
+      const id = document.getElementById('row-id').value.trim();
+      if (!id) {
+        showMsg('削除できるのは保存済みの行だけです', false);
+        return;
+      }
+      if (!confirm('このエピソードを削除しますか？（元に戻せません）')) return;
+      const { error } = await supabase.from('episodes').delete().eq('id', id);
+      if (error) {
+        showMsg('削除エラー: ' + error.message, false);
+        return;
+      }
+      clearForm();
+      await loadList();
+      showMsg('削除しました', true);
+    });
+
+    document.getElementById('btn-signin').addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        showMsg('ログイン失敗: ' + error.message, false);
+        return;
+      }
+      showMsg('ログインしました', true);
+    });
+
+    document.getElementById('btn-signout').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      showMsg('ログアウトしました', true);
+    });
+
+    function setUiSession(session) {
+      if (session) {
+        authPanel.hidden = true;
+        app.hidden = false;
+        loadList();
+      } else {
+        authPanel.hidden = false;
+        app.hidden = true;
+        listEl.innerHTML = '';
+      }
+    }
+
+    supabase.auth.onAuthStateChange((_e, session) => {
+      setUiSession(session);
+    });
+
+    const { data: { session } } = await supabase.auth.getSession();
+    setUiSession(session);
+    }
+  </script>
+</body>
+</html>

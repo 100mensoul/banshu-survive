@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-episode-slug="ep-4">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -101,6 +101,10 @@ img {
   font-size: 0.85rem;
   font-weight: bold;
 }
+.episode-md { line-height: 1.8; }
+.episode-md p { margin-bottom: 1rem; }
+.episode-md img { width: 100%; margin: 1rem 0; border-radius: 0; }
+.episode-md strong { font-weight: bold; color: #4a7c59; }
   </style>
 </head>
 <body>
@@ -108,9 +112,10 @@ img {
     <p class="back-to-top"><a href="../index.html">← トップへ戻る</a></p>
     <div class="nav">
       <a href="ep-3.html">← 第3話</a>
-      <a href="#">第5話 →</a>
+      <a href="ep-5.html">第5話 →</a>
     </div>
 
+    <div id="episode-content">
     <h1>エピソード4</h1>
     <div class="sub-title">タネはまかれた</div>
     <div class="date">2026.04.03</div>
@@ -152,11 +157,14 @@ img {
     <p>――その一部始終を、<strong>平尾</strong>は記録していた。メモ魔。広報部長。見届け人。播州の地で妻が紡ぐ夢を、書き留め、語り継ぐ。それがこの男に与えられた、たったひとつの役割だった。</p>
 
     <p>地平はつづく。</p>
+    </div>
 
     <div class="nav">
       <a href="ep-3.html">← 第3話</a>
-      <a href="#">第5話 →</a>
+      <a href="ep-5.html">第5話 →</a>
     </div>
   </div>
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="module" src="../js/episode-public.js"></script>
 </body>
 </html>

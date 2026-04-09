@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>接続テスト｜播州サバイブ admin</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; line-height: 1.5; }
+    body { max-width: 720px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    h1 { font-size: 1.25rem; }
+    .box { background: #f6f6f6; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+    .err { background: #ffe8e8; border-color: #e66; }
+    pre { overflow: auto; font-size: 0.8rem; background: #111; color: #e8e8e8; padding: 1rem; border-radius: 6px; }
+    label { display: block; margin-top: 0.5rem; font-size: 0.9rem; }
+    input { width: 100%; max-width: 360px; padding: 0.4rem; margin-top: 0.2rem; }
+    button { margin-top: 0.75rem; padding: 0.45rem 1rem; cursor: pointer; border-radius: 6px; border: 1px solid #333; background: #fff100; font-weight: 600; }
+    button.secondary { background: #e8e8e8; }
+    #log { white-space: pre-wrap; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>Supabase 接続テスト</h1>
+
+  <div class="box err" id="config-missing" hidden>
+    <strong>config.local.js</strong> が読めません。<code>admin/config.example.js</code> をコピーして <code>config.local.js</code> を作り、URL と anon キーを入れて再読み込みしてください。
+  </div>
+
+  <div class="box">
+    <strong>① 匿名</strong>（<code>published</code> のみ）<br>
+    <button type="button" id="btn-anon">匿名で取得</button>
+  </div>
+
+  <div class="box">
+    <strong>② ログイン</strong><br>
+    <label>メール<input type="email" id="email" autocomplete="username"></label>
+    <label>パスワード<input type="password" id="password" autocomplete="current-password"></label>
+    <button type="button" id="btn-signin">ログイン</button>
+    <button type="button" class="secondary" id="btn-signout">ログアウト</button>
+  </div>
+
+  <div class="box">
+    <strong>③ 認証後・全件</strong><br>
+    <button type="button" id="btn-auth">認証済みで全件取得</button>
+  </div>
+
+  <div class="box">
+    <strong>結果</strong>
+    <pre id="log">（ボタンを押すとここに表示されます）</pre>
+  </div>
+
+  <p>
+    <a href="episodes-editor.html">エピソード管理へ</a>
+    ·
+    <a href="../index.html">← サイトトップへ</a>
+  </p>
+
+  <script src="config.local.js"></script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const logEl = document.getElementById('log');
+    const missingEl = document.getElementById('config-missing');
+
+    function log(msg, obj) {
+      const t = typeof obj !== 'undefined' ? msg + '\n' + JSON.stringify(obj, null, 2) : String(msg);
+      logEl.textContent = t;
+    }
+
+    const url = window.__SB_URL;
+    const key = window.__SB_ANON_KEY;
+    const configOk = url && key && !String(url).includes('あなたのプロジェクトID');
+
+    if (!configOk) {
+      missingEl.hidden = false;
+      log('config.local.js を用意し、URL と anon キーを設定してください。');
+    }
+
+    const supabase = configOk ? createClient(url, key) : null;
+
+    document.getElementById('btn-anon').addEventListener('click', async () => {
+      if (!supabase) return;
+      const { data, error } = await supabase.from('episodes').select('slug,title,status,updated_at').order('slug');
+      if (error) {
+        log('エラー:', { message: error.message, code: error.code, details: error.details });
+        return;
+      }
+      log('匿名で取得（RLSにより published の行だけ返る想定。0件なら下書きのみの可能性）:', data);
+    });
+
+    document.getElementById('btn-signin').addEventListener('click', async () => {
+      if (!supabase) return;
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        log('ログイン失敗:', { message: error.message });
+        return;
+      }
+      log('ログインOK。ユーザーID:', data.user?.id);
+    });
+
+    document.getElementById('btn-signout').addEventListener('click', async () => {
+      if (!supabase) return;
+      await supabase.auth.signOut();
+      log('ログアウトしました。');
+    });
+
+    document.getElementById('btn-auth').addEventListener('click', async () => {
+      if (!supabase) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        log('先にログインしてください。');
+        return;
+      }
+      const { data, error } = await supabase.from('episodes').select('slug,title,status,updated_at').order('slug');
+      if (error) {
+        log('エラー:', { message: error.message, code: error.code });
+        return;
+      }
+      log('認証後・全件:', data);
+    });
+  </script>
+</body>
+</html>
