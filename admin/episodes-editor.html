@@ -74,6 +74,11 @@
     .preview-content img { max-width: 100%; height: auto; }
     #auth-panel label { max-width: 360px; }
     #msg { font-size: 0.9rem; }
+    .upload-row {
+      margin-top: 0.5rem; padding: 0.65rem; background: #f8faf8; border: 1px dashed #9abf9a;
+      border-radius: 8px; font-size: 0.82rem;
+    }
+    .upload-row input[type="file"] { max-width: 100%; margin-top: 0.35rem; font-size: 0.85rem; }
   </style>
 </head>
 <body>
@@ -119,6 +124,14 @@
         <label>話数<input type="number" id="episode_number" min="0" step="1" placeholder="3"></label>
         <label>タイトル<input type="text" id="title" required placeholder="エピソード3"></label>
         <label>サブタイトル<input type="text" id="subtitle" placeholder="東京ネイティブ"></label>
+
+        <div class="upload-row">
+          <strong>画像（Supabase Storage）</strong>
+          <div>ログイン後、画像を選んで「本文に挿入」。初回は <code>admin/storage-policies.sql</code> を Supabase で実行してバケット <code>episode-images</code> を用意してください。</div>
+          <input type="file" id="image-file" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml">
+          <button type="button" class="secondary" id="btn-upload-image" style="margin-top:0.5rem;">アップロードして本文に挿入</button>
+        </div>
+
         <label>本文（Markdown）<textarea id="md-body" placeholder="## 見出し&#10;&#10;段落…"></textarea></label>
         <label>公開状態
           <select id="status">
@@ -251,6 +264,44 @@
 
     document.getElementById('btn-new').addEventListener('click', clearForm);
 
+    const STORAGE_BUCKET = 'episode-images';
+
+    document.getElementById('btn-upload-image').addEventListener('click', async () => {
+      const fileInput = document.getElementById('image-file');
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) {
+        showMsg('画像ファイルを選んでください', false);
+        return;
+      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        showMsg('画像アップロードにはログインが必要です', false);
+        return;
+      }
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = 'episodes/' + session.user.id + '/' + Date.now() + '-' + safe;
+      const { error: upErr } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false });
+      if (upErr) {
+        showMsg('アップロード失敗: ' + upErr.message, false);
+        return;
+      }
+      const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+      const url = pub.publicUrl;
+      const md = '\n\n![](' + url + ')\n\n';
+      const ta = document.getElementById('md-body');
+      const start = typeof ta.selectionStart === 'number' ? ta.selectionStart : ta.value.length;
+      const end = typeof ta.selectionEnd === 'number' ? ta.selectionEnd : ta.value.length;
+      ta.value = ta.value.slice(0, start) + md + ta.value.slice(end);
+      ta.focus();
+      const pos = start + md.length;
+      ta.setSelectionRange(pos, pos);
+      renderPreview();
+      showMsg('画像を本文に挿入しました（このあと保存）', true);
+      fileInput.value = '';
+    });
+
     document.getElementById('btn-reload').addEventListener('click', async () => {
       const id = document.getElementById('row-id').value;
       if (!id) {
@@ -269,7 +320,6 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const id = document.getElementById('row-id').value.trim();
       const seasonVal = document.getElementById('season').value;
       const epVal = document.getElementById('episode_number').value;
       const payload = {
@@ -287,21 +337,19 @@
         return;
       }
 
-      let error;
-      if (id) {
-        const res = await supabase.from('episodes').update(payload).eq('id', id);
-        error = res.error;
-      } else {
-        const res = await supabase.from('episodes').insert([payload]).select('id').single();
-        error = res.error;
-        if (!error && res.data?.id) {
-          document.getElementById('row-id').value = res.data.id;
-        }
-      }
+      /* slug が既にあれば更新、なければ追加（新規のまま同じ slug で保存してもエラーにしない） */
+      const { data, error } = await supabase
+        .from('episodes')
+        .upsert(payload, { onConflict: 'slug' })
+        .select('id')
+        .single();
 
       if (error) {
         showMsg('保存エラー: ' + error.message, false);
         return;
+      }
+      if (data?.id) {
+        document.getElementById('row-id').value = data.id;
       }
       await loadList();
       showMsg('保存しました', true);
