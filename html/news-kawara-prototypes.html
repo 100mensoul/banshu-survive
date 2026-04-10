@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>瓦版デザイン試作｜播州サバイブ</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: #1e1a14;
+      color: #e8dcc8;
+      padding: 1.5rem 1rem 3rem;
+      line-height: 1.6;
+    }
+    h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      margin: 0 0 0.5rem;
+    }
+    .note {
+      font-size: 0.78rem;
+      opacity: 0.85;
+      margin-bottom: 1.75rem;
+      max-width: 42rem;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.75rem;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .proto {
+      text-align: center;
+    }
+    .proto h2 {
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      margin: 0 0 0.75rem;
+      color: #b8a88c;
+      font-weight: 600;
+    }
+    .sample {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+      height: 280px;
+      width: max-content;
+      max-width: 200px;
+      padding: 0.75rem 0.55rem;
+      color: #14110d;
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      line-height: 1.85;
+    }
+    /* A: 紙のみ（現行に近い） */
+    .a .sample {
+      background: linear-gradient(90deg, #fdf9f0, #ebe0cc);
+      border: 1px solid #2a2218;
+      outline: 3px solid #c4a574;
+      outline-offset: -1px;
+      box-shadow: 2px 6px 14px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,250,235,0.5);
+    }
+    /* B: 木台の上に紙（掲示っぽい） */
+    .b .board {
+      display: inline-block;
+      padding: 10px 12px 14px;
+      background: linear-gradient(145deg, #4a3828, #2d2218);
+      border-radius: 4px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.45), 0 8px 20px rgba(0,0,0,0.5);
+    }
+    .b .sample {
+      background: #f2eada;
+      border: 1px solid #3d3428;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset;
+    }
+    /* C: 版画っぽい粗い枠＋印 */
+    .c .sample {
+      background: #f0e8d8;
+      border: 2px solid #1a1410;
+      box-shadow: 3px 3px 0 #8b1a1a;
+      position: relative;
+    }
+    .c .sample::after {
+      content: '速報';
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      writing-mode: horizontal-tb;
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      color: #8b1a1a;
+      border: 1px solid #8b1a1a;
+      padding: 0.1rem 0.25rem;
+      opacity: 0.85;
+    }
+    .back {
+      margin-top: 2rem;
+      font-size: 0.85rem;
+    }
+    .back a { color: #c9b896; }
+  </style>
+</head>
+<body>
+  <h1>瓦版ニュース・見た目の試作（比較用）</h1>
+  <p class="note">
+    本番は <code>index.html</code> の「播州事変」ブロックと <code>css/news.css</code>。ここはローカルで見比べるだけの静的サンプルです。A＝紙1枚、B＝木枠に紙、C＝枠を強め＋印風の装飾。</p>
+
+  <div class="row">
+    <div class="proto a">
+      <h2>A · 和紙1枚（金縁）</h2>
+      <div class="sample">姫路にて一件あり</div>
+    </div>
+    <div class="proto b">
+      <h2>B · 掲示板に貼った感じ</h2>
+      <div class="board">
+        <div class="sample">番組更新のお知らせ</div>
+      </div>
+    </div>
+    <div class="proto c">
+      <h2>C · 木版・号外風</h2>
+      <div class="sample">播州より急ぎ報ず</div>
+    </div>
+  </div>
+
+  <p class="back"><a href="../index.html">← トップへ</a></p>
+</body>
+</html>

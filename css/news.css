@@ -1,3 +1,115 @@
+/* トップ「播州事変」＝瓦版風：縦書きの細長い枚を横スクロール */
+
+/*
+ * 帯（.news-section--kawara）の背景を元に戻すとき:
+ *   background: #2a241c;
+ *   background-image: linear-gradient(180deg, #353028 0%, #252018 100%);
+ * の2行だけにして、下の background-color / background-image ブロックを削除。
+ */
+
+@keyframes kou-fuda-hover {
+  0%,
+  100% {
+    transform: translateY(-5px) scale(1.02) translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-5px) scale(1.02) translateX(-2px) rotate(-0.45deg);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.02) translateX(1.5px) rotate(0.3deg);
+  }
+  75% {
+    transform: translateY(-5px) scale(1.02) translateX(-1px) rotate(-0.2deg);
+  }
+}
+
+.news-section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1rem 2.5rem;
+  text-align: center;
+}
+
+.news-section--kawara {
+  max-width: none;
+  margin: 0;
+  padding: 2.75rem 0 3.25rem;
+  font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  background-color: #2a241c;
+  background-image:
+    linear-gradient(165deg, rgba(72, 62, 48, 0.35) 0%, transparent 50%),
+    linear-gradient(195deg, transparent 45%, rgba(12, 10, 6, 0.55) 100%),
+    linear-gradient(180deg, #383226 0%, #2a241c 38%, #1f1a14 72%, #252018 100%);
+  border-top: 2px solid #1a1510;
+  border-bottom: 2px solid #0f0c08;
+}
+
+/* 横スクロールの瓦版列 ＋ 右スパイン（縦書きタイトル） */
+.news-section__layout {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.75rem 2.25rem;
+  max-width: none;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+.news-section__rail {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 右列に幅を取り、縦書きブロックをその列の中央に配置（右端によらない） */
+.news-section__spine {
+  flex: 0 0 clamp(10.5rem, 15vw, 17.5rem);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 0.35rem clamp(0.65rem, 1.5vw, 1.25rem) 1rem;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-family: inherit;
+}
+
+.news-section__spine-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.2vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: #f2e6c8;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.news-section__spine-lead {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  line-height: 1.85;
+  color: #d4c4a4;
+  max-height: min(70vh, 500px);
+}
+
+.news-section__lead {
+  font-size: 0.82rem;
+  color: #d4c4a4;
+  letter-spacing: 0.1em;
+  margin: 0.15rem 1rem 1.35rem;
+  font-family: inherit;
+}
+
+.news-section .scroll-container {
+  text-align: left;
+  margin-top: 0;
+}
+
+.news-section__rail .scroll-container {
+  margin-top: 0;
+}
+
 .section-title {
   text-align: center;
   display: inline-block;
@@ -8,33 +120,201 @@
   color: #000;
 }
 
+.section-title--kawara {
+  font-family: inherit;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+  padding-bottom: 0;
+  color: #f2e6c8;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
 .section-title .en {
   font-size: 1rem;
   color: #555;
 }
 
+/* 横スクロール＝瓦版を並べて眺める */
 .scroll-container {
   overflow-x: auto;
+  overflow-y: hidden;
   white-space: nowrap;
-  padding: 1rem;
-  max-height: 300px;
+  -webkit-overflow-scrolling: touch;
 }
 
-.scroll-content {
+.scroll-container--kawara {
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 1.25rem;
+  max-width: none;
+  margin: 0;
+  padding: 1.75rem 1rem 1.85rem;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.scroll-content--kawara {
   display: inline-flex;
-  gap: 1.5rem;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0.9rem;
+  padding: 0 0.35rem;
+  min-height: min(70vh, 480px);
 }
 
-.news-item {
+/* 横書きフォールバック（未使用） */
+.news-item:not(.news-item--vertical) {
   background: #fff;
   border: 1px dashed #ccc;
-  padding: 1rem;
+  padding: 0.85rem 1rem;
   min-width: 200px;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   white-space: normal;
-  box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+}
+
+/*
+ * 縦書き瓦版：画面上では「細く高い」矩形。
+ * writing-mode: vertical-rl で一文字ずつ縦に積み、行が右→左へ進む。
+ * 長文は列を増やしてボックス幅が広がる（max-width で1枚の上限）。
+ */
+.news-item--vertical {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-family: inherit;
+  color: #14110d;
+  box-sizing: border-box;
+
+  /* 左＝古い＝暗め、右＝新しい＝明め（--kou-*-mixed は JS で rgb にセット。color-mix は Safari 等で崩れるため未使用） */
+  --kou-tone: 0.5;
+
+  /* 縦＝インライン方向の長さ（本文の流れの長さ）— 帯に対して縦長の「板」 */
+  height: clamp(320px, 64vh, 500px);
+  width: max-content;
+  max-width: min(88vw, 340px);
+  min-width: 2.75em;
+
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+
+  padding: 0.85rem 0.65rem;
+  white-space: normal;
+
+  background-color: var(--kou-bg-mixed, #ebe4d4);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    transparent 35%,
+    transparent 65%,
+    rgba(0, 0, 0, 0.04) 100%
+  );
+  border: 1px solid var(--kou-border-mixed, #5c4838);
+  outline: 3px solid var(--kou-outline-mixed, #a89070);
+  outline-offset: -1px;
+  box-shadow:
+    2px 6px 14px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 250, 235, 0.6);
+}
+
+a.news-item--link {
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  animation: none;
+  transition:
+    box-shadow 0.22s ease,
+    filter 0.2s ease,
+    outline-color 0.2s ease,
+    border-color 0.2s ease,
+    outline-width 0.2s ease;
+}
+
+a.news-item--link:hover {
+  animation: kou-fuda-hover 0.48s ease-in-out infinite;
+  box-shadow:
+    3px 12px 26px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 1px rgba(255, 250, 235, 0.72);
+  filter: brightness(1.05);
+  outline-width: 4px;
+  /* 木枠：内側の線＋外側の「枠」色を少し明るい茶に */
+  border-color: #6a5340;
+  outline-color: #ddb87a;
+}
+
+a.news-item--link:active {
+  animation: none;
+  transform: translateY(-2px) scale(1.015);
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.news-item--link:hover {
+    animation: none;
+    transform: translateY(-4px) scale(1.02);
+  }
+
+  a.news-item--link:active {
+    transform: translateY(-2px) scale(1.015);
+  }
+}
+
+.news-item--episode.news-item--link:hover {
+  border-color: #5c4434;
+  outline-color: #c49a6e;
+}
+
+a.news-item--link:focus-visible {
+  outline: 2px solid #c4a574;
+  outline-offset: 3px;
+}
+
+/* 日付に数字・中点が混じるので mixed（縦中横に近い見え方） */
+.news-item--vertical .news-date {
+  text-orientation: mixed;
+  font-size: 0.72rem;
+  color: #4a4034;
+  margin: 0;
+  letter-spacing: 0.18em;
+  font-weight: 500;
+  font-feature-settings: 'palt' 1;
+}
+
+.news-item--vertical .news-title {
+  text-orientation: upright;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.9;
+  letter-spacing: 0.22em;
+  font-feature-settings: 'palt' 1;
+}
+
+.news-item--vertical .news-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.news-item--vertical .news-title a:hover {
+  color: #3d2a1a;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.news-kicker {
+  text-orientation: upright;
+  font-size: 0.68rem;
+  letter-spacing: 0.35em;
+  color: #4a3524;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.news-item--episode .news-kicker {
+  color: #4a3524;
 }
 
 .news-date {
@@ -59,11 +339,53 @@
 }
 
 @media screen and (max-width: 768px) {
-  .scroll-container {
-    padding: 1rem 0.5rem;
+  .news-section__layout {
+    flex-direction: column;
+    padding: 0 0.65rem;
   }
 
-  .news-item {
+  .news-section__spine {
+    flex: 1 1 auto;
+    width: 100%;
+    flex-basis: auto;
+    flex-direction: column;
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+    align-items: center;
+    border-left: none;
+    border-bottom: 1px solid rgba(196, 165, 116, 0.35);
+    padding: 0 0 1rem;
+    margin-bottom: 0.35rem;
+    gap: 0.35rem;
+  }
+
+  .news-section__spine-lead {
+    max-height: none;
+    font-size: 0.8rem;
+  }
+
+  .scroll-container--kawara {
+    scroll-padding-inline: 0.75rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .scroll-content--kawara {
+    gap: 0.65rem;
+    min-height: min(58vh, 420px);
+  }
+
+  .news-item--vertical {
+    height: min(58vh, 420px);
+    max-width: 92vw;
+    padding: 0.65rem 0.5rem;
+  }
+
+  .news-item:not(.news-item--vertical) {
     min-width: 160px;
+  }
+
+  .section-title--kawara {
+    font-size: 2rem;
   }
 }
