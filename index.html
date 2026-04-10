@@ -20,7 +20,11 @@
     <!-- エピソード -->
     <div class="dropdown">
       <div class="dropbtn" tabindex="0">エピソード</div>
-      <div class="dropdown-content dropdown-content--episodes">
+      <div
+        class="dropdown-content dropdown-content--episodes"
+        id="episode-dropdown-root"
+        data-episode-link-base="html/"
+      >
         <div class="dropdown-season">
           <div class="dropdown-heading">SEASON 1</div>
           <div class="dropdown-links">
@@ -191,51 +195,50 @@
   document.addEventListener('DOMContentLoaded', function () {
     const form = document.querySelector('.chat-form');
     const messages = document.querySelector('.messages');
-    const nameInput = form.querySelectorAll('input')[0];
-    const messageInput = form.querySelectorAll('input')[1];
+    if (form && messages) {
+      const nameInput = form.querySelectorAll('input')[0];
+      const messageInput = form.querySelectorAll('input')[1];
 
-    form.addEventListener('submit', function (e) {
-      e.preventDefault(); // ページリロード防止
+      if (nameInput && messageInput) {
+        form.addEventListener('submit', function (e) {
+          e.preventDefault(); // ページリロード防止
 
-      const name = nameInput.value.trim() || '名無し'; // 空なら「名無し」
-      const message = messageInput.value.trim();
+          const name = nameInput.value.trim() || '名無し'; // 空なら「名無し」
+          const message = messageInput.value.trim();
 
-      if (message !== '') {
-        const newMessage = document.createElement('p');
-        newMessage.innerHTML = `<strong>${name}：</strong> ${message}`;
-        messages.appendChild(newMessage);
+          if (message !== '') {
+            const newMessage = document.createElement('p');
+            newMessage.innerHTML = '<strong>' + name + '：</strong> ' + message;
+            messages.appendChild(newMessage);
 
-        // スクロールを一番下へ
-        messages.scrollTop = messages.scrollHeight;
-
-        // フォームをクリア
-        messageInput.value = '';
-      }
-    });
-
-    // タッチ端末: ドロップダウンはホバーが使えないため、タップで開閉
-    if (window.matchMedia('(hover: none)').matches) {
-      document.querySelectorAll('.nav-bar .dropdown > .dropbtn').forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-          e.stopPropagation();
-          var drop = btn.parentElement;
-          var willOpen = !drop.classList.contains('is-touch-open');
-          document.querySelectorAll('.nav-bar .dropdown.is-touch-open').forEach(function (d) {
-            d.classList.remove('is-touch-open');
-          });
-          if (willOpen) drop.classList.add('is-touch-open');
+            messages.scrollTop = messages.scrollHeight;
+            messageInput.value = '';
+          }
         });
-      });
-      document.addEventListener('click', function (e) {
-        if (e.target.closest('.nav-bar .dropdown')) return;
+      }
+    }
+
+    // ドロップダウン: クリック／タップで開閉（ホバーと併用）
+    document.querySelectorAll('.nav-bar .dropdown > .dropbtn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var drop = btn.parentElement;
+        var willOpen = !drop.classList.contains('is-touch-open');
         document.querySelectorAll('.nav-bar .dropdown.is-touch-open').forEach(function (d) {
           d.classList.remove('is-touch-open');
         });
+        if (willOpen) drop.classList.add('is-touch-open');
       });
-    }
+    });
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('.nav-bar .dropdown')) return;
+      document.querySelectorAll('.nav-bar .dropdown.is-touch-open').forEach(function (d) {
+        d.classList.remove('is-touch-open');
+      });
+    });
   });
 </script>
-
-  
+  <script src="js/supabase-public-config.js"></script>
+  <script type="module" src="js/home-episode-nav.js"></script>
 </body>
 </html>

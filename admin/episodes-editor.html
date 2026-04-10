@@ -120,6 +120,14 @@
       <form id="form" spellcheck="true">
         <input type="hidden" id="row-id" value="">
         <label>slug（英数字・ハイフン）<input type="text" id="slug" required placeholder="ep-3"></label>
+        <div class="public-url-box" style="margin-top:0.5rem;padding:0.65rem;background:#f0f7f0;border:1px solid #9abf9a;border-radius:8px;font-size:0.82rem;">
+          <strong>公開ページ（このURLで閲覧）</strong>
+          <div style="margin-top:0.35rem;word-break:break-all;">
+            <a id="public-url-link" href="#" target="_blank" rel="noopener"></a>
+          </div>
+          <button type="button" class="secondary" id="btn-copy-public-url" style="margin-top:0.5rem;">URLをコピー</button>
+          <p style="margin:0.5rem 0 0;color:#555;">公開用は <code>html/episode.html?slug=…</code> です。<strong>新規エピソードのたびに HTML を増やす必要はありません</strong>（管理画面の保存・公開だけで反映されます）。</p>
+        </div>
         <label>シーズン<input type="number" id="season" min="0" step="1" placeholder="1"></label>
         <label>話数<input type="number" id="episode_number" min="0" step="1" placeholder="3"></label>
         <label>タイトル<input type="text" id="title" required placeholder="エピソード3"></label>
@@ -199,6 +207,20 @@
       debounceT = setTimeout(renderPreview, 200);
     });
 
+    function updatePublicUrl() {
+      const slug = document.getElementById('slug').value.trim();
+      const a = document.getElementById('public-url-link');
+      if (!slug) {
+        a.textContent = '（slug を入力すると表示されます）';
+        a.removeAttribute('href');
+        return;
+      }
+      const u = new URL('../html/episode.html', window.location.href);
+      u.searchParams.set('slug', slug);
+      a.href = u.toString();
+      a.textContent = u.toString();
+    }
+
     function clearForm() {
       document.getElementById('row-id').value = '';
       document.getElementById('slug').value = '';
@@ -210,6 +232,7 @@
       document.getElementById('status').value = 'draft';
       listEl.querySelectorAll('li').forEach((li) => li.classList.remove('active'));
       renderPreview();
+      updatePublicUrl();
     }
 
     function fillForm(row) {
@@ -222,6 +245,7 @@
       document.getElementById('md-body').value = row.body || '';
       document.getElementById('status').value = row.status === 'published' ? 'published' : 'draft';
       renderPreview();
+      updatePublicUrl();
     }
 
     async function loadList() {
@@ -263,6 +287,24 @@
     }
 
     document.getElementById('btn-new').addEventListener('click', clearForm);
+
+    document.getElementById('slug').addEventListener('input', updatePublicUrl);
+
+    document.getElementById('btn-copy-public-url').addEventListener('click', async () => {
+      const slug = document.getElementById('slug').value.trim();
+      if (!slug) {
+        showMsg('slug がありません', false);
+        return;
+      }
+      const u = new URL('../html/episode.html', window.location.href);
+      u.searchParams.set('slug', slug);
+      try {
+        await navigator.clipboard.writeText(u.toString());
+        showMsg('公開URLをコピーしました', true);
+      } catch {
+        showMsg('コピーに失敗しました（ブラウザの制限など）', false);
+      }
+    });
 
     const STORAGE_BUCKET = 'episode-images';
 
@@ -352,6 +394,7 @@
         document.getElementById('row-id').value = data.id;
       }
       await loadList();
+      updatePublicUrl();
       showMsg('保存しました', true);
     });
 
@@ -406,6 +449,7 @@
 
     const { data: { session } } = await supabase.auth.getSession();
     setUiSession(session);
+    updatePublicUrl();
     }
   </script>
 </body>

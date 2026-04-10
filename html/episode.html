@@ -3,41 +3,151 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>エピソード1｜播州サバイブ</title>
+  <title>エピソード｜播州サバイブ</title>
   <style>
-    body {
-      font-family: 'Hiragino Mincho ProN', serif;
-      background: #f9f6f1;
-      color: #333;
-      margin: 0;
-      padding: 2rem;
-      line-height: 1.8;
-    }
-    h1 {
-      text-align: center;
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
-    .back-link {
-      display: block;
-      text-align: center;
-      margin-top: 2rem;
-    }
+body {
+  background-color: #e6f0ec;
+  margin: 0;
+  font-family: 'Hiragino Kaku Gothic ProN', sans-serif;
+}
+
+.container {
+  max-width: 700px;
+  margin: 2rem auto;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.05);
+}
+
+h1 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 0.3rem;
+  font-weight: bold;
+}
+.sub-title {
+  text-align: center;
+  color: #7b7b7b;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+.date {
+  text-align: center;
+  color: #aaa;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+p {
+  margin-bottom: 1rem;
+  line-height: 1.8;
+}
+strong {
+  font-weight: bold;
+  color: #4a7c59;
+}
+img {
+  width: 100%;
+  margin: 1rem 0;
+  border-radius: 0;
+}
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1rem 0;
+  gap: 0.5rem;
+}
+.nav a {
+  background: #f7d85c;
+  color: #333;
+  text-decoration: none;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+@media (max-width: 768px) {
+  .container {
+    width: 75%;
+    padding: 1.2rem;
+  }
+  h1 {
+    font-size: 1.5rem;
+  }
+  .nav a {
+    font-size: 0.6rem;
+    padding: 0.3rem 0.8rem;
+  }
+}
+.episode-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+  min-height: 2.35rem;
+}
+.episode-top-bar__left {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  min-width: 0;
+}
+.episode-top-bar__left a {
+  display: inline-block;
+  background: #d4e5d9;
+  color: #333;
+  text-decoration: none;
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+.episode-top-bar__center {
+  flex: 0 1 auto;
+  text-align: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  color: #4a6b4a;
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 50%;
+}
+.episode-top-bar__center:empty {
+  display: none;
+}
+.episode-top-bar__right {
+  flex: 1;
+  min-width: 0;
+}
+.episode-md { line-height: 1.8; }
+.episode-md p { margin-bottom: 1rem; }
+.episode-md img { width: 100%; margin: 1rem 0; border-radius: 0; }
+.episode-md strong { font-weight: bold; color: #4a7c59; }
   </style>
 </head>
 <body>
-  <h1>エピソード「い」：原風景を求めて</h1>
+  <div class="container">
+    <div class="episode-top-bar">
+      <div class="episode-top-bar__left">
+        <a href="../index.html">← トップへ戻る</a>
+      </div>
+      <div class="episode-top-bar__center" id="episode-season-slot"></div>
+      <div class="episode-top-bar__right" aria-hidden="true"></div>
+    </div>
 
-  <p>Rは姫路に戻った。</p>
-  <p>フォークノード計画、ヒメモリの地――次世代に原風景を残すため、彼女の足は自然と動き出していた。紹介されるキーパーソンたち。地域に根ざす人々。少しずつ顔と声がつながり、コミュニティの輪が広がっていく。</p>
+    <div class="nav" id="episode-series-nav-top"></div>
 
-  <p>だが、その中で見えてきたのは、いくつもの壁だった。計画が動き出すスピード、関わる人々の複雑な思惑、時間の余裕のなさ。それでもRは、同じ志を持つ仲間たちと出会い、語り合い、笑い合いながら、未来を描き始めていく。どうすれば競合ではなく、共に歩む立場になれるのか。どうアプローチすればこの街の未来を守れるのか。小さなテーブルで戦略は静かに練られ、夜は更けていった。</p>
+    <div id="episode-content">
+      <h1>エピソード</h1>
+      <p>トップの「エピソード」から話を選ぶと、このページに <code>?slug=</code> が付いて開きます。</p>
+      <p>管理画面だけで公開まで完結させる場合、<strong>新規エピソード用に HTML を追加する必要はありません</strong>（同一の <code>episode.html</code> を使い回します）。</p>
+    </div>
 
-  <p>一方、夫の平尾は妻に寄り添い、各地のヒアリングに同行していた。</p>
-  <p>その一週間の間に、奇妙な出来事が重なる。ある店では革ジャンを着た男に間違われ、別の料理屋では着物姿の男と呼び間違えられ、さらには「テレビで見た」と声をかけられる。心当たりのないその人物像に、平尾はただ首をかしげるしかなかった。</p>
-
-  <p>そして街のどこかに、自分と“似た誰か”が存在するらしい――そんなぼんやりとした気配だけが、平尾の胸に残った。</p>
-
-  <a class="back-link" href="episodes.html">← エピソード一覧に戻る</a>
+    <div class="nav" id="episode-series-nav-bottom"></div>
+  </div>
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="module" src="../js/episode-public.js"></script>
 </body>
 </html>

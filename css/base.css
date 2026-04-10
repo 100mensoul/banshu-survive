@@ -10,6 +10,8 @@ body {
 }
 
 .nav-bar {
+  position: relative;
+  z-index: 50;
   background-color: #fff100;
   color:#000;
   font-weight:bold;
@@ -30,7 +32,15 @@ body {
 /* ドロップダウン用 */
 .dropdown {
   position: relative;
+  z-index: 1;
   display: inline-block;
+}
+
+/* 横並びナビで、後続の兄弟要素の下にパネルが隠れないようにする */
+.dropdown:hover,
+.dropdown:focus-within,
+.dropdown.is-touch-open {
+  z-index: 200;
 }
 
 .dropbtn {
