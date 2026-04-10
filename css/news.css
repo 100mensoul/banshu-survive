@@ -342,7 +342,13 @@ a.news-item--link:focus-visible {
     padding: 0 0.65rem;
   }
 
+  /* DOM 順は rail → spine だが、モバイルでは見出しを上に（デスクトップは row のまま右列スパイン） */
+  .news-section__rail {
+    order: 2;
+  }
+
   .news-section__spine {
+    order: 1;
     flex: 1 1 auto;
     width: 100%;
     flex-basis: auto;

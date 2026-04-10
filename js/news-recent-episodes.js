@@ -162,7 +162,13 @@ if (scrollContent && urlOk && keyOk) {
       frag.appendChild(card);
     }
     scrollContent.appendChild(frag);
+    if (typeof window.scrollKawaraToNewestEnd === 'function') {
+      window.scrollKawaraToNewestEnd();
+    }
   }
 }
 
 applyKouToneToScroll();
+if (typeof window.scrollKawaraToNewestEnd === 'function') {
+  window.scrollKawaraToNewestEnd();
+}
