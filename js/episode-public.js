@@ -30,6 +30,7 @@ const slug = document.documentElement.getAttribute('data-episode-slug');
 const url = window.__SB_URL;
 const key = window.__SB_ANON_KEY;
 const root = document.getElementById('episode-content');
+const seasonSlot = document.getElementById('episode-season-slot');
 
 const keyOk = key && String(key).trim().length > 0;
 const urlOk = url && String(url).trim().length > 0 && !String(url).includes('あなたのプロジェクトID');
@@ -48,6 +49,14 @@ if (!slug || !root || !urlOk || !keyOk) {
 
   if (!error && data) {
     document.title = `${data.title}｜播州サバイブ`;
+
+    if (seasonSlot) {
+      if (data.season != null) {
+        seasonSlot.textContent = 'SEASON ' + String(data.season);
+      } else {
+        seasonSlot.textContent = '';
+      }
+    }
 
     const sub = data.subtitle ? `<div class="sub-title">${esc(data.subtitle)}</div>` : '';
     const dateLine = data.updated_at

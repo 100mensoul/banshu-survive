@@ -89,11 +89,22 @@ img {
     padding: 0.3rem 0.8rem;
   }
 }
-.back-to-top {
-  text-align: center;
+.episode-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
   margin: 0 0 0.75rem;
+  min-height: 2.35rem;
 }
-.back-to-top a {
+.episode-top-bar__left {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  min-width: 0;
+}
+.episode-top-bar__left a {
   display: inline-block;
   background: #d4e5d9;
   color: #333;
@@ -103,6 +114,23 @@ img {
   font-size: 0.85rem;
   font-weight: bold;
 }
+.episode-top-bar__center {
+  flex: 0 1 auto;
+  text-align: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  color: #4a6b4a;
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 50%;
+}
+.episode-top-bar__center:empty {
+  display: none;
+}
+.episode-top-bar__right {
+  flex: 1;
+  min-width: 0;
+}
 .episode-md { line-height: 1.8; }
 .episode-md p { margin-bottom: 1rem; }
 .episode-md img { width: 100%; margin: 1rem 0; border-radius: 0; }
@@ -111,7 +139,13 @@ img {
 </head>
 <body>
   <div class="container">
-    <p class="back-to-top"><a href="../index.html">← トップへ戻る</a></p>
+    <div class="episode-top-bar">
+      <div class="episode-top-bar__left">
+        <a href="../index.html">← トップへ戻る</a>
+      </div>
+      <div class="episode-top-bar__center" id="episode-season-slot">SEASON 1</div>
+      <div class="episode-top-bar__right" aria-hidden="true"></div>
+    </div>
     <div class="nav">
       <a href="#">← 第0話</a>
       <a href="ep-3.html">第3話 →</a>
