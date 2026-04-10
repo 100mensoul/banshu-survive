@@ -4,95 +4,153 @@
   <meta charset="utf-8">
   <title>播州サバイブ 〜姫の路〜</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="css/main.css"> 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css?v=navmichi12">
 </head>
 <body>
 
 
 <div class="hero">
-  <img src="images/main-visual.jpg" alt="メインビジュアル">
+  <img src="images/main-visual_v2.jpg" alt="メインビジュアル">
 </div>
   
 
-  <nav class="nav-bar">
-  <div class="nav-group">
+  <nav class="nav-bar nav-bar--ishigaki" aria-label="メインナビゲーション">
+    <div class="stone-shell">
+      <div class="stone-mortar">
+        <div class="stone-row nav-group">
 
-    <!-- エピソード -->
-    <div class="dropdown">
-      <div class="dropbtn" tabindex="0">エピソード</div>
-      <div
-        class="dropdown-content dropdown-content--episodes"
-        id="episode-dropdown-root"
-        data-episode-link-base="html/"
-      >
-        <div class="dropdown-season">
-          <div class="dropdown-heading">SEASON 1</div>
-          <div class="dropdown-links">
-            <a href="html/ep-box.html">EP1 原風景を求めて</a>
-            <a href="html/ep-3.html">EP3 東京ネイティブ</a>
+          <!-- エピソード -->
+          <div class="stone-nav-slot stone-nav-slot--dd">
+            <div class="stone-dd-flip" aria-hidden="true">
+              <div class="flip-inner">
+                <div class="flip-face flip-front">エピソード</div>
+                <div class="flip-face flip-back">小噺</div>
+              </div>
+            </div>
+            <div class="stone-dd-ui">
+              <div class="dropdown">
+                <div class="dropbtn" tabindex="0" aria-haspopup="true" aria-label="エピソード、サブメニューを開く"></div>
+                <div
+                  class="dropdown-content dropdown-content--episodes"
+                  id="episode-dropdown-root"
+                  data-episode-link-base="html/"
+                >
+                  <div class="dropdown-season">
+                    <div class="dropdown-heading">SEASON 1</div>
+                    <div class="dropdown-links">
+                      <a href="html/ep-box.html">EP1 原風景を求めて</a>
+                      <a href="html/ep-3.html">EP3 東京ネイティブ</a>
+                    </div>
+                  </div>
+                  <div class="dropdown-season">
+                    <div class="dropdown-heading">SEASON 2</div>
+                    <div class="dropdown-links">
+                      <a href="html/ep-4.html">EP4 タネはまかれた</a>
+                      <a href="html/ep-5.html">EP5 嵐のはじまり</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="dropdown-season">
-          <div class="dropdown-heading">SEASON 2</div>
-          <div class="dropdown-links">
-            <a href="html/ep-4.html">EP4 タネはまかれた</a>
-            <a href="html/ep-5.html">EP5 嵐のはじまり</a>
+
+          <!-- あらすじ（めくり） -->
+          <div class="stone-nav-slot stone-nav-slot--flip">
+            <a href="html/arasuji.html" class="stone-flip-anchor" aria-label="あらすじへ（ストーリー／物語）">
+              <div class="flip-inner">
+                <span class="flip-face flip-front">ストーリー</span>
+                <span class="flip-face flip-back" aria-hidden="true">物語</span>
+              </div>
+            </a>
           </div>
+
+          <!-- キャスト -->
+          <div class="stone-nav-slot stone-nav-slot--dd">
+            <div class="stone-dd-flip" aria-hidden="true">
+              <div class="flip-inner">
+                <div class="flip-face flip-front">キャスト</div>
+                <div class="flip-face flip-back">人物</div>
+              </div>
+            </div>
+            <div class="stone-dd-ui">
+              <div class="dropdown">
+                <div class="dropbtn" tabindex="0" aria-haspopup="true" aria-label="キャスト、サブメニューを開く"></div>
+                <div class="dropdown-content">
+                  <a href="html/chart.html">相関図・登場人物</a>
+                  <a href="html/himejin.html">ひめじんファイル</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- マップ -->
+          <div class="stone-nav-slot stone-nav-slot--dd">
+            <div class="stone-dd-flip" aria-hidden="true">
+              <div class="flip-inner">
+                <div class="flip-face flip-front">マップ</div>
+                <div class="flip-face flip-back">地図</div>
+              </div>
+            </div>
+            <div class="stone-dd-ui">
+              <div class="dropdown">
+                <div class="dropbtn" tabindex="0" aria-haspopup="true" aria-label="マップ、サブメニューを開く"></div>
+                <div class="dropdown-content">
+                  <a href="html/zoom-map-4.html">ヒメモリの地</a>
+                  <a href="html/test-map0428.html">フラワータウン</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 風土記 -->
+          <div class="stone-nav-slot stone-nav-slot--dd">
+            <div class="stone-dd-flip" aria-hidden="true">
+              <div class="flip-inner">
+                <div class="flip-face flip-front">インフォ</div>
+                <div class="flip-face flip-back">風土記</div>
+              </div>
+            </div>
+            <div class="stone-dd-ui">
+              <div class="dropdown">
+                <div class="dropbtn" tabindex="0" aria-haspopup="true" aria-label="インフォ（風土記）、サブメニューを開く"></div>
+                <div class="dropdown-content">
+                  <a href="diary/index.html">ヒメログ（姫事記）</a>
+                  <a href="html/guide0503.html">シン播磨風土記</a>
+                  <a href="html/kotoba6.html">コトバの路</a>
+                  <a href="html/recipe.html">播州レシピ</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 特集 -->
+          <div class="stone-nav-slot stone-nav-slot--dd">
+            <div class="stone-dd-flip" aria-hidden="true">
+              <div class="flip-inner">
+                <div class="flip-face flip-front">スペシャル</div>
+                <div class="flip-face flip-back">特集</div>
+              </div>
+            </div>
+            <div class="stone-dd-ui">
+              <div class="dropdown">
+                <div class="dropbtn" tabindex="0" aria-haspopup="true" aria-label="スペシャル（特集）、サブメニューを開く"></div>
+                <div class="dropdown-content">
+                  <a href="logo-special/index.html">ロゴは語る</a>
+                  <a href="interview-hyakumensou.html">百面惣インタビュー</a>
+                  <a href="r-photo/index.html">フォト</a>
+                  <a href="live/radio.html">ラジオ</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
-
-    <!-- あらすじ -->
-    <a href="html/arasuji.html">あらすじ</a>
-
-    <!-- キャスト -->
-    <div class="dropdown">
-      <div class="dropbtn" tabindex="0">キャスト</div>
-      <div class="dropdown-content">
-        <a href="html/chart.html">相関図・登場人物</a>
-        <a href="html/himejin.html">ひめじんファイル</a>
-      </div>
-    </div>
-
-    <!-- 風土記 -->
-    <div class="dropdown">
-      <div class="dropbtn" tabindex="0">風土記</div>
-      <div class="dropdown-content">
-        <a href="html/guide0503.html">シン播磨風土記</a>
-        <a href="html/kotoba6.html">コトバの路</a>
-        <a href="html/recipe.html">播州レシピ</a>
-      </div>
-    </div>
-
-    <!-- マップ -->
-    <div class="dropdown">
-      <div class="dropbtn" tabindex="0">マップ</div>
-      <div class="dropdown-content">
-        <a href="html/zoom-map-4.html">ヒメモリの地</a>
-        <a href="html/test-map0428.html">フラワータウン</a>
-      </div>
-    </div>
-
-    <!-- ヒメログ -->
-    <a href="diary/index.html">ヒメログ</a>
-
-    <!-- 写真 -->
-    <a href="r-photo/index.html">写真</a>
-
-    <!-- ラジオ -->
-    <a href="live/radio.html">ラジオ</a>
-
-    <!-- 特集 -->
-    <div class="dropdown">
-      <div class="dropbtn" tabindex="0">特集</div>
-      <div class="dropdown-content">
-        <a href="logo-special/index.html">ロゴは語る</a>
-        <a href="interview-hyakumensou.html">百面惣インタビュー</a>
-      </div>
-    </div>
-
-  </div>
-</nav>
+  </nav>
 
 
 
@@ -231,6 +289,6 @@
 </script>
   <script src="js/supabase-public-config.js"></script>
   <script type="module" src="js/home-episode-nav.js"></script>
-  <script type="module" src="js/news-recent-episodes.js"></script>
+  <script type="module" src="js/news-recent-episodes.js?v=1"></script>
 </body>
 </html>

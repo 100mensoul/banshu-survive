@@ -1,0 +1,452 @@
+/*
+ * トップ用・石垣グロナビ（シック・マット寄り）
+ * 全幅ダーク帯／DD列は裏面つきめくり＋透明の全幅 hit（▼なし）
+ */
+
+.nav-bar--ishigaki {
+  /* 6列ナビ：石の高さ＋黒帯の余白（プロトタイプのゆとりに寄せる） */
+  --stone-h: 3.45rem;
+  --stone-radius: 7px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  /* 手前の石垣より、背景の黒帯を十分に高く見せる */
+  padding: 0.95rem 0 1rem;
+  background: #0a0a09;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+}
+
+.nav-bar--ishigaki .stone-nav-slot {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+/* 帯全体を画面幅いっぱい・角なし（ヒーロー下で白が見えない） */
+.nav-bar--ishigaki .stone-shell {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0.75rem 0.55rem 0.78rem;
+  box-sizing: border-box;
+  background: #0e0e0c;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.nav-bar--ishigaki .stone-mortar {
+  position: relative;
+  z-index: 1;
+  background: #22211f;
+  /* モルタル帯：石の上下にグレーを見せる（石＝中身より帯を厚く） */
+  padding: 0.65rem 0.36rem 0.68rem;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.nav-bar--ishigaki .stone-row.nav-group {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px 3px;
+  border: none;
+  overflow: visible;
+}
+
+.nav-bar--ishigaki .stone-row.nav-group > * {
+  border-left: none;
+  min-width: 0;
+}
+
+/* ---------- ドロップダウン：手前にめくり、透明ボタンで石全体をターゲット ---------- */
+.nav-bar--ishigaki .stone-nav-slot--dd {
+  position: relative;
+  perspective: 820px;
+  min-height: var(--stone-h);
+}
+
+.nav-bar--ishigaki .stone-dd-flip {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.nav-bar--ishigaki .stone-dd-flip .flip-inner {
+  position: relative;
+  width: 100%;
+  min-height: var(--stone-h);
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.33, 1, 0.48, 1);
+}
+
+.nav-bar--ishigaki .stone-nav-slot--dd:hover .stone-dd-flip .flip-inner,
+.nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown:hover) .stone-dd-flip .flip-inner,
+.nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown.is-touch-open) .stone-dd-flip .flip-inner,
+.nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown:focus-within) .stone-dd-flip .flip-inner {
+  transform: rotateY(180deg);
+}
+
+.nav-bar--ishigaki .flip-face {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-weight: 700;
+}
+
+.nav-bar--ishigaki .stone-dd-flip .flip-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.22rem 0.14rem;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  font-size: clamp(0.74rem, 1.1vw, 0.94rem);
+  letter-spacing: 0.045em;
+  line-height: 1.22;
+  border-radius: var(--stone-radius);
+}
+
+/* 石の表面：マット寄り（テカリ・強いインセットを抑える） */
+.nav-bar--ishigaki .stone-dd-flip .flip-front,
+.nav-bar--ishigaki .stone-nav-slot--flip .flip-front {
+  color: #1c1b19;
+  text-shadow: none;
+  border: 1px solid rgba(30, 28, 26, 0.28);
+  box-shadow:
+    1px 2px 4px rgba(0, 0, 0, 0.18),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05),
+    inset 0 -1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease;
+  filter: none;
+}
+
+.nav-bar--ishigaki .stone-nav-slot--dd:hover .stone-dd-flip .flip-front,
+.nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown:hover) .stone-dd-flip .flip-front,
+.nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown.is-touch-open) .stone-dd-flip .flip-front,
+.nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown:focus-within) .stone-dd-flip .flip-front,
+.nav-bar--ishigaki .stone-nav-slot--flip:hover .flip-front,
+.nav-bar--ishigaki .stone-flip-anchor:focus-visible .flip-front {
+  box-shadow:
+    1px 3px 6px rgba(0, 0, 0, 0.22),
+    inset 0 1px 1px rgba(255, 255, 255, 0.07),
+    inset 0 -1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.nav-bar--ishigaki .stone-dd-flip .flip-back,
+.nav-bar--ishigaki .stone-nav-slot--flip .flip-back {
+  transform: rotateY(180deg);
+  color: #342c28;
+  text-shadow: none;
+  border: 1px solid rgba(45, 38, 34, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 6px rgba(0, 0, 0, 0.08);
+}
+
+.nav-bar--ishigaki .stone-dd-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+}
+
+.nav-bar--ishigaki .stone-dd-ui .dropdown {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100%;
+  justify-content: stretch;
+  position: relative;
+  pointer-events: auto;
+}
+
+/* 透明の全幅 hit（▼なし・石の上をクリックで開く） */
+.nav-bar--ishigaki .stone-nav-slot--dd .dropbtn {
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-height: var(--stone-h);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  font-size: 0;
+  line-height: 0;
+  color: transparent;
+  text-indent: -9999px;
+  overflow: hidden;
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-bar--ishigaki .stone-nav-slot--dd .dropbtn:hover,
+.nav-bar--ishigaki .stone-nav-slot--dd .dropbtn:focus-visible {
+  background: transparent;
+  outline: none;
+}
+
+.nav-bar--ishigaki .stone-nav-slot--dd .dropbtn:focus-visible {
+  box-shadow: inset 0 0 0 1px rgba(220, 210, 195, 0.45);
+}
+
+.nav-bar--ishigaki .nav-group .dropdown:hover > .dropbtn,
+.nav-bar--ishigaki .nav-group .dropdown:focus-within > .dropbtn,
+.nav-bar--ishigaki .nav-group .dropdown.is-touch-open > .dropbtn {
+  background-color: transparent;
+}
+
+/*
+ * プルダウンパネル：石との間に margin だけ空けるとホバーが途切れる。
+ * 透明の太い border-top で隙間を要素内に取り、カーソルが列を離れない。
+ */
+.nav-bar--ishigaki .nav-group .dropdown-content {
+  margin-top: 0;
+  top: 100%;
+  border-top: 0.5rem solid transparent;
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+  background:
+    linear-gradient(175deg, #343230 0%, #252320 48%, #1a1816 100%) padding-box;
+  background-clip: padding-box;
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.nav-bar--ishigaki .dropdown-content a {
+  color: #c9c5be;
+}
+
+.nav-bar--ishigaki .dropdown-content a:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f2efe8;
+  text-decoration: none;
+}
+
+/* エピソード：構造はそのまま（シーズン見出し＋リンク列） */
+.nav-bar--ishigaki .dropdown-content--episodes .dropdown-season {
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+.nav-bar--ishigaki .dropdown-content--episodes .dropdown-heading {
+  background: linear-gradient(90deg, #3d3a36 0%, #2f2c29 100%);
+  color: rgba(210, 206, 198, 0.88);
+  border-left: 2px solid rgba(160, 155, 148, 0.45);
+  border-radius: 2px;
+  margin: 0 0.35rem;
+  padding: 0.38rem 0.7rem 0.28rem;
+}
+
+.nav-bar--ishigaki .dropdown-content--episodes .dropdown-links {
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  margin-left: 0.5rem;
+  padding-left: 0.6rem;
+}
+
+.nav-bar--ishigaki .dropdown-content--episodes .dropdown-links a {
+  color: #b8b4ac;
+}
+
+.nav-bar--ishigaki .dropdown-content--episodes .dropdown-links a:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ebe7df;
+}
+
+/* 列ごと：プロトタイプ（nav-michi-prototype）と同じ石肌・裏面トーン */
+.nav-bar--ishigaki .stone-nav-slot:nth-child(1) .flip-front {
+  border-radius: var(--stone-radius);
+  background:
+    radial-gradient(ellipse 85% 65% at 68% 30%, rgba(235, 233, 228, 0.26) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 42% at 20% 82%, rgba(45, 42, 38, 0.18) 0%, transparent 48%),
+    linear-gradient(158deg, #9c9791 0%, #84807a 38%, #6a6660 72%, #524e4a 100%);
+}
+.nav-bar--ishigaki .stone-nav-slot:nth-child(1) .flip-back {
+  border-radius: var(--stone-radius);
+  background: linear-gradient(155deg, #e4c8d0 0%, #c898a8 42%, #9a6070 100%);
+  color: #3a2228;
+  text-shadow: none;
+}
+
+.nav-bar--ishigaki .stone-nav-slot:nth-child(3) .flip-front {
+  border-radius: var(--stone-radius);
+  background:
+    radial-gradient(ellipse 78% 58% at 52% 68%, rgba(60, 56, 50, 0.2) 0%, transparent 52%),
+    radial-gradient(ellipse 48% 38% at 14% 24%, rgba(220, 216, 208, 0.24) 0%, transparent 44%),
+    linear-gradient(172deg, #706c66 0%, #5c5854 42%, #45423e 88%);
+  color: #e8e6e1;
+  text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.22);
+}
+.nav-bar--ishigaki .stone-nav-slot:nth-child(3) .flip-back {
+  border-radius: var(--stone-radius);
+  background: linear-gradient(168deg, #d0e8d4 0%, #88b890 45%, #4a7852 100%);
+  color: #142818;
+  text-shadow: none;
+}
+
+.nav-bar--ishigaki .stone-nav-slot:nth-child(4) .flip-front {
+  border-radius: var(--stone-radius);
+  background:
+    radial-gradient(ellipse 62% 52% at 78% 42%, rgba(230, 226, 218, 0.18) 0%, transparent 48%),
+    radial-gradient(ellipse 46% 52% at 22% 86%, rgba(40, 36, 32, 0.15) 0%, transparent 48%),
+    linear-gradient(152deg, #b4b0a8 0%, #98948c 45%, #76726a 100%);
+}
+.nav-bar--ishigaki .stone-nav-slot:nth-child(4) .flip-back {
+  border-radius: var(--stone-radius);
+  background: linear-gradient(148deg, #ddd4ec 0%, #a898c8 46%, #706088 100%);
+  color: #241828;
+  text-shadow: none;
+}
+
+.nav-bar--ishigaki .stone-nav-slot:nth-child(5) .flip-front {
+  border-radius: var(--stone-radius);
+  background:
+    radial-gradient(ellipse 70% 55% at 28% 72%, rgba(55, 50, 46, 0.16) 0%, transparent 50%),
+    radial-gradient(ellipse 68% 52% at 72% 22%, rgba(250, 246, 238, 0.16) 0%, transparent 44%),
+    linear-gradient(128deg, #eae6de 0%, #cec9c0 40%, #a39e96 100%);
+}
+.nav-bar--ishigaki .stone-nav-slot:nth-child(5) .flip-back {
+  border-radius: var(--stone-radius);
+  background: linear-gradient(158deg, #f0c8d8 0%, #d07890 46%, #985868 100%);
+  color: #2c1018;
+  text-shadow: none;
+}
+
+/* 6列目＝スペシャル（旧9列目のトーン） */
+.nav-bar--ishigaki .stone-nav-slot:nth-child(6) .flip-front {
+  border-radius: var(--stone-radius);
+  background:
+    radial-gradient(ellipse 74% 58% at 52% 48%, rgba(95, 90, 84, 0.14) 0%, transparent 52%),
+    radial-gradient(ellipse 46% 40% at 16% 22%, rgba(218, 214, 206, 0.2) 0%, transparent 44%),
+    linear-gradient(168deg, #c8c4bc 0%, #a8a49c 38%, #7d7973 78%, #5c5852 100%);
+}
+.nav-bar--ishigaki .stone-nav-slot:nth-child(6) .flip-back {
+  border-radius: var(--stone-radius);
+  background: linear-gradient(162deg, #c8e8e0 0%, #68b0a0 46%, #388070 100%);
+  color: #0e201c;
+  text-shadow: none;
+}
+
+/* ---------- めくりリンク ---------- */
+.nav-bar--ishigaki .stone-nav-slot--flip {
+  perspective: 820px;
+  min-height: var(--stone-h);
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.nav-bar--ishigaki .stone-nav-slot--flip:focus-within {
+  outline: 1px solid rgba(200, 195, 185, 0.35);
+  outline-offset: 2px;
+}
+
+.nav-bar--ishigaki .stone-flip-anchor {
+  display: block;
+  height: 100%;
+  min-height: var(--stone-h);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-bar--ishigaki .stone-nav-slot--flip .flip-inner {
+  position: relative;
+  width: 100%;
+  min-height: var(--stone-h);
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.33, 1, 0.48, 1);
+}
+
+.nav-bar--ishigaki .stone-nav-slot--flip:hover .flip-inner,
+.nav-bar--ishigaki .stone-flip-anchor:focus-visible .flip-inner {
+  transform: rotateY(180deg);
+}
+
+.nav-bar--ishigaki .stone-nav-slot--flip .flip-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.22rem 0.14rem;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  font-size: clamp(0.74rem, 1.1vw, 0.94rem);
+  letter-spacing: 0.045em;
+  line-height: 1.22;
+  border-radius: var(--stone-radius);
+}
+
+.nav-bar--ishigaki .stone-nav-slot:nth-child(2) .flip-front {
+  border-radius: var(--stone-radius);
+  background:
+    radial-gradient(ellipse 72% 58% at 38% 28%, rgba(245, 242, 236, 0.2) 0%, transparent 46%),
+    radial-gradient(ellipse 58% 48% at 85% 78%, rgba(35, 32, 28, 0.2) 0%, transparent 45%),
+    linear-gradient(148deg, #d8d4cc 0%, #c4c0b8 35%, #9e9a94 100%);
+}
+.nav-bar--ishigaki .stone-nav-slot:nth-child(2) .flip-back {
+  border-radius: var(--stone-radius);
+  background: linear-gradient(158deg, #f0e8c0 0%, #d8b860 44%, #a88838 100%);
+  color: #2a2410;
+  text-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-bar--ishigaki .stone-dd-flip .flip-inner,
+  .nav-bar--ishigaki .stone-nav-slot--flip .flip-inner {
+    transition: none;
+    transform: none !important;
+  }
+  .nav-bar--ishigaki .stone-dd-flip .flip-back,
+  .nav-bar--ishigaki .stone-nav-slot--flip .flip-back {
+    transform: none !important;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .nav-bar--ishigaki .stone-dd-flip .flip-front,
+  .nav-bar--ishigaki .stone-nav-slot--flip .flip-front {
+    transition: opacity 0.2s ease;
+  }
+  .nav-bar--ishigaki .stone-nav-slot--dd:hover .stone-dd-flip .flip-inner,
+  .nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown:hover) .stone-dd-flip .flip-inner,
+  .nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown.is-touch-open) .stone-dd-flip .flip-inner,
+  .nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown:focus-within) .stone-dd-flip .flip-inner,
+  .nav-bar--ishigaki .stone-nav-slot--flip:hover .flip-inner,
+  .nav-bar--ishigaki .stone-flip-anchor:focus-visible .flip-inner {
+    transform: none;
+  }
+  .nav-bar--ishigaki .stone-nav-slot--dd:hover .stone-dd-flip .flip-front,
+  .nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown:hover) .stone-dd-flip .flip-front,
+  .nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown.is-touch-open) .stone-dd-flip .flip-front,
+  .nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown:focus-within) .stone-dd-flip .flip-front,
+  .nav-bar--ishigaki .stone-nav-slot--flip:hover .flip-front,
+  .nav-bar--ishigaki .stone-flip-anchor:focus-visible .flip-front {
+    opacity: 0;
+  }
+  .nav-bar--ishigaki .stone-nav-slot--dd:hover .stone-dd-flip .flip-back,
+  .nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown:hover) .stone-dd-flip .flip-back,
+  .nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown.is-touch-open) .stone-dd-flip .flip-back,
+  .nav-bar--ishigaki .stone-nav-slot--dd:has(.dropdown:focus-within) .stone-dd-flip .flip-back,
+  .nav-bar--ishigaki .stone-nav-slot--flip:hover .flip-back,
+  .nav-bar--ishigaki .stone-flip-anchor:focus-visible .flip-back {
+    opacity: 1;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .nav-bar--ishigaki .stone-row.nav-group {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px 3px;
+    background: transparent;
+  }
+}

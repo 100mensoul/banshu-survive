@@ -1,10 +1,8 @@
 /* トップ「播州事変」＝瓦版風：縦書きの細長い枚を横スクロール */
 
 /*
- * 帯（.news-section--kawara）の背景を元に戻すとき:
- *   background: #2a241c;
- *   background-image: linear-gradient(180deg, #353028 0%, #252018 100%);
- * の2行だけにして、下の background-color / background-image ブロックを削除。
+ * 帯（.news-section--kawara）の背景を簡略化するときは、background-color / background-image を
+ * 任意の単一グラデに差し替え。
  */
 
 @keyframes kou-fuda-hover {
@@ -35,11 +33,11 @@
   margin: 0;
   padding: 2.75rem 0 3.25rem;
   font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
-  background-color: #2a241c;
+  /* 上を暗く・下を明るく（帯のトーン） */
+  background-color: #1a1610;
   background-image:
-    linear-gradient(165deg, rgba(72, 62, 48, 0.35) 0%, transparent 50%),
-    linear-gradient(195deg, transparent 45%, rgba(12, 10, 6, 0.55) 100%),
-    linear-gradient(180deg, #383226 0%, #2a241c 38%, #1f1a14 72%, #252018 100%);
+    linear-gradient(165deg, rgba(0, 0, 0, 0.18) 0%, transparent 48%),
+    linear-gradient(180deg, #0e0c0a 0%, #16120e 28%, #221c18 58%, #2e2820 100%);
   border-top: 2px solid #1a1510;
   border-bottom: 2px solid #0f0c08;
 }
@@ -203,20 +201,20 @@
   padding: 0.85rem 0.65rem;
   white-space: normal;
 
-  background-color: var(--kou-bg-mixed, #ebe4d4);
+  background-color: var(--kou-bg-mixed, #d2c2a8);
   background-image: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 248, 235, 0.14) 0%,
     transparent 35%,
     transparent 65%,
-    rgba(0, 0, 0, 0.04) 100%
+    rgba(0, 0, 0, 0.06) 100%
   );
   border: 1px solid var(--kou-border-mixed, #5c4838);
   outline: 3px solid var(--kou-outline-mixed, #a89070);
   outline-offset: -1px;
   box-shadow:
     2px 6px 14px rgba(0, 0, 0, 0.35),
-    inset 0 0 0 1px rgba(255, 250, 235, 0.6);
+    inset 0 0 0 1px rgba(230, 215, 190, 0.45);
 }
 
 a.news-item--link {
@@ -236,7 +234,7 @@ a.news-item--link:hover {
   animation: kou-fuda-hover 0.48s ease-in-out infinite;
   box-shadow:
     3px 12px 26px rgba(0, 0, 0, 0.42),
-    inset 0 0 0 1px rgba(255, 250, 235, 0.72);
+    inset 0 0 0 1px rgba(235, 220, 195, 0.55);
   filter: brightness(1.05);
   outline-width: 4px;
   /* 木枠：内側の線＋外側の「枠」色を少し明るい茶に */

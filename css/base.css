@@ -9,31 +9,100 @@ body {
   padding: 0;
 }
 
+/*
+ * グロナビ帯：播州の大地・春のたんぽぽを意識した金芥子色（電気黄は使わない）
+ * 内側の枠・白パネルは置かず、道の駅／IC看板のようにフラットに近づける
+ */
 .nav-bar {
   position: relative;
   z-index: 50;
-  background-color: #fff100;
-  color:#000;
-  font-weight:bold;
-  padding: 1rem;
+  background: linear-gradient(
+    180deg,
+    #e8d45a 0%,
+    #d4b82a 38%,
+    #c4a028 72%,
+    #a88620 100%
+  );
+  color: #141008;
+  font-weight: bold;
+  padding: 0.75rem 0.65rem 0.55rem;
   text-align: center;
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  /* 看板の下辺＝土・舗装の重み（花田ICの標識の「足元」イメージ） */
+  border-bottom: solid 4px #2e2618;
+  box-shadow: 0 4px 14px rgba(40, 32, 12, 0.18);
 }
-.nav-bar a {
-  color: #000;
+
+/*
+ * グロナビ：6列グリッドで必ず均等幅（HTMLの改行空白は flex だと匿名アイテムになり崩れるため grid を使用）
+ *（.nav-bar の直下に .nav-group を一つ置く想定）
+ */
+.nav-group {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: stretch;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  font-size: 0;
+  line-height: 0;
+}
+
+.nav-group > * {
+  font-size: clamp(0.75rem, 1.05vw, 0.92rem);
+  line-height: 1.25;
+  min-width: 0;
+  max-width: 100%;
+  /* 区切りは点線ではなく細い実線（標識の区切りに近い） */
+  border-left: 1px solid rgba(46, 38, 24, 0.28);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  box-sizing: border-box;
+  letter-spacing: 0.06em;
+  overflow: visible;
+}
+
+.nav-group > *:first-child {
+  border-left: none;
+}
+
+.nav-group > a {
+  color: #141008;
   text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  font-weight: 800;
+  padding: 0.65rem 0.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: background-color 0.15s ease;
+  text-shadow: 0 1px 0 rgba(255, 248, 210, 0.35);
+}
+
+.nav-group > a:hover {
+  background-color: rgba(255, 255, 255, 0.22);
 }
 
 /* ドロップダウン用 */
 .dropdown {
   position: relative;
   z-index: 1;
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  overflow: visible;
 }
 
 /* 横並びナビで、後続の兄弟要素の下にパネルが隠れないようにする */
@@ -44,27 +113,57 @@ body {
 }
 
 .dropbtn {
-  display: inline-block;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+.nav-group .dropbtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 0.35rem;
+  font-weight: 800;
+  text-align: center;
+  transition: background-color 0.15s ease;
+  color: #141008;
+  text-shadow: 0 1px 0 rgba(255, 248, 210, 0.35);
+}
+
+.nav-group .dropdown:hover > .dropbtn,
+.nav-group .dropdown:focus-within > .dropbtn,
+.nav-group .dropdown.is-touch-open > .dropbtn {
+  background-color: rgba(255, 255, 255, 0.22);
 }
 
 .dropdown-content {
   display: none;
   position: absolute;
-  background-color: #fff;
-  min-width: 11rem;
-  max-width: 20rem;
-  box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-  z-index: 100;
   left: 0;
   top: 100%;
+  margin-top: 0;
+  background-color: #fff;
+  min-width: 11rem;
+  max-width: min(22rem, calc(100vw - 1.5rem));
+  width: max-content;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+  z-index: 300;
   font-weight: normal;
   text-align: left;
+  box-sizing: border-box;
+}
+
+/* グロナビ内：列幅を押し広げないよう、パネルは必ずセル外に重ねる */
+.nav-group .dropdown-content {
+  position: absolute !important;
+  left: 0;
+  right: auto;
+  top: 100%;
 }
 
 .dropdown-content a {
-  color: #333;
+  color: #0d3b66;
   padding: 0.35rem 0.65rem;
   text-decoration: none;
   display: block;
@@ -75,6 +174,7 @@ body {
 
 .dropdown-content a:hover {
   background-color: #f0f0f0;
+  text-decoration: underline;
 }
 
 /* エピソード：シーズン見出しと話数リンクの階層 */
@@ -127,4 +227,19 @@ body {
 .dropdown:focus-within .dropdown-content,
 .dropdown.is-touch-open .dropdown-content {
   display: block;
+}
+
+/* 狭い画面：3列グリッド＋細い区切り（9項目＝3×3） */
+@media screen and (max-width: 900px) {
+  .nav-group {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    padding: 0;
+    background: rgba(46, 38, 24, 0.22);
+  }
+
+  .nav-group > * {
+    border-left: none;
+    background: transparent;
+  }
 }

@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ナビ・石垣プロトタイプ（カタカナ表／日本語裏）</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=M+PLUS+Rounded+1c:wght@700&family=Noto+Sans+JP:wght@600;700&family=Shippori+Mincho:wght@600&family=Zen+Kaku+Gothic+New:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      margin: 0;
+      padding: 1.25rem;
+      background: #2a241c;
+      color: #e8e0d4;
+      line-height: 1.6;
+    }
+    h1 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      letter-spacing: 0.08em;
+    }
+    p.note {
+      font-size: 0.82rem;
+      opacity: 0.9;
+      margin: 0 0 1.25rem;
+      max-width: 46rem;
+    }
+    p.note code { color: #e8d88a; }
+    section {
+      margin-bottom: 2.25rem;
+    }
+    section h2 {
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      color: #c4b89a;
+      margin: 0 0 0.5rem;
+      font-weight: 600;
+    }
+
+    /* ========== D: 石垣・隙間のモルタル＋各石をめくる（試作） ========== */
+    .stone-shell {
+      position: relative;
+      padding: 6px 8px 12px;
+      background: linear-gradient(180deg, #1e1d1b 0%, #2a2826 30%, #242220 70%, #181716 100%);
+      border-radius: 6px;
+      box-shadow:
+        0 8px 28px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .stone-mortar {
+      position: relative;
+      z-index: 1;
+      background:
+        radial-gradient(ellipse 120% 80% at 20% 0%, rgba(80, 78, 74, 0.35) 0%, transparent 55%),
+        radial-gradient(ellipse 100% 60% at 80% 100%, rgba(0, 0, 0, 0.25) 0%, transparent 50%),
+        linear-gradient(180deg, #3a3835 0%, #32302d 50%, #2e2c29 100%);
+      padding: 0.7rem 0.45rem 0.75rem;
+      border-radius: 4px;
+      box-shadow: inset 0 3px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    .stone-row {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      max-width: 1180px;
+      margin: 0 auto;
+      font-size: 0;
+      gap: 5px 4px;
+    }
+
+    .flip-cell {
+      position: relative;
+      perspective: 780px;
+      min-height: 4.35rem;
+      padding: 0;
+      box-sizing: border-box;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .flip-cell:focus-visible {
+      outline: 2px solid rgba(200, 190, 160, 0.55);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    .flip-inner {
+      position: relative;
+      width: 100%;
+      min-height: 3.85rem;
+      transform-style: preserve-3d;
+      transition: transform 0.58s cubic-bezier(0.33, 1, 0.48, 1);
+    }
+    .flip-cell:hover .flip-inner,
+    .flip-cell:focus-visible .flip-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-face {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0.35rem 0.18rem;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      font-size: clamp(0.74rem, 1.12vw, 0.95rem);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      line-height: 1.22;
+    }
+
+    /* 表面＝グレー基調・白み／中間／濃い石を混ぜて濃淡を強める */
+    .flip-front {
+      color: #1c1b19;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(30, 28, 26, 0.22);
+      box-shadow:
+        2px 3px 8px rgba(0, 0, 0, 0.28),
+        inset 1px 1px 4px rgba(255, 255, 255, 0.22),
+        inset -2px -3px 7px rgba(0, 0, 0, 0.22);
+      transition: filter 0.2s ease, box-shadow 0.2s ease;
+      filter: contrast(1.04) brightness(0.98);
+    }
+    .flip-cell:hover .flip-front,
+    .flip-cell:focus-visible .flip-front {
+      filter: contrast(1.06) brightness(1.02);
+      box-shadow:
+        2px 4px 10px rgba(0, 0, 0, 0.3),
+        inset 1px 1px 5px rgba(255, 255, 255, 0.28),
+        inset -2px -3px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .flip-cell:nth-child(1) .flip-front {
+      border-radius: 5px 8px 4px 6px;
+      background:
+        radial-gradient(ellipse 85% 65% at 68% 30%, rgba(235, 233, 228, 0.45) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 42% at 20% 82%, rgba(45, 42, 38, 0.18) 0%, transparent 48%),
+        linear-gradient(158deg, #9c9791 0%, #84807a 38%, #6a6660 72%, #524e4a 100%);
+    }
+    .flip-cell:nth-child(2) .flip-front {
+      border-radius: 7px 5px 6px 5px;
+      background:
+        radial-gradient(ellipse 72% 58% at 38% 28%, rgba(245, 242, 236, 0.35) 0%, transparent 46%),
+        radial-gradient(ellipse 58% 48% at 85% 78%, rgba(35, 32, 28, 0.2) 0%, transparent 45%),
+        linear-gradient(148deg, #d8d4cc 0%, #c4c0b8 35%, #9e9a94 100%);
+    }
+    .flip-cell:nth-child(3) .flip-front {
+      border-radius: 6px 6px 7px 5px;
+      background:
+        radial-gradient(ellipse 78% 58% at 52% 68%, rgba(60, 56, 50, 0.2) 0%, transparent 52%),
+        radial-gradient(ellipse 48% 38% at 14% 24%, rgba(220, 216, 208, 0.4) 0%, transparent 44%),
+        linear-gradient(172deg, #706c66 0%, #5c5854 42%, #45423e 88%);
+      color: #e8e6e1;
+      text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.35);
+    }
+    .flip-cell:nth-child(4) .flip-front {
+      border-radius: 5px 5px 8px 7px;
+      background:
+        radial-gradient(ellipse 62% 52% at 78% 42%, rgba(230, 226, 218, 0.3) 0%, transparent 48%),
+        radial-gradient(ellipse 46% 52% at 22% 86%, rgba(40, 36, 32, 0.15) 0%, transparent 48%),
+        linear-gradient(152deg, #b4b0a8 0%, #98948c 45%, #76726a 100%);
+    }
+    .flip-cell:nth-child(5) .flip-front {
+      border-radius: 8px 5px 5px 6px;
+      background:
+        radial-gradient(ellipse 70% 55% at 28% 72%, rgba(55, 50, 46, 0.16) 0%, transparent 50%),
+        radial-gradient(ellipse 68% 52% at 72% 22%, rgba(250, 246, 238, 0.28) 0%, transparent 44%),
+        linear-gradient(128deg, #eae6de 0%, #cec9c0 40%, #a39e96 100%);
+    }
+    .flip-cell:nth-child(6) .flip-front {
+      border-radius: 5px 7px 6px 8px;
+      background:
+        radial-gradient(ellipse 80% 62% at 48% 38%, rgba(210, 206, 198, 0.22) 0%, transparent 48%),
+        radial-gradient(ellipse 52% 44% at 10% 62%, rgba(25, 22, 18, 0.25) 0%, transparent 48%),
+        linear-gradient(168deg, #4a4642 0%, #3a3632 45%, #2a2624 100%);
+      color: #ddd9d2;
+      text-shadow: 0 -1px 2px rgba(0, 0, 0, 0.45);
+    }
+    .flip-cell:nth-child(7) .flip-front {
+      border-radius: 6px 5px 5px 7px;
+      background:
+        radial-gradient(ellipse 58% 46% at 62% 78%, rgba(42, 40, 38, 0.14) 0%, transparent 44%),
+        radial-gradient(ellipse 88% 68% at 42% 20%, rgba(232, 230, 226, 0.32) 0%, transparent 50%),
+        linear-gradient(145deg, #a8aaa8 0%, #8a8c8a 42%, #686a68 100%);
+    }
+    .flip-cell:nth-child(8) .flip-front {
+      border-radius: 7px 6px 5px 5px;
+      background:
+        radial-gradient(ellipse 54% 48% at 24% 48%, rgba(240, 234, 224, 0.38) 0%, transparent 48%),
+        radial-gradient(ellipse 72% 54% at 82% 32%, rgba(70, 64, 56, 0.12) 0%, transparent 46%),
+        linear-gradient(158deg, #8a8580 0%, #726d68 40%, #56524c 100%);
+      color: #f0ece4;
+      text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.4);
+    }
+    .flip-cell:nth-child(9) .flip-front {
+      border-radius: 5px 6px 7px 6px;
+      background:
+        radial-gradient(ellipse 74% 58% at 52% 48%, rgba(95, 90, 84, 0.14) 0%, transparent 52%),
+        radial-gradient(ellipse 46% 40% at 16% 22%, rgba(218, 214, 206, 0.35) 0%, transparent 44%),
+        linear-gradient(168deg, #c8c4bc 0%, #a8a49c 38%, #7d7973 78%, #5c5852 100%);
+    }
+
+    .flip-front-kata {
+      font-size: clamp(0.74rem, 1.12vw, 0.95rem);
+      letter-spacing: 0.05em;
+    }
+
+    /* E: フォント比較（3石・ラジオ切替） */
+    .font-demo-row {
+      max-width: 36rem;
+      margin: 0 auto;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+    .font-demo-wrap .flip-face {
+      font-weight: 600;
+    }
+    .font-demo--hiragino .flip-face {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+    }
+    .font-demo--noto .flip-face {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-weight: 700;
+    }
+    .font-demo--zen .flip-face {
+      font-family: 'Zen Kaku Gothic New', sans-serif;
+      font-weight: 700;
+    }
+    .font-demo--shippori .flip-face {
+      font-family: 'Shippori Mincho', serif;
+      font-weight: 600;
+    }
+    .font-demo--mplus .flip-face {
+      font-family: 'M PLUS Rounded 1c', sans-serif;
+      font-weight: 700;
+    }
+    .font-demo--kosugi .flip-face {
+      font-family: 'Kosugi Maru', sans-serif;
+      font-weight: 400;
+    }
+
+    /* E の3石は「ストーリー／フォト／ラジオ」列の石肌・裏色に合わせる（nth-child の誤適用を上書き） */
+    .font-demo-row .flip-cell:nth-child(1) .flip-front {
+      border-radius: 7px 5px 6px 5px;
+      background:
+        radial-gradient(ellipse 72% 58% at 38% 28%, rgba(245, 242, 236, 0.35) 0%, transparent 46%),
+        radial-gradient(ellipse 58% 48% at 85% 78%, rgba(35, 32, 28, 0.2) 0%, transparent 45%),
+        linear-gradient(148deg, #d8d4cc 0%, #c4c0b8 35%, #9e9a94 100%);
+      color: #1c1b19;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+    .font-demo-row .flip-cell:nth-child(1) .flip-back {
+      background: linear-gradient(158deg, #f0e8c0 0%, #d8b860 44%, #a88838 100%);
+      color: #2a2410;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    .font-demo-row .flip-cell:nth-child(2) .flip-front {
+      border-radius: 6px 5px 5px 7px;
+      background:
+        radial-gradient(ellipse 58% 46% at 62% 78%, rgba(42, 40, 38, 0.14) 0%, transparent 44%),
+        radial-gradient(ellipse 88% 68% at 42% 20%, rgba(232, 230, 226, 0.32) 0%, transparent 50%),
+        linear-gradient(145deg, #a8aaa8 0%, #8a8c8a 42%, #686a68 100%);
+      color: #1c1b19;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+    .font-demo-row .flip-cell:nth-child(2) .flip-back {
+      background: linear-gradient(155deg, #c8e2f0 0%, #78b0d0 46%, #407898 100%);
+      color: #0e1c28;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+    .font-demo-row .flip-cell:nth-child(3) .flip-front {
+      border-radius: 7px 6px 5px 5px;
+      background:
+        radial-gradient(ellipse 54% 48% at 24% 48%, rgba(240, 234, 224, 0.38) 0%, transparent 48%),
+        radial-gradient(ellipse 72% 54% at 82% 32%, rgba(70, 64, 56, 0.12) 0%, transparent 46%),
+        linear-gradient(158deg, #8a8580 0%, #726d68 40%, #56524c 100%);
+      color: #f0ece4;
+      text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.4);
+    }
+    .font-demo-row .flip-cell:nth-child(3) .flip-back {
+      background: linear-gradient(158deg, #f8e8b8 0%, #e8a048 44%, #b07028 100%);
+      color: #281808;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    /* 裏面＝春の連想は残しつつ、くすみ＋土色・灰を混ぜて人工的な鮮やかさを抑える */
+    .flip-back {
+      transform: rotateY(180deg);
+      color: #342c28;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(45, 38, 34, 0.18);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -2px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .flip-cell:nth-child(1) .flip-back {
+      border-radius: 5px 7px 5px 6px;
+      background: linear-gradient(155deg, #e4c8d0 0%, #c898a8 42%, #9a6070 100%);
+      color: #3a2228;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    .flip-cell:nth-child(2) .flip-back {
+      border-radius: 7px 5px 6px 6px;
+      background: linear-gradient(158deg, #f0e8c0 0%, #d8b860 44%, #a88838 100%);
+      color: #2a2410;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    .flip-cell:nth-child(3) .flip-back {
+      border-radius: 6px 6px 7px 5px;
+      background: linear-gradient(168deg, #d0e8d4 0%, #88b890 45%, #4a7852 100%);
+      color: #142818;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+    .flip-cell:nth-child(4) .flip-back {
+      border-radius: 5px 6px 8px 7px;
+      background: linear-gradient(148deg, #ddd4ec 0%, #a898c8 46%, #706088 100%);
+      color: #241828;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
+    }
+    .flip-cell:nth-child(5) .flip-back {
+      border-radius: 8px 5px 5px 6px;
+      background: linear-gradient(158deg, #f0c8d8 0%, #d07890 46%, #985868 100%);
+      color: #2c1018;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+    .flip-cell:nth-child(6) .flip-back {
+      border-radius: 5px 8px 6px 7px;
+      background: linear-gradient(162deg, #f5dcc8 0%, #e09878 44%, #b06048 100%);
+      color: #2c1410;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+    .flip-cell:nth-child(7) .flip-back {
+      border-radius: 6px 5px 5px 7px;
+      background: linear-gradient(155deg, #c8e2f0 0%, #78b0d0 46%, #407898 100%);
+      color: #0e1c28;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.18);
+    }
+    .flip-cell:nth-child(8) .flip-back {
+      border-radius: 7px 6px 5px 5px;
+      background: linear-gradient(158deg, #f8e8b8 0%, #e8a048 44%, #b07028 100%);
+      color: #281808;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+    .flip-cell:nth-child(9) .flip-back {
+      border-radius: 5px 6px 7px 6px;
+      background: linear-gradient(162deg, #c8e8e0 0%, #68b0a0 46%, #388070 100%);
+      color: #0e201c;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .flip-inner {
+        transition: none;
+        transform: none !important;
+      }
+      .flip-back {
+        transform: none !important;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      .flip-front {
+        transition: opacity 0.2s ease;
+      }
+      .flip-cell:hover .flip-inner,
+      .flip-cell:focus-visible .flip-inner {
+        transform: none;
+      }
+      .flip-cell:hover .flip-front,
+      .flip-cell:focus-visible .flip-front {
+        opacity: 0;
+      }
+      .flip-cell:hover .flip-back,
+      .flip-cell:focus-visible .flip-back {
+        opacity: 1;
+      }
+    }
+
+    /* --- A / B / C（色比較・従来） --- */
+    .proto-a {
+      background: linear-gradient(180deg, #e8d45a 0%, #d4b82a 38%, #c4a028 72%, #a88620 100%);
+      border-bottom: 4px solid #2e2618;
+      padding: 0.65rem 0.5rem 0.5rem;
+      box-shadow: 0 4px 14px rgba(40, 32, 12, 0.18);
+    }
+    .proto-a .row {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      max-width: 1180px;
+      margin: 0 auto;
+      font-size: 0;
+    }
+    .proto-a .cell {
+      font-size: clamp(0.72rem, 1vw, 0.88rem);
+      letter-spacing: 0.06em;
+      font-weight: 800;
+      color: #141008;
+      text-align: center;
+      padding: 0.55rem 0.2rem;
+      border-left: 1px solid rgba(46, 38, 24, 0.28);
+      text-shadow: 0 1px 0 rgba(255, 248, 210, 0.35);
+    }
+    .proto-a .cell:first-child { border-left: none; }
+    .proto-b {
+      background: #c9a82e;
+      border-bottom: 4px solid #2e2618;
+      padding: 0.65rem 0.5rem 0.5rem;
+    }
+    .proto-b .row { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); max-width: 1180px; margin: 0 auto; font-size: 0; }
+    .proto-b .cell {
+      font-size: clamp(0.72rem, 1vw, 0.88rem);
+      letter-spacing: 0.06em;
+      font-weight: 800;
+      color: #141008;
+      text-align: center;
+      padding: 0.55rem 0.2rem;
+      border-left: 1px solid rgba(255, 255, 255, 0.28);
+    }
+    .proto-b .cell:first-child { border-left: none; }
+    .proto-c {
+      background: linear-gradient(180deg, #e9dc68 0%, #d4b82a 35%, #b89420 100%);
+      border-bottom: 4px solid #3d2e18;
+      padding: 0.65rem 0.5rem 0.5rem;
+      box-shadow: 0 3px 10px rgba(30, 24, 8, 0.2);
+    }
+    .proto-c .row { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); max-width: 1180px; margin: 0 auto; font-size: 0; }
+    .proto-c .cell {
+      font-size: clamp(0.72rem, 1vw, 0.88rem);
+      letter-spacing: 0.06em;
+      font-weight: 800;
+      color: #121008;
+      text-align: center;
+      padding: 0.55rem 0.2rem;
+      border-left: 1px solid rgba(46, 38, 24, 0.25);
+    }
+    .proto-c .cell:first-child { border-left: none; }
+  </style>
+</head>
+<body>
+  <h1>播州サバイブ・グロナビ プロトタイプ</h1>
+  <p class="note">
+    <strong>D</strong> は<strong>石垣</strong>の試作です。隙間はモルタル、各マスは石の塊。表面のベースは<strong>グレー</strong>で濃淡を付けています。めくると<strong>桜・菜の花・若葉・藤などを連想する色</strong>（くすみで安っぽさを抑えたトーン）が石ごとに違います。表面は<strong>カタカナ</strong>、裏は<strong>和文</strong>。キーボードは Tab → フォーカスで同様（motion 軽減ではフェード）。
+  </p>
+
+  <section>
+    <h2>D — 石垣ナビ・石をめくる（試作）</h2>
+    <div class="stone-shell">
+      <div class="stone-mortar">
+        <div class="stone-row">
+          <div class="flip-cell" tabindex="0" title="エピソード → 小噺">
+            <div class="flip-inner">
+              <div class="flip-face flip-front flip-front-kata">エピソード</div>
+              <div class="flip-face flip-back">小噺</div>
+            </div>
+          </div>
+          <div class="flip-cell" tabindex="0" title="ストーリー → 物語">
+            <div class="flip-inner">
+              <div class="flip-face flip-front flip-front-kata">ストーリー</div>
+              <div class="flip-face flip-back">物語</div>
+            </div>
+          </div>
+          <div class="flip-cell" tabindex="0" title="キャスト → 人物">
+            <div class="flip-inner">
+              <div class="flip-face flip-front flip-front-kata">キャスト</div>
+              <div class="flip-face flip-back">人物</div>
+            </div>
+          </div>
+          <div class="flip-cell" tabindex="0" title="マップ → 地図">
+            <div class="flip-inner">
+              <div class="flip-face flip-front flip-front-kata">マップ</div>
+              <div class="flip-face flip-back">地図</div>
+            </div>
+          </div>
+          <div class="flip-cell" tabindex="0" title="インフォ → 風土記">
+            <div class="flip-inner">
+              <div class="flip-face flip-front flip-front-kata">インフォ</div>
+              <div class="flip-face flip-back">風土記</div>
+            </div>
+          </div>
+          <div class="flip-cell" tabindex="0" title="ヒメログ → 姫事記">
+            <div class="flip-inner">
+              <div class="flip-face flip-front flip-front-kata">ヒメログ</div>
+              <div class="flip-face flip-back">姫事記</div>
+            </div>
+          </div>
+          <div class="flip-cell" tabindex="0" title="フォト → 写真">
+            <div class="flip-inner">
+              <div class="flip-face flip-front flip-front-kata">フォト</div>
+              <div class="flip-face flip-back">写真</div>
+            </div>
+          </div>
+          <div class="flip-cell" tabindex="0" title="ラジオ → 声">
+            <div class="flip-inner">
+              <div class="flip-face flip-front flip-front-kata">ラジオ</div>
+              <div class="flip-face flip-back">声</div>
+            </div>
+          </div>
+          <div class="flip-cell" tabindex="0" title="スペシャル → 特集">
+            <div class="flip-inner">
+              <div class="flip-face flip-front flip-front-kata">スペシャル</div>
+              <div class="flip-face flip-back">特集</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin-top: 0.75rem; font-size: 0.75rem; opacity: 0.85;">
+      裏面は<strong>華やかさと落ち着きのバランス</strong>を取った9パターンです。本番トップ（<code>nav-ishigaki.css</code>）と同色です。
+    </p>
+  </section>
+
+  <section>
+    <h2>E — カタカナのフォント比較（3石サンプル）</h2>
+    <p class="note">
+      Google Fonts を読み込み、ラジオで<strong>同じ石の見え方</strong>だけ切り替えて比較できます。しっぽり明朝はカタカナでも趣が出ます。本番トップは現状 OS のヒラギノ系です。
+    </p>
+    <p class="note" style="margin-bottom: 0.85rem; line-height: 1.9;">
+      <label style="margin-right: 0.65rem;"><input type="radio" name="fontdemo" value="hiragino" checked> ヒラギノ角ゴ（OS）</label>
+      <label style="margin-right: 0.65rem;"><input type="radio" name="fontdemo" value="noto"> Noto Sans JP</label>
+      <label style="margin-right: 0.65rem;"><input type="radio" name="fontdemo" value="zen"> Zen Kaku Gothic New</label>
+      <label style="margin-right: 0.65rem;"><input type="radio" name="fontdemo" value="shippori"> しっぽり明朝</label>
+      <label style="margin-right: 0.65rem;"><input type="radio" name="fontdemo" value="mplus"> M PLUS Rounded 1c</label>
+      <label><input type="radio" name="fontdemo" value="kosugi"> Kosugi Maru</label>
+    </p>
+    <div id="font-demo-wrap" class="font-demo-wrap font-demo--hiragino">
+      <div class="stone-shell">
+        <div class="stone-mortar">
+          <div class="stone-row font-demo-row">
+            <div class="flip-cell" tabindex="0" title="ストーリー → 物語">
+              <div class="flip-inner">
+                <div class="flip-face flip-front flip-front-kata">ストーリー</div>
+                <div class="flip-face flip-back">物語</div>
+              </div>
+            </div>
+            <div class="flip-cell" tabindex="0" title="フォト → 写真">
+              <div class="flip-inner">
+                <div class="flip-face flip-front flip-front-kata">フォト</div>
+                <div class="flip-face flip-back">写真</div>
+              </div>
+            </div>
+            <div class="flip-cell" tabindex="0" title="ラジオ → 声">
+              <div class="flip-inner">
+                <div class="flip-face flip-front flip-front-kata">ラジオ</div>
+                <div class="flip-face flip-back">声</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>A — 本番寄り（色のみ・静的）</h2>
+    <div class="proto-a">
+      <div class="row">
+        <div class="cell">エピソード</div>
+        <div class="cell">あらすじ</div>
+        <div class="cell">キャスト</div>
+        <div class="cell">マップ</div>
+        <div class="cell">風土記</div>
+        <div class="cell">ヒメログ</div>
+        <div class="cell">写真</div>
+        <div class="cell">ラジオ</div>
+        <div class="cell">特集</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>B — 単色フラット（色のみ・静的）</h2>
+    <div class="proto-b">
+      <div class="row">
+        <div class="cell">エピソード</div>
+        <div class="cell">あらすじ</div>
+        <div class="cell">キャスト</div>
+        <div class="cell">マップ</div>
+        <div class="cell">風土記</div>
+        <div class="cell">ヒメログ</div>
+        <div class="cell">写真</div>
+        <div class="cell">ラジオ</div>
+        <div class="cell">特集</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>C — 新芽寄りグラデ（色のみ・静的）</h2>
+    <div class="proto-c">
+      <div class="row">
+        <div class="cell">エピソード</div>
+        <div class="cell">あらすじ</div>
+        <div class="cell">キャスト</div>
+        <div class="cell">マップ</div>
+        <div class="cell">風土記</div>
+        <div class="cell">ヒメログ</div>
+        <div class="cell">写真</div>
+        <div class="cell">ラジオ</div>
+        <div class="cell">特集</div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      var wrap = document.getElementById('font-demo-wrap');
+      if (!wrap) return;
+      document.querySelectorAll('input[name="fontdemo"]').forEach(function (r) {
+        r.addEventListener('change', function () {
+          if (!r.checked) return;
+          wrap.className = 'font-demo-wrap font-demo--' + r.value;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

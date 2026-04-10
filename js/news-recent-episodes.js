@@ -86,12 +86,12 @@ function mixHex(hexA, hexB, t) {
 
 /** 通常札・エピソード札の配色（左＝古い＝暗、右＝新しい＝明） */
 const KOU_PALETTE_REG = {
-  bg: ['#cfc3b2', '#faf6ec'],
+  bg: ['#b8a690', '#e2d4bc'],
   border: ['#1e1610', '#9c8262'],
   outline: ['#3d3024', '#e8d4a8'],
 };
 const KOU_PALETTE_EP = {
-  bg: ['#b8a896', '#f2ebe0'],
+  bg: ['#a8967e', '#d8c8b0'],
   border: ['#140e0a', '#8a6e52'],
   outline: ['#2a1e14', '#d4b088'],
 };
