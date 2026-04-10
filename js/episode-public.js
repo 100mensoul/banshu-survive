@@ -43,6 +43,10 @@ const urlOk =
   String(url).trim().length > 0 &&
   !String(url).includes('あなたのプロジェクトID');
 
+function endEpisodeFetching() {
+  document.documentElement.classList.remove('episode-fetching');
+}
+
 function navRowHtml(prev, next) {
   if (!prev && !next) return '';
   const left = prev
@@ -85,50 +89,57 @@ async function fillSeriesNav(supabase, current) {
   if (bottom) bottom.innerHTML = inner;
 }
 
-if (!slug || !root || !urlOk || !keyOk) {
-  /* slug なし／設定なしは静的HTMLのまま */
+if (!slug || !root) {
+  endEpisodeFetching();
+} else if (!urlOk || !keyOk) {
+  endEpisodeFetching();
+  /* 静的プレースホルダをそのまま表示 */
 } else {
-  const supabase = createClient(url, key);
+  try {
+    const supabase = createClient(url, key);
 
-  const { data, error } = await supabase
-    .from('episodes')
-    .select('*')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .maybeSingle();
+    const { data, error } = await supabase
+      .from('episodes')
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .maybeSingle();
 
-  if (!error && data) {
-    document.title = `${data.title}｜播州サバイブ`;
+    if (!error && data) {
+      document.title = `${data.title}｜播州サバイブ`;
 
-    if (seasonSlot) {
-      if (data.season != null) {
-        seasonSlot.textContent = 'SEASON ' + String(data.season);
-      } else {
-        seasonSlot.textContent = '';
+      if (seasonSlot) {
+        if (data.season != null) {
+          seasonSlot.textContent = 'SEASON ' + String(data.season);
+        } else {
+          seasonSlot.textContent = '';
+        }
       }
-    }
 
-    const sub = data.subtitle ? `<div class="sub-title">${esc(data.subtitle)}</div>` : '';
-    const dateLine = data.updated_at
-      ? `<div class="date">${formatDate(data.updated_at)}</div>`
-      : '';
+      const sub = data.subtitle ? `<div class="sub-title">${esc(data.subtitle)}</div>` : '';
+      const dateLine = data.updated_at
+        ? `<div class="date">${formatDate(data.updated_at)}</div>`
+        : '';
 
-    root.innerHTML = `
+      root.innerHTML = `
       <h1>${esc(data.title)}</h1>
       ${sub}
       ${dateLine}
       <div class="episode-md">${marked.parse(data.body || '')}</div>
     `;
 
-    await fillSeriesNav(supabase, data);
-  } else if (!error && !data) {
-    document.title = 'エピソード｜播州サバイブ';
-    if (seasonSlot) seasonSlot.textContent = '';
-    root.innerHTML =
-      '<p>このエピソードは見つからないか、まだ<strong>公開</strong>されていません（下書きの可能性があります）。</p>';
-  } else if (error) {
-    document.title = 'エピソード｜播州サバイブ';
-    if (seasonSlot) seasonSlot.textContent = '';
-    root.innerHTML = `<p>読み込みエラー: ${esc(error.message)}</p>`;
+      await fillSeriesNav(supabase, data);
+    } else if (!error && !data) {
+      document.title = 'エピソード｜播州サバイブ';
+      if (seasonSlot) seasonSlot.textContent = '';
+      root.innerHTML =
+        '<p>このエピソードは見つからないか、まだ<strong>公開</strong>されていません（下書きの可能性があります）。</p>';
+    } else if (error) {
+      document.title = 'エピソード｜播州サバイブ';
+      if (seasonSlot) seasonSlot.textContent = '';
+      root.innerHTML = `<p>読み込みエラー: ${esc(error.message)}</p>`;
+    }
+  } finally {
+    endEpisodeFetching();
   }
 }

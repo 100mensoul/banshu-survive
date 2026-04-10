@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>エピソード｜播州サバイブ</title>
+  <!-- 先に slug があると分かる場合だけ本文を隠す（モジュールより前に実行してチラつき防止） -->
+  <script>
+    (function () {
+      try {
+        var s = new URLSearchParams(location.search).get('slug');
+        if (s && String(s).trim()) document.documentElement.classList.add('episode-fetching');
+      } catch (e) {}
+    })();
+  </script>
   <style>
 body {
   background-color: #e6f0ec;
@@ -125,6 +134,20 @@ img {
 .episode-md p { margin-bottom: 1rem; }
 .episode-md img { width: 100%; margin: 1rem 0; border-radius: 0; }
 .episode-md strong { font-weight: bold; color: #4a7c59; }
+.episode-loading {
+  display: none;
+  text-align: center;
+  padding: 2.5rem 1rem 3rem;
+  color: #6a7a6a;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+}
+html.episode-fetching .episode-loading {
+  display: block;
+}
+html.episode-fetching #episode-content {
+  display: none !important;
+}
   </style>
 </head>
 <body>
@@ -138,6 +161,8 @@ img {
     </div>
 
     <div class="nav" id="episode-series-nav-top"></div>
+
+    <p id="episode-loading" class="episode-loading" role="status" aria-live="polite">読み込み中…</p>
 
     <div id="episode-content">
       <h1>エピソード</h1>
