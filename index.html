@@ -7,10 +7,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css?v=navmichi17">
+  <link rel="stylesheet" href="css/main.css?v=navmichi18">
 </head>
 <body>
 
+<div id="page-transition-overlay" class="page-transition-overlay" aria-hidden="true"></div>
 
 <div class="hero">
   <img src="images/main-visual_v2.jpg" alt="メインビジュアル">
@@ -27,7 +28,7 @@
             <div class="stone-dd-flip" aria-hidden="true">
               <div class="flip-inner">
                 <div class="flip-face flip-front">エピソード</div>
-                <div class="flip-face flip-back">小噺</div>
+                <div class="flip-face flip-back">物語</div>
               </div>
             </div>
             <div class="stone-dd-ui">
@@ -59,10 +60,10 @@
 
           <!-- あらすじ（めくり） -->
           <div class="stone-nav-slot stone-nav-slot--flip">
-            <a href="html/arasuji.html" class="stone-flip-anchor" aria-label="あらすじへ（ストーリー／物語）">
+            <a href="html/arasuji.html" class="stone-flip-anchor" aria-label="あらすじへ（ストーリー／あらすじ）">
               <div class="flip-inner">
                 <span class="flip-face flip-front">ストーリー</span>
-                <span class="flip-face flip-back" aria-hidden="true">物語</span>
+                <span class="flip-face flip-back" aria-hidden="true">あらすじ</span>
               </div>
             </a>
           </div>
@@ -285,6 +286,36 @@
         d.classList.remove('is-touch-open');
       });
     });
+
+    // あらすじへ：トップを黒く暗転してから遷移
+    var arasujiAnchor = document.querySelector('a.stone-flip-anchor[href="html/arasuji.html"]');
+    var fadeOverlay = document.getElementById('page-transition-overlay');
+    if (arasujiAnchor && fadeOverlay) {
+      arasujiAnchor.addEventListener('click', function (e) {
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        e.preventDefault();
+        var href = arasujiAnchor.getAttribute('href');
+        var navigated = false;
+        function go() {
+          if (navigated) return;
+          navigated = true;
+          try {
+            sessionStorage.setItem('banshuArasujiEnter', '1');
+          } catch (err) {}
+          var sep = href.indexOf('?') >= 0 ? '&' : '?';
+          window.location.href = href + sep + 'reveal=1';
+        }
+        fadeOverlay.setAttribute('aria-hidden', 'false');
+        fadeOverlay.classList.add('is-visible');
+        fadeOverlay.addEventListener('transitionend', function onFade(ev) {
+          if (ev.propertyName !== 'opacity') return;
+          fadeOverlay.removeEventListener('transitionend', onFade);
+          go();
+        });
+        window.setTimeout(go, 1400);
+      });
+    }
   });
 </script>
   <script src="js/supabase-public-config.js"></script>

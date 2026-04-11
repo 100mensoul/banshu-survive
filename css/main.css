@@ -7,3 +7,4 @@
 @import url("sns.css");
 @import url("interview.css");   /* ← 特定ページ専用なので最後寄りでもOK */
 @import url("footer.css");
+@import url("page-transition-home.css");

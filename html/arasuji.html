@@ -5,9 +5,47 @@
   <title>あらすじ｜播州サバイブ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../css/main.css">
-  <link rel="stylesheet" href="../css/arasuji.css">
+  <link rel="stylesheet" href="../css/arasuji.css?v=3">
+  <!-- 先に黒を確実に被せる（CSS読込前の一瞬の白抜け対策。opacity は触らない＝フェードが効く） -->
+  <style>
+    #arasuji-enter-overlay.is-active {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: #000;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
+
+<div id="arasuji-enter-overlay" class="arasuji-enter-overlay"></div>
+<script>
+(function () {
+  var el = document.getElementById('arasuji-enter-overlay');
+  if (!el) return;
+  var params = new URLSearchParams(window.location.search);
+  var fromUrl = params.get('reveal') === '1';
+  try {
+    if (fromUrl) {
+      history.replaceState(null, '', window.location.pathname + window.location.hash);
+    }
+  } catch (err) {}
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var fromStorage = false;
+  try {
+    fromStorage = sessionStorage.getItem('banshuArasujiEnter') === '1';
+    sessionStorage.removeItem('banshuArasujiEnter');
+  } catch (err) {}
+  var show = (fromUrl || fromStorage) && !reduceMotion;
+  if (show) {
+    document.documentElement.style.background = '#000';
+    el.classList.add('is-active');
+  } else {
+    el.parentNode.removeChild(el);
+  }
+})();
+</script>
 
   <!-- 1. ヒーロー画像 -->
   <div class="hero-image">
@@ -47,6 +85,31 @@
       あなたが今、目にするすべての風景に、物語の種が眠っている。
     </p>
   </section>
+
+<script>
+(function () {
+  var overlay = document.getElementById('arasuji-enter-overlay');
+  if (!overlay || !overlay.classList.contains('is-active')) return;
+  var done = false;
+  function cleanup() {
+    if (done) return;
+    done = true;
+    document.documentElement.style.background = '';
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+  }
+  function startFade() {
+    void overlay.offsetHeight;
+    overlay.classList.add('is-revealed');
+    overlay.addEventListener('transitionend', function onEnd(ev) {
+      if (ev.propertyName !== 'opacity') return;
+      overlay.removeEventListener('transitionend', onEnd);
+      cleanup();
+    });
+    window.setTimeout(cleanup, 2600);
+  }
+  window.setTimeout(startFade, 80);
+})();
+</script>
 
 </body>
 </html>

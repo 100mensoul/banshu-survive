@@ -1,0 +1,21 @@
+/* トップページ → あらすじ：遷移前に画面を黒へフェード */
+.page-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.1s ease-in-out;
+}
+
+.page-transition-overlay.is-visible {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition-overlay {
+    transition-duration: 0.01ms;
+  }
+}

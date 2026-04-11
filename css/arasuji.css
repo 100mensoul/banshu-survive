@@ -7,6 +7,28 @@ body {
   line-height: 1.8;
 }
 
+/* トップ（暗転遷移）から来たとき：黒からゆっくり立ち上がる */
+.arasuji-enter-overlay {
+  display: none;
+  opacity: 1;
+  transition: opacity 1.15s ease-in-out;
+  will-change: opacity;
+}
+
+.arasuji-enter-overlay.is-active {
+  display: block;
+}
+
+.arasuji-enter-overlay.is-revealed {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arasuji-enter-overlay {
+    transition-duration: 0.01ms;
+  }
+}
+
 /* 1. ヒーロー画像 */
 .hero-image img {
   width: 100%;
