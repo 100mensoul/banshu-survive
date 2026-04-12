@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>あらすじ｜播州サバイブ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="stylesheet" href="../css/main.css">
-  <link rel="stylesheet" href="../css/arasuji.css?v=21">
+  <link rel="stylesheet" href="../css/arasuji.css?v=33">
+  <link rel="stylesheet" href="../css/sakura-petals.css?v=11">
   <!-- 先に黒を確実に被せる（CSS読込前の一瞬の白抜け対策。opacity は触らない＝フェードが効く） -->
   <style>
     #arasuji-enter-overlay.is-active {
@@ -53,6 +54,9 @@
       <img class="arasuji-hero-bg__img" src="../images/shikkui-wall.png" alt="播州をイメージした背景">
       <div class="arasuji-hero-bg__scrim"></div>
     </div>
+
+    <!-- 桜：背景と本文のあいだ（全面ヒーローより下だと隠れて見えないためここに配置） -->
+    <div id="arasuji-sakura" class="arasuji-sakura" aria-hidden="true"></div>
 
     <div class="arasuji-hero-panel__inner">
   <div class="arasuji-intro">
@@ -116,7 +120,15 @@
     </div>
   </section>
     </div>
+
   </div>
+  <!-- /.arasuji-hero-panel：漆喰背景・桜はここまで。フッターはパネル外＝最下端がグレー帯のみ -->
+
+  <footer class="arasuji-footer arasuji-footer--band" role="contentinfo">
+    <div class="arasuji-footer__inner">
+      <a href="../index.html" class="arasuji-footer__link">トップへ</a>
+    </div>
+  </footer>
 
 <script>
 (function () {
@@ -144,6 +156,7 @@
 </script>
   <script defer src="../js/arasuji-float-lines.js?v=6"></script>
   <script defer src="../js/arasuji-narrative-fade.js?v=1"></script>
+  <script defer src="../js/sakura-petals.js?v=12"></script>
 
 </body>
 </html>

@@ -1,5 +1,12 @@
 html {
   scroll-behavior: smooth;
+  /* オーバースクロール時・隙間でも黒く見えないよう漆喰に近いグレー */
+  background-color: #6f7378;
+  /* height:100% だけだと文書が長いときの下端で不整合が出ることがある → min-height で確保 */
+  min-height: 100%;
+  min-height: 100dvh;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -12,9 +19,14 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'YuGothic', 'Hiragino Kaku Gothic ProN', sans-serif;
-  background-color: #0a0a0a;
+  background-color: #6f7378;
   color: #222;
   line-height: 1.8;
+  min-height: 100%;
+  min-height: 100dvh;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* トップ（暗転遷移）から来たとき：黒からゆっくり立ち上がる */
@@ -44,6 +56,14 @@ body {
   position: relative;
   isolation: isolate;
   min-height: 100vh;
+  min-height: 100dvh;
+  /* 漆喰・桜がパネル下端よりはみ出してフッター帯の下／上に見えないようクリップ */
+  overflow: hidden;
+  /* 画像の下に本文まで続くが、隙間や未描画時も黒ではなく壁色に近い色 */
+  background-color: #6f7378;
+  /* safe-area はフッター帯のみ。ここに padding があると漆喰レイヤーがフッター下まで伸びる */
+  padding-bottom: 0;
+  box-sizing: border-box;
 }
 
 .arasuji-hero-bg {
@@ -51,6 +71,7 @@ body {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  min-height: 100%;
 }
 
 /* 漆喰の明度アップ（画像側を少し持ち上げ、スクリムはわずかに薄く） */
@@ -333,6 +354,57 @@ a.arasuji-scroll-hint:focus-visible {
 .arasuji-hero-panel .arasuji-narrative__p {
   color: rgba(245, 240, 232, 0.94);
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+/*
+ * フッター：本文末尾・全幅グレー帯（html/body 裏地と同色）。固定しない。
+ * main.css の footer.css（footer { background:#f2f2f2 … }）より詳細度で上書き。
+ * transform 花びらレイヤーより手前に固定（z-index + 合成レイヤ）。
+ */
+footer.arasuji-footer.arasuji-footer--band {
+  position: relative;
+  z-index: 20;
+  isolation: isolate;
+  transform: translateZ(0);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  margin-top: clamp(0.85rem, 2.2vh, 1.5rem);
+  padding: 0.45rem 0 calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  background-color: #6f7378;
+  border: none;
+  border-radius: 0;
+  text-align: center;
+  font-size: inherit;
+}
+
+.arasuji-footer__inner {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.arasuji-footer__link {
+  display: inline-block;
+  font-size: clamp(0.78rem, 2vw, 0.88rem);
+  font-weight: 400;
+  letter-spacing: 0.24em;
+  color: rgba(250, 246, 238, 0.72);
+  text-decoration: none;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+  transition: color 0.25s ease;
+}
+
+.arasuji-footer__link:hover {
+  color: rgba(255, 252, 248, 0.95);
+}
+
+.arasuji-footer__link:focus-visible {
+  outline: 1px solid rgba(255, 248, 240, 0.55);
+  outline-offset: 3px;
 }
 
 /* イントロ3行だけ：浮き上がり（本文とは別） */

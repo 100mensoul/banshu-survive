@@ -1,0 +1,163 @@
+/* あらすじページ：桜（親＝落下・透過、子＝回転・見た目） */
+
+#arasuji-sakura.arasuji-sakura {
+  --sakura-fall-px: 180vh;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* 横へはみ出し・画面外から入場を許可（visible のみでブラウザの overflow 混在バグを避ける） */
+  overflow: visible;
+  pointer-events: none;
+  /* 数値を大きく＝3D を弱め、真横から見えて消える感じを抑える */
+  perspective: 2200px;
+  perspective-origin: 50% 38%;
+}
+
+/* 位置・落下アニメのみ（translate と opacity） */
+.arasuji-sakura__petal {
+  position: absolute;
+  top: -12%;
+  margin-left: -5px;
+  transform-style: preserve-3d;
+  animation-name: arasuji-sakura-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+.arasuji-sakura__petal-inner {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+  backface-visibility: visible;
+  /* 一部ブラウザの 3D レイヤーで消えるチラつき対策 */
+  transform: translateZ(0);
+  animation-name: arasuji-sakura-spin;
+  /* 落下は linear、回転だけ緩急（別アニメの利点） */
+  animation-timing-function: cubic-bezier(0.42, 0.02, 0.58, 0.98);
+  animation-iteration-count: infinite;
+  will-change: transform;
+  border-radius: inherit;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 236, 244, 0.98) 0%,
+    rgba(255, 183, 198, 0.92) 45%,
+    rgba(250, 160, 175, 0.85) 100%
+  );
+}
+
+/* 奥（あまり「遠く」見せすぎない：mid に近いサイズ＋軽いぼかしだけ） */
+.arasuji-sakura__petal--far {
+  width: 10px;
+  height: 13px;
+  margin-left: -5px;
+  border-radius: 100% 12% 100% 12%;
+}
+
+.arasuji-sakura__petal--far .arasuji-sakura__petal-inner {
+  opacity: 0.9;
+  box-shadow: 0 0 5px rgba(255, 200, 210, 0.3);
+  filter: blur(0.42px) hue-rotate(var(--sakura-hue, 0deg));
+}
+
+/* 中間 */
+.arasuji-sakura__petal--mid {
+  width: 11px;
+  height: 14px;
+  border-radius: 120% 8% 120% 8%;
+}
+
+.arasuji-sakura__petal--mid .arasuji-sakura__petal-inner {
+  box-shadow: 0 0 6px rgba(255, 200, 210, 0.35);
+  filter: hue-rotate(var(--sakura-hue, 0deg));
+}
+
+/* 手前 */
+.arasuji-sakura__petal--near {
+  width: 13px;
+  height: 16px;
+  margin-left: -6px;
+  border-radius: 130% 6% 130% 10%;
+}
+
+.arasuji-sakura__petal--near .arasuji-sakura__petal-inner {
+  box-shadow:
+    0 1px 2px rgba(15, 10, 12, 0.1),
+    0 0 8px rgba(255, 190, 205, 0.38);
+  filter: hue-rotate(var(--sakura-hue, 0deg));
+}
+
+.arasuji-sakura__petal--shape-b {
+  border-radius: 95% 18% 95% 18%;
+}
+
+.arasuji-sakura__petal--shape-b.arasuji-sakura__petal--far {
+  border-radius: 90% 20% 90% 20%;
+}
+
+@keyframes arasuji-sakura-fall {
+  0% {
+    transform: translate3d(var(--sx0, 0px), 0, 0);
+    /* ループ直後も極端に薄くしない（途中で消えたように見えにくく） */
+    opacity: 0.28;
+  }
+  2.5% {
+    opacity: 0.9;
+  }
+  25% {
+    transform: translate3d(var(--sx1, 0px), calc(var(--sakura-fall-px, 150vh) * 0.25), 0);
+    opacity: 0.88;
+  }
+  50% {
+    transform: translate3d(var(--sx2, 0px), calc(var(--sakura-fall-px, 150vh) * 0.5), 0);
+    opacity: 0.84;
+  }
+  75% {
+    transform: translate3d(var(--sx3, 0px), calc(var(--sakura-fall-px, 150vh) * 0.75), 0);
+    opacity: 0.78;
+  }
+  /* 終端だけフェード：手前で薄くなりすぎないよう 94% を遅らせる */
+  92% {
+    opacity: 0.72;
+  }
+  97% {
+    opacity: 0.38;
+  }
+  100% {
+    transform: translate3d(var(--sx4, 0px), var(--sakura-fall-px, 150vh), 0);
+    opacity: 0;
+  }
+}
+
+/*
+ * 回転・スケールのみ（--sakura-turn-n: Z 軸総回転、--sakura-rx-n: X 軸でひらひら）
+ */
+@keyframes arasuji-sakura-spin {
+  0% {
+    transform: translateZ(0) rotateX(0deg) rotateZ(0deg) scale(var(--sakura-scale, 1));
+  }
+  25% {
+    transform: translateZ(0) rotateX(calc(var(--sakura-rx-n, 72) * 0.25 * 1deg))
+      rotateZ(calc(var(--sakura-turn-n, 540) * 0.25 * 1deg)) scale(var(--sakura-scale, 1));
+  }
+  50% {
+    transform: translateZ(0) rotateX(calc(var(--sakura-rx-n, 72) * 0.5 * 1deg))
+      rotateZ(calc(var(--sakura-turn-n, 540) * 0.5 * 1deg)) scale(var(--sakura-scale, 1));
+  }
+  75% {
+    transform: translateZ(0) rotateX(calc(var(--sakura-rx-n, 72) * 0.75 * 1deg))
+      rotateZ(calc(var(--sakura-turn-n, 540) * 0.75 * 1deg)) scale(var(--sakura-scale, 1));
+  }
+  100% {
+    transform: translateZ(0) rotateX(calc(var(--sakura-rx-n, 72) * 1deg))
+      rotateZ(calc(var(--sakura-turn-n, 540) * 1deg)) scale(var(--sakura-scale, 1));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #arasuji-sakura.arasuji-sakura {
+    display: none;
+  }
+}
