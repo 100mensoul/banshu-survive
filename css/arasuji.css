@@ -234,6 +234,31 @@ a.arasuji-scroll-hint:focus-visible {
   outline-offset: 4px;
 }
 
+/*
+ * イントロ直下の下矢印だけ：3行（.arasuji-float-line）の浮き上がりが終わってから表示。
+ * 遅延は js/arasuji-float-lines.js の step（0.38s）×2 + float-up（1.35s）≒ 2.11s に合わせる。
+ */
+.arasuji-intro > a.arasuji-scroll-hint {
+  opacity: 0;
+  pointer-events: none;
+  animation: arasuji-intro-scroll-hint-in 0.55s ease forwards;
+  animation-delay: 1.45s;
+  animation-fill-mode: both;
+}
+
+@keyframes arasuji-intro-scroll-hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+}
+
 /* 本文エリア内：次の章へジャンプする矢印（絶対配置しない） */
 .arasuji-narrative a.arasuji-scroll-hint--inline {
   position: relative;
@@ -248,6 +273,24 @@ a.arasuji-scroll-hint:focus-visible {
   z-index: 1;
 }
 
+/* 段落＋矢印を1スタックに（1画面目・節目ブロックなど）。外側 screenful が 100dvh で justify-content:center → ジャンプ時にセット全体が画面中央付近に */
+.arasuji-narrative__first-stack {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.arasuji-narrative__first-stack > a.arasuji-scroll-hint--first-screen-next {
+  align-self: center;
+  margin-top: clamp(0.35rem, 1.2vh, 0.85rem);
+  margin-bottom: 0;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: clamp(0.25rem, 0.8vh, 0.5rem);
+}
+
 /* 下向きシェブロンを2枚「縦に」重ねる（横並びにしない） */
 .arasuji-scroll-hint__stack {
   display: grid;
@@ -258,6 +301,11 @@ a.arasuji-scroll-hint:focus-visible {
   width: min-content;
   margin: 0 auto;
   animation: arasuji-scroll-hint-float 2.2s ease-in-out infinite;
+}
+
+/* 上の .arasuji-scroll-hint__stack の直後に置く（animation ショートハンドで delay がリセットされないように） */
+.arasuji-intro > a.arasuji-scroll-hint .arasuji-scroll-hint__stack {
+  animation-delay: calc(1.45s + 0.55s);
 }
 
 .arasuji-scroll-hint__chev {
@@ -274,9 +322,37 @@ a.arasuji-scroll-hint:focus-visible {
   margin-top: -0.55rem;
 }
 
+/* 単一シェブロン（下向き1枚）。上の grid 指定より後に置いて上書きする */
+.arasuji-scroll-hint__stack.arasuji-scroll-hint__stack--single {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  grid-auto-flow: unset;
+  grid-template-rows: unset;
+  width: min-content;
+  margin: 0 auto;
+}
+
+.arasuji-scroll-hint__stack.arasuji-scroll-hint__stack--single .arasuji-scroll-hint__chev {
+  grid-row: auto;
+  grid-column: auto;
+  margin-top: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .arasuji-scroll-hint__stack {
     animation: none;
+  }
+
+  .arasuji-intro > a.arasuji-scroll-hint {
+    opacity: 1;
+    pointer-events: auto;
+    animation: none;
+    transform: none;
+  }
+
+  .arasuji-intro > a.arasuji-scroll-hint .arasuji-scroll-hint__stack {
+    animation-delay: 0s;
   }
 }
 
@@ -312,15 +388,39 @@ a.arasuji-scroll-hint:focus-visible {
   scroll-margin-top: 0.75rem;
 }
 
+/* part1 / part3 は screenful の id：フラグメント＋flex 中央と競合しにくいよう scroll-margin は 0 */
 #arasuji-narrative-part1,
-#arasuji-narrative-part2 {
+#arasuji-narrative-part3 {
+  scroll-margin-top: 0;
+}
+
+#arasuji-narrative-part2,
+#arasuji-narrative-part4 {
   scroll-margin-top: 0.85rem;
+}
+
+/* 本文を「1画面あたりの塊」に。padding-top はセクションではなく各 screenful に移す（# ジャンプ位置のずれ対策） */
+.arasuji-narrative__screenful {
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding-top: clamp(2rem, 5vh, 3.5rem);
+}
+
+/* 1画面目・節目ブロック等：min-height 1 画面の箱の「中で」stack（本文＋矢印）を縦中央。id は screenful に付与 */
+.arasuji-narrative__screenful--first,
+.arasuji-narrative__screenful--centered {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  padding-top: 0;
 }
 
 .arasuji-narrative {
   max-width: 42rem;
-  margin: 0 auto;
-  padding: clamp(2rem, 5vh, 3.5rem) 0 0;
+  margin: clamp(2rem, 5vh, 3.5rem) auto 0;
+  padding: 0;
 }
 
 .arasuji-narrative__heading {
