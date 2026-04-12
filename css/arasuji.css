@@ -1,8 +1,18 @@
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
   margin: 0;
   padding: 0;
   font-family: 'YuGothic', 'Hiragino Kaku Gothic ProN', sans-serif;
-  background-color: #fff;
+  background-color: #0a0a0a;
   color: #222;
   line-height: 1.8;
 }
@@ -29,53 +39,241 @@ body {
   }
 }
 
-/* 1. ヒーロー画像 */
-.hero-image img {
-  width: 100%;
-  height: auto;
-  display: block;
+/* ヒーロー画像を全面にし、その上に見出し〜本文を重ねる */
+.arasuji-hero-panel {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
 }
 
-/* 2. タイトル */
+.arasuji-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 漆喰の明度アップ（画像側を少し持ち上げ、スクリムはわずかに薄く） */
+.arasuji-hero-bg__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 28%;
+  display: block;
+  filter: brightness(1.22) contrast(1.05);
+}
+
+/* 暗めのスクリム＋明るい文字（初期スタイル） */
+.arasuji-hero-bg__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.34) 40%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+}
+
+.arasuji-hero-panel__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 0 1rem 2.75rem;
+  box-sizing: border-box;
+}
+
+/*
+ * ▼ あらすじページ：位置の調整は主にこのブロック
+ * ・3行（.arasuji-intro__center）は常に画面の縦中央（top:50% + translateY(-50%)）で固定
+ * ・「あらすじ」タイトル → .arasuji-intro .page-title の top（と必要なら left/right）
+ * ・下矢印 → a.arasuji-scroll-hint の bottom（と必要なら left/right）
+ * ファイル: css/arasuji.css（このコメントのすぐ下〜 a.arasuji-scroll-hint まで）
+ */
+
+/* ファーストビュー：3行は縦中央固定／タイトル・矢印は絶対配置で別調整 */
+.arasuji-intro {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+}
+
+/* 【調整①】「あらすじ」タイトルの上下位置（下げる＝数値を大きく） */
+.arasuji-intro .page-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(env(safe-area-inset-top, 0px) + clamp(8rem, 18vh, 10rem));
+  margin: 0;
+  text-align: center;
+  z-index: 2;
+}
+
+/* 3行：ビューポートの縦中央に固定（通常はここは触らない） */
+.arasuji-intro__center {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 0 0.5rem;
+  box-sizing: border-box;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.arasuji-intro__center .arasuji-loglines {
+  pointer-events: auto;
+}
+
+/* タイトル（メインは3行のため一段コンパクトに） */
 .page-title {
   text-align: center;
-  font-size: 2.8rem;
-  margin-top: 1.5rem;
+  font-size: clamp(1.85rem, 5vw, 2.35rem);
   font-weight: bold;
 }
 
-/* 3. メニュー */
-.menu-bar {
+.arasuji-hero-panel .page-title {
+  color: rgba(247, 244, 238, 0.92);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
+}
+
+.arasuji-loglines {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
+/* ログライン：3行固定・折り返しなし（狭い幅では横スクロール） */
+.arasuji-loglines .arasuji-logline {
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/*
+ * 【3行の行間をいじる場所】
+ * ・行と行の「空き」… このブロックの margin（今は 0.1rem が上下）を大きく／小さく
+ * ・1行の高さの感じ… line-height（今は 1.48）
+ * ・行の内側の余白… padding（今は 0.1rem 0.5rem）
+ */
+/* ログライン：メイン扱い・やや小さめタイポ（行間はやや詰め） */
+.arasuji-logline {
+  text-align: center;
+  font-size: clamp(1.05rem, 3.35vw, 1.68rem);
+  line-height: 1.48;
+  letter-spacing: 0.04em;
+  font-feature-settings: 'palt' 1;
+  font-weight: 500;
+  color: rgba(255, 252, 248, 0.99);
+  margin: 0.1rem auto;
+  max-width: none;
+  padding: 0.1rem 0.5rem;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.35);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.arasuji-loglines .arasuji-logline:first-child {
+  margin-top: 0;
+}
+
+.arasuji-loglines .arasuji-logline:last-child {
+  margin-bottom: 0;
+}
+
+/* 【調整②】下矢印の上下位置（上に寄せる＝bottom の数値を大きく）／タップで本文へ */
+a.arasuji-scroll-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(6.5rem, env(safe-area-inset-bottom, 0px));
+  width: fit-content;
+  margin: 0 auto;
+  padding: 0;
+  color: rgba(255, 250, 245, 0.9);
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.45));
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  z-index: 2;
+}
+
+a.arasuji-scroll-hint:focus-visible {
+  outline: 2px solid rgba(255, 248, 240, 0.85);
+  outline-offset: 4px;
+}
+
+/* 本文エリア内：次の章へジャンプする矢印（絶対配置しない） */
+.arasuji-narrative a.arasuji-scroll-hint--inline {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
   display: flex;
   justify-content: center;
-  gap: 1.5rem;
-  padding: 1rem;
-  background-color: #eee;
-  font-size: 1rem;
-}
-.menu-bar a {
-  text-decoration: none;
-  color: #333;
-}
-.menu-bar a:hover {
-  text-decoration: underline;
+  width: 100%;
+  max-width: none;
+  margin: clamp(1.75rem, 4vh, 2.75rem) auto clamp(2rem, 5vh, 3rem);
+  z-index: 1;
 }
 
-/* 4. サブタイトル */
-.subtitle {
-  text-align: center;
-  font-size: 1.5rem;
-  color: #666;
-  margin-top: 1rem;
+/* 下向きシェブロンを2枚「縦に」重ねる（横並びにしない） */
+.arasuji-scroll-hint__stack {
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-rows: auto auto;
+  justify-items: center;
+  align-content: start;
+  width: min-content;
+  margin: 0 auto;
+  animation: arasuji-scroll-hint-float 2.2s ease-in-out infinite;
 }
 
-/* 5. キャッチコピー */
-.catchcopy {
-  text-align: center;
-  font-size: 1.2rem;
-  font-style: italic;
-  color: #444;
-  margin: 1rem 2rem;
+.arasuji-scroll-hint__chev {
+  display: block;
+  grid-column: 1;
+}
+
+.arasuji-scroll-hint__chev:nth-child(1) {
+  grid-row: 1;
+}
+
+.arasuji-scroll-hint__chev:nth-child(2) {
+  grid-row: 2;
+  margin-top: -0.55rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arasuji-scroll-hint__stack {
+    animation: none;
+  }
+}
+
+@keyframes arasuji-scroll-hint-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(10px);
+  }
+}
+
+.arasuji-logline strong {
+  font-weight: 700;
+  color: #f4ebd4;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 14px rgba(0, 0, 0, 0.4);
 }
 
 /* 6. 本文 */
@@ -86,4 +284,99 @@ body {
 }
 .main-text p {
   margin-bottom: 1.5rem;
+}
+
+/* あらすじ長文 — イントロの下（初期画面ではスクロールで見える） */
+#arasuji-narrative.arasuji-narrative {
+  scroll-margin-top: 0.75rem;
+}
+
+#arasuji-narrative-part1,
+#arasuji-narrative-part2 {
+  scroll-margin-top: 0.85rem;
+}
+
+.arasuji-narrative {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: clamp(2rem, 5vh, 3.5rem) 0 0;
+}
+
+.arasuji-narrative__heading {
+  font-size: clamp(1.05rem, 2.8vw, 1.2rem);
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 1.85rem 0 0.65rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  letter-spacing: 0.04em;
+}
+
+.arasuji-hero-panel .arasuji-narrative__heading {
+  color: #f0ebe3;
+  border-bottom-color: rgba(255, 255, 255, 0.22);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+}
+
+.arasuji-narrative__heading:first-child {
+  margin-top: 0;
+}
+
+.arasuji-narrative__p {
+  margin: 0 0 1.1rem;
+  line-height: 1.95;
+  color: #333;
+  text-align: justify;
+  font-size: clamp(0.9rem, 2.2vw, 1rem);
+}
+
+.arasuji-hero-panel .arasuji-narrative__p {
+  color: rgba(245, 240, 232, 0.94);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* イントロ3行だけ：浮き上がり（本文とは別） */
+.arasuji-loglines .arasuji-float-line {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: arasuji-float-up 1.35s ease forwards;
+}
+
+.arasuji-loglines .arasuji-float-line--static {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+
+/* 本文：段落・見出しごとフェード（スクロールで表示領域に入ったとき .is-visible） */
+.arasuji-narrative__fade {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+}
+
+.arasuji-narrative__fade.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arasuji-narrative__fade {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+@keyframes arasuji-float-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

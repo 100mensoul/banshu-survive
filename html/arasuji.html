@@ -5,7 +5,7 @@
   <title>あらすじ｜播州サバイブ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../css/main.css">
-  <link rel="stylesheet" href="../css/arasuji.css?v=3">
+  <link rel="stylesheet" href="../css/arasuji.css?v=21">
   <!-- 先に黒を確実に被せる（CSS読込前の一瞬の白抜け対策。opacity は触らない＝フェードが効く） -->
   <style>
     #arasuji-enter-overlay.is-active {
@@ -47,44 +47,76 @@
 })();
 </script>
 
-  <!-- 1. ヒーロー画像 -->
-  <div class="hero-image">
-    <img src="../images/shikkui-wall.png" alt="播州サバイブ メインビジュアル">
+  <!-- ヒーロー画像の上にタイトル〜本文を重ねる（画像と別ブロックに分けない） -->
+  <div class="arasuji-hero-panel">
+    <div class="arasuji-hero-bg" aria-hidden="true">
+      <img class="arasuji-hero-bg__img" src="../images/shikkui-wall.png" alt="播州をイメージした背景">
+      <div class="arasuji-hero-bg__scrim"></div>
+    </div>
+
+    <div class="arasuji-hero-panel__inner">
+  <div class="arasuji-intro">
+    <h1 class="page-title">あらすじ</h1>
+    <div class="arasuji-intro__center">
+      <div class="arasuji-loglines">
+        <p class="arasuji-logline arasuji-float-line">播州で生まれ育った<strong>R</strong>が故郷に戻り</p>
+        <p class="arasuji-logline arasuji-float-line">先祖の遺した古アパートを生まれ変わらせ</p>
+        <p class="arasuji-logline arasuji-float-line">いのちを循環させる<strong>『ツインコモンズ』</strong> をつくる！</p>
+      </div>
+    </div>
+    <a class="arasuji-scroll-hint" href="#arasuji-narrative-part1" aria-label="本文へスクロール（故郷を出るまで）">
+      <span class="arasuji-scroll-hint__stack" aria-hidden="true">
+        <svg class="arasuji-scroll-hint__chev" width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg class="arasuji-scroll-hint__chev" width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+    </a>
   </div>
 
-  <!-- 2. タイトル -->
-  <h1 class="page-title">あらすじ</h1>
+  <section id="arasuji-narrative" class="arasuji-narrative" aria-label="あらすじ本文">
 
-  <!-- 3. メニューバー（仮で最低限）-->
-  <nav class="menu-bar">
-    <a href="../index.html">トップ</a>
-    <a href="chart.html">登場人物</a>
-    <a href="map.html">地図</a>
-    <a href="diary.html">姫ゴト日記</a>
-  </nav>
+    <div id="arasuji-narrative-part1" class="arasuji-narrative__chunk">
+      <h3 class="arasuji-narrative__heading arasuji-narrative__fade">故郷を出るまで</h3>
+      <p class="arasuji-narrative__p arasuji-narrative__fade">播州で生まれ育ったＲ（アール）は、教師だった母に影響を受けて教育者を志す。故郷を離れて外の世界で奔走し確かな手応えも得たが、気づけば20年の月日が流れていた。どれほど身を尽くしても何かが足りない。それは大地に根付いた「くらし」だった。</p>
 
-  <!-- 4. サブタイトル -->
-  <h2 class="subtitle">この物語が始まる場所</h2>
+      <h3 class="arasuji-narrative__heading arasuji-narrative__fade">変貌する故郷の原風景</h3>
+      <p class="arasuji-narrative__p arasuji-narrative__fade">城下町の東の果てに位置する実家の周辺は、古くから先祖が住み続けてきたゆかりの地。自然がまだ残る環境の下で子供時代を過ごせたことは、今の自分を形作る感性を育んでくれた。</p>
+      <p class="arasuji-narrative__p arasuji-narrative__fade">しかし都市化の波が迫っており、かつての田園風景はこの20年間で開発により物流倉庫や商業施設などに変貌し、原風景は存亡の危機に瀕している。</p>
 
-  <!-- 5. キャッチコピー -->
-  <p class="catchcopy">「すべての“今”が、かつての“物語”だった。」</p>
+      <h3 class="arasuji-narrative__heading arasuji-narrative__fade">節目を迎える実家の不動産</h3>
+      <p class="arasuji-narrative__p arasuji-narrative__fade">一方、実家の周辺には祖母が購入した不動産が点在しており、父の代でもテナントやアパートとして運用してきた。だがそれも50年の月日を経て老朽化してきている。</p>
+      <p class="arasuji-narrative__p arasuji-narrative__fade">このまま放っておくと新興住宅やコンビニなどに建て直され、全国どこにでもあるような街並みになってしまうのではないか。</p>
+    </div>
 
-  <!-- 6. 本文 -->
-  <section class="main-text">
-    <p>
-      播州の地に生きる人々の声をすくい上げるようにして生まれたこの物語。
-      それはフィクションでありながら、現実よりも真実に近い。
-    </p>
-    <p>
-      語り手は外様（とざま）である「平尾」。<br>
-      主人公は不思議な魅力を放つ「R」。<br>
-      町おこしという名の再構築が進むなか、彼女たちの日々は記録され、
-      いずれ「歴史」となるかもしれない。
-    </p>
-    <p>
-      あなたが今、目にするすべての風景に、物語の種が眠っている。
-    </p>
+    <a class="arasuji-scroll-hint arasuji-scroll-hint--inline" href="#arasuji-narrative-part2" aria-label="次の章へ（ターニングポイントとなる道の駅計画）">
+      <span class="arasuji-scroll-hint__stack" aria-hidden="true">
+        <svg class="arasuji-scroll-hint__chev" width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <svg class="arasuji-scroll-hint__chev" width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+    </a>
+
+    <div id="arasuji-narrative-part2" class="arasuji-narrative__chunk">
+      <h3 class="arasuji-narrative__heading arasuji-narrative__fade">ターニングポイントとなる道の駅計画</h3>
+      <p class="arasuji-narrative__p arasuji-narrative__fade">そんな折、市内発の道の駅が実家のすぐ近くで計画されていることが数年前にわかった。</p>
+      <p class="arasuji-narrative__p arasuji-narrative__fade">このタイミングだからこそ故郷に対して何か自分にもできることがあるんじゃないかと、仕事で全国を飛び回りながらも想い続けてきた。</p>
+      <p class="arasuji-narrative__p arasuji-narrative__fade">Rの仕事はおおよそ、人々の居場所をつくり誰もが幸せに暮らせるようにすることだったが、どれだけ他所の地域を活性化しても当人の自分自身は移動ばかりの生活で、根ざすべき自分の場をもてないことへの焦燥感と空虚感を抱いていた。</p>
+
+      <h3 class="arasuji-narrative__heading arasuji-narrative__fade">今しかない。帰ってきた故郷</h3>
+      <p class="arasuji-narrative__p arasuji-narrative__fade">原風景を残したい。ただそれだけの想いで、昨年ついに住民票を故郷に戻した。</p>
+      <p class="arasuji-narrative__p arasuji-narrative__fade">久しぶりの播州の地は、嫌悪していた姫路らしさも依然としてありながら、それでも若い自分と同世代の仲間が一部帰ってきていて、何かが変わる予感がしている。</p>
+      <p class="arasuji-narrative__p arasuji-narrative__fade">播州人の横のつながりで、姫路の城文化をもしかしたら明るい方向へ変えていくことができるかもしれない。</p>
+      <p class="arasuji-narrative__p arasuji-narrative__fade">頼れる仲間とこの土地の持つポテンシャルに期待を寄せて、「帰ってきたR」の挑戦の旅が幕を開けた。</p>
+    </div>
   </section>
+    </div>
+  </div>
 
 <script>
 (function () {
@@ -110,6 +142,8 @@
   window.setTimeout(startFade, 80);
 })();
 </script>
+  <script defer src="../js/arasuji-float-lines.js?v=6"></script>
+  <script defer src="../js/arasuji-narrative-fade.js?v=1"></script>
 
 </body>
 </html>

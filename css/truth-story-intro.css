@@ -1,0 +1,73 @@
+/* トップ：真実のストーリー（順次表示テキスト） */
+.truth-story {
+  margin: 0;
+  padding: 1.25rem 1.25rem 1.35rem;
+  /* 石垣ナビ帯（#0a0a09 付近）と馴染むようほぼ純黒に寄せる */
+  background: #000;
+  border-top: 1px solid rgba(255, 255, 255, 0.035);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+  color: rgba(245, 242, 235, 0.94);
+}
+
+.truth-story__inner {
+  max-width: 40rem;
+  margin: 0 auto;
+  box-sizing: border-box;
+  /* min-height は付けない＝帯は本文の高さぴったり（下に黒余白が溜まらない） */
+}
+
+.truth-story__title {
+  font-family: 'Zen Kaku Gothic New', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.35rem, 3.8vw, 1.85rem);
+  letter-spacing: 0.12em;
+  margin: 0 0 0.85rem;
+  line-height: 1.35;
+  color: #f0ebe3;
+}
+
+.truth-story__prose {
+  margin: 0;
+}
+
+.truth-story__prose p {
+  font-size: clamp(0.92rem, 2.1vw, 1.02rem);
+  line-height: 2.05;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.85rem;
+  color: rgba(235, 230, 220, 0.92);
+}
+
+.truth-story__prose p:last-child {
+  margin-bottom: 0;
+}
+
+.truth-story__prose strong {
+  font-weight: 700;
+  color: #e8d9b8;
+}
+
+.truth-story__char {
+  display: inline-block;
+  opacity: 0;
+  animation: truth-story-char-in 0.38s ease forwards;
+}
+
+@keyframes truth-story-char-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.22em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .truth-story__char {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
+}

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css?v=navmichi18">
+  <link rel="stylesheet" href="css/main.css?v=navmichi24">
 </head>
 <body>
 
@@ -16,7 +16,13 @@
 <div class="hero">
   <img src="images/main-visual_v2.jpg" alt="メインビジュアル">
 </div>
-  
+
+  <section class="truth-story" lang="ja" aria-labelledby="truthStoryTitle">
+    <div class="truth-story__inner">
+      <h1 class="truth-story__title" id="truthStoryTitle"></h1>
+      <div class="truth-story__prose" id="truthStoryProse"></div>
+    </div>
+  </section>
 
   <nav class="nav-bar nav-bar--ishigaki" aria-label="メインナビゲーション">
     <div class="stone-shell">
@@ -152,8 +158,6 @@
       </div>
     </div>
   </nav>
-
-
 
 <section class="news-section news-section--kawara">
   <div class="news-section__layout">
@@ -322,5 +326,6 @@
   <script defer src="js/kawara-scroll-mobile.js?v=1"></script>
   <script type="module" src="js/home-episode-nav.js"></script>
   <script type="module" src="js/news-recent-episodes.js?v=2"></script>
+  <script defer src="js/truth-story-reveal.js?v=3"></script>
 </body>
 </html>
