@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>種族・姫路クラン辞典｜播州サバイブ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../css/main.css?v=navmichi7">
+  <style>
+.page-glossary {
+  background-color: #2d3830;
+  color: #e8ece9;
+  min-height: 100vh;
+}
+.page-glossary .glossary-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+.page-glossary h1 {
+  text-align: center;
+  font-size: 1.65rem;
+  margin-bottom: 0.35rem;
+}
+.page-glossary .glossary-sub {
+  text-align: center;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  opacity: 0.72;
+  margin: 0 0 1.25rem;
+}
+.page-glossary .glossary-lead {
+  font-size: 0.9rem;
+  line-height: 1.75;
+  margin: 0 0 1.75rem;
+  opacity: 0.9;
+}
+.page-glossary .glossary-lead a {
+  color: #c5dcc5;
+}
+.page-glossary h2 {
+  font-size: 1.05rem;
+  color: #c5dcc5;
+  margin: 2rem 0 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+.page-glossary .glossary-entry {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 0 0;
+}
+.page-glossary .glossary-entry h3 {
+  font-size: 0.98rem;
+  margin: 0 0 0.4rem;
+  color: #e8ece9;
+}
+.page-glossary .glossary-entry p {
+  font-size: 0.88rem;
+  line-height: 1.75;
+  margin: 0;
+  opacity: 0.9;
+  white-space: pre-wrap;
+}
+.page-glossary .site-footer {
+  text-align: center;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  font-size: 0.85rem;
+}
+.page-glossary .site-footer a { color: #c5dcc5; }
+.page-glossary .glossary-wait {
+  opacity: 0.65;
+  font-size: 0.88rem;
+}
+  </style>
+</head>
+<body class="page-glossary">
+
+  <nav class="nav-bar">
+    <div class="nav-group">
+      <div class="dropdown">
+        <div class="dropbtn" tabindex="0">エピソード</div>
+        <div class="dropdown-content dropdown-content--episodes" id="episode-dropdown-root" data-episode-link-base="">
+          <div class="dropdown-season">
+            <div class="dropdown-heading">SEASON 1</div>
+            <div class="dropdown-links">
+              <a href="ep-box.html">EP1 原風景を求めて</a>
+              <a href="ep-3.html">EP3 東京ネイティブ</a>
+            </div>
+          </div>
+          <div class="dropdown-season">
+            <div class="dropdown-heading">SEASON 2</div>
+            <div class="dropdown-links">
+              <a href="ep-4.html">EP4 タネはまかれた</a>
+              <a href="ep-5.html">EP5 嵐のはじまり</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <a href="arasuji.html">あらすじ</a>
+      <div class="dropdown">
+        <div class="dropbtn" tabindex="0">キャスト</div>
+        <div class="dropdown-content">
+          <a href="chart.html">相関図・登場人物</a>
+          <a href="himejin.html">ひめじんファイル</a>
+        </div>
+      </div>
+      <div class="dropdown">
+        <div class="dropbtn" tabindex="0">風土記</div>
+        <div class="dropdown-content">
+          <a href="../diary/index.html">ヒメログ（姫事記）</a>
+          <a href="guide0503.html">シン播磨風土記</a>
+          <a href="kotoba6.html">コトバの路</a>
+          <a href="recipe.html">播州レシピ</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="glossary-wrap">
+    <header>
+      <h1>種族・姫路クラン辞典</h1>
+      <p class="glossary-sub">TRIBES &amp; HIMEJI CLAN GLOSSARY</p>
+      <p class="glossary-lead">
+        ここは<strong>説明文の正本</strong>です（Supabase 管理）。ひめじんファイル上部には、物語上重要な<strong>3種族</strong>だけを載せています。
+        クランスケープの語りは <a href="guide0503.html#himeji-clans">シン播磨風土記・姫路クラン</a> もあわせてどうぞ。
+      </p>
+    </header>
+
+    <section aria-labelledby="glossary-tribes-heading">
+      <h2 id="glossary-tribes-heading">種族</h2>
+      <div id="glossary-tribes-root" class="glossary-wait">読み込み中…</div>
+    </section>
+
+    <section aria-labelledby="glossary-clans-heading">
+      <h2 id="glossary-clans-heading">姫路クラン</h2>
+      <div id="glossary-clans-root" class="glossary-wait">読み込み中…</div>
+    </section>
+
+    <footer class="site-footer">
+      <p><a href="himejin.html">ひめじんファイルへ</a> · <a href="../index.html">トップへ</a></p>
+      <p>© 2026 播州サバイブ</p>
+    </footer>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.nav-bar .dropdown > .dropbtn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var drop = btn.parentElement;
+          var willOpen = !drop.classList.contains('is-touch-open');
+          document.querySelectorAll('.nav-bar .dropdown.is-touch-open').forEach(function (d) {
+            d.classList.remove('is-touch-open');
+          });
+          if (willOpen) drop.classList.add('is-touch-open');
+        });
+      });
+      document.addEventListener('click', function (e) {
+        if (e.target.closest('.nav-bar .dropdown')) return;
+        document.querySelectorAll('.nav-bar .dropdown.is-touch-open').forEach(function (d) {
+          d.classList.remove('is-touch-open');
+        });
+      });
+    });
+  </script>
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="module" src="../js/home-episode-nav.js"></script>
+  <script type="module" src="../js/himejin-glossary-public.js?v=1"></script>
+</body>
+</html>

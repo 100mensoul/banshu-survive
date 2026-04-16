@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ひめじん管理｜播州サバイブ</title>
+  <style>
+    body { margin: 0; padding: 16px; background: #f0f2f0; font-family: system-ui, sans-serif; }
+    .panel { background: #fff; border: 1px solid #d9ddd9; border-radius: 10px; padding: 12px; }
+    .layout { display: grid; gap: 12px; max-width: 1240px; margin: 0 auto; }
+    @media (min-width: 960px) { .layout { grid-template-columns: 320px 1fr; } }
+    .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .ok, .err { padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+    .ok { border: 1px solid #4a7c59; background: #e8f5e9; }
+    .err { border: 1px solid #a44; background: #ffe8e8; }
+    ul { list-style: none; padding: 0; margin: 0; max-height: 70vh; overflow: auto; }
+    li { border: 1px solid #ddd; border-radius: 8px; margin: 0 0 8px; padding: 8px; cursor: pointer; }
+    li.active { border-color: #333; background: #fff7ad; }
+    label { display: block; font-weight: 600; margin-top: 10px; font-size: 13px; }
+    input, textarea, select { width: 100%; box-sizing: border-box; padding: 8px; margin-top: 4px; }
+    textarea { min-height: 160px; }
+    button { padding: 8px 12px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>ひめじん管理</h1>
+  <div class="toolbar">
+    <a href="../html/himejin.html">公開ページ</a>
+    <span>·</span>
+    <a href="news-editor.html">高札場管理</a>
+    <span>·</span>
+    <a href="tribes-editor.html">種族説明管理</a>
+    <span>·</span>
+    <a href="clan-editor.html">姫路クラン管理</a>
+  </div>
+  <div id="msg" hidden></div>
+  <div class="panel" id="auth-panel">
+    <strong>ログイン</strong>
+    <label>メール<input id="email" type="email" autocomplete="username"></label>
+    <label>パスワード<input id="password" type="password" autocomplete="current-password"></label>
+    <div style="margin-top:8px;display:flex;gap:8px;">
+      <button type="button" id="btn-signin">ログイン</button>
+      <button type="button" id="btn-signout">ログアウト</button>
+    </div>
+  </div>
+
+  <div id="app" class="layout" hidden>
+    <div class="panel">
+      <button type="button" id="btn-new" style="width:100%;">＋ 新規ひめじん</button>
+      <ul id="rows-list"></ul>
+    </div>
+    <div class="panel">
+      <form id="form">
+        <input id="row-id" type="hidden">
+        <label>slug（英数字・ハイフン）<input id="slug" required></label>
+        <label>名前<input id="name" required></label>
+        <label>種族コード（<code>tribe_descriptions.code</code> と一致させる）
+          <input id="tribe_code" list="tribe-code-list" placeholder="banshujin / nbt / himejin / unknown" required>
+        </label>
+        <datalist id="tribe-code-list">
+          <option value="banshujin"></option>
+          <option value="nbt"></option>
+          <option value="himejin"></option>
+          <option value="unknown"></option>
+        </datalist>
+        <label>種族ラベル（表示文字）<input id="tribe_label" required></label>
+        <label>姫路クラン（任意・1人1つ）
+          <select id="clan_code"><option value="">（なし）</option></select>
+        </label>
+        <label>タグライン<input id="tagline"></label>
+        <label>紹介文<textarea id="intro"></textarea></label>
+        <label>写真URL<input id="photo_url" type="url" placeholder="https://..."></label>
+        <label>並び順（小さいほど上）<input id="sort_order" type="number" min="0" step="1" value="100"></label>
+        <label>公開状態
+          <select id="status">
+            <option value="draft">下書き</option>
+            <option value="published">公開</option>
+          </select>
+        </label>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button type="submit">保存</button>
+          <button type="button" id="btn-delete">削除</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
+    const msg = document.getElementById('msg');
+    const authPanel = document.getElementById('auth-panel');
+    const app = document.getElementById('app');
+    const list = document.getElementById('rows-list');
+
+    function showMsg(text, ok) {
+      msg.hidden = false;
+      msg.className = ok ? 'ok' : 'err';
+      msg.textContent = text;
+    }
+    async function loadClanSelect() {
+      const sel = document.getElementById('clan_code');
+      const prev = sel.value;
+      const { data, error } = await supabase
+        .from('clan_descriptions')
+        .select('code,title')
+        .order('sort_order', { ascending: true })
+        .order('code', { ascending: true });
+      sel.innerHTML = '<option value="">（なし）</option>';
+      if (!error) {
+        for (const c of data || []) {
+          const opt = document.createElement('option');
+          opt.value = c.code;
+          opt.textContent = c.title || c.code;
+          sel.appendChild(opt);
+        }
+      }
+      if (prev && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
+    }
+
+    function fillForm(row) {
+      document.getElementById('row-id').value = row.id || '';
+      document.getElementById('slug').value = row.slug || '';
+      document.getElementById('name').value = row.name || '';
+      document.getElementById('tribe_code').value = row.tribe_code || 'unknown';
+      document.getElementById('tribe_label').value = row.tribe_label || '未判明';
+      const clanSel = document.getElementById('clan_code');
+      clanSel.value = row.clan_code && String(row.clan_code).trim() !== '' ? row.clan_code : '';
+      document.getElementById('tagline').value = row.tagline || '';
+      document.getElementById('intro').value = row.intro || '';
+      document.getElementById('photo_url').value = row.photo_url || '';
+      document.getElementById('sort_order').value = row.sort_order ?? 100;
+      document.getElementById('status').value = row.status || 'draft';
+    }
+    function clearForm() {
+      fillForm({ id: '', slug: '', name: '', tribe_code: 'unknown', tribe_label: '', clan_code: '', tagline: '', intro: '', photo_url: '', sort_order: 100, status: 'draft' });
+      list.querySelectorAll('li').forEach((li) => li.classList.remove('active'));
+    }
+    async function loadList() {
+      const { data, error } = await supabase
+        .from('himejin_profiles')
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .order('updated_at', { ascending: true });
+      if (error) {
+        showMsg('一覧取得エラー: ' + error.message, false);
+        return;
+      }
+      list.innerHTML = '';
+      for (const row of data || []) {
+        const li = document.createElement('li');
+        li.innerHTML = '<strong>' + (row.name || '-') + '</strong><br><small>' + (row.slug || '') + ' / ' + (row.status || '') + '</small>';
+        li.addEventListener('click', () => {
+          list.querySelectorAll('li').forEach((x) => x.classList.remove('active'));
+          li.classList.add('active');
+          fillForm(row);
+        });
+        list.appendChild(li);
+      }
+    }
+
+    document.getElementById('btn-new').addEventListener('click', clearForm);
+
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('row-id').value;
+      const clanVal = document.getElementById('clan_code').value.trim();
+      const payload = {
+        slug: document.getElementById('slug').value.trim(),
+        name: document.getElementById('name').value.trim(),
+        tribe_code: document.getElementById('tribe_code').value,
+        tribe_label: document.getElementById('tribe_label').value.trim(),
+        clan_code: clanVal === '' ? null : clanVal,
+        tagline: document.getElementById('tagline').value.trim() || null,
+        intro: document.getElementById('intro').value.trim() || null,
+        photo_url: document.getElementById('photo_url').value.trim() || null,
+        sort_order: parseInt(document.getElementById('sort_order').value || '100', 10),
+        status: document.getElementById('status').value,
+      };
+      if (!payload.slug || !payload.name || !payload.tribe_label) {
+        showMsg('slug / 名前 / 種族ラベル は必須です', false);
+        return;
+      }
+      let error;
+      if (id) {
+        ({ error } = await supabase.from('himejin_profiles').update(payload).eq('id', id));
+      } else {
+        ({ error } = await supabase.from('himejin_profiles').insert(payload));
+      }
+      if (error) {
+        showMsg('保存エラー: ' + error.message, false);
+        return;
+      }
+      showMsg('保存しました', true);
+      clearForm();
+      await loadList();
+    });
+
+    document.getElementById('btn-delete').addEventListener('click', async () => {
+      const id = document.getElementById('row-id').value;
+      if (!id) {
+        showMsg('削除対象を選択してください', false);
+        return;
+      }
+      if (!confirm('この人物を削除しますか？')) return;
+      const { error } = await supabase.from('himejin_profiles').delete().eq('id', id);
+      if (error) {
+        showMsg('削除エラー: ' + error.message, false);
+        return;
+      }
+      showMsg('削除しました', true);
+      clearForm();
+      await loadList();
+    });
+
+    document.getElementById('btn-signin').addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        showMsg('ログイン失敗: ' + error.message, false);
+        return;
+      }
+      showMsg('ログインしました', true);
+    });
+    document.getElementById('btn-signout').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      showMsg('ログアウトしました', true);
+    });
+    function setUi(session) {
+      if (session) {
+        authPanel.hidden = true;
+        app.hidden = false;
+        loadClanSelect().then(() => loadList());
+      } else {
+        authPanel.hidden = false;
+        app.hidden = true;
+      }
+    }
+    supabase.auth.onAuthStateChange((_e, session) => setUi(session));
+    const { data: { session } } = await supabase.auth.getSession();
+    setUi(session);
+  </script>
+</body>
+</html>
