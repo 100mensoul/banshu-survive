@@ -104,6 +104,11 @@
   margin-top: 0;
 }
 
+/* 瓦版だけ上書き（より詳細度で .scroll-container--kawara の text-align:right を維持） */
+.news-section .scroll-container.scroll-container--kawara {
+  text-align: right;
+}
+
 .news-section__rail .scroll-container {
   margin-top: 0;
 }
