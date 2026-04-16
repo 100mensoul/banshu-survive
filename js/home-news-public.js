@@ -231,12 +231,22 @@ if (root && keyOk && urlOk) {
   }
 
   applyKouToneToScroll();
-  if (typeof window.scrollKawaraToNewestEnd === 'function') {
-    window.scrollKawaraToNewestEnd();
-  }
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      applyKouToneToScroll();
+      if (typeof window.scrollKawaraToNewestEnd === 'function') {
+        window.scrollKawaraToNewestEnd();
+      }
+    });
+  });
 } else {
   applyKouToneToScroll();
-  if (typeof window.scrollKawaraToNewestEnd === 'function') {
-    window.scrollKawaraToNewestEnd();
-  }
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      applyKouToneToScroll();
+      if (typeof window.scrollKawaraToNewestEnd === 'function') {
+        window.scrollKawaraToNewestEnd();
+      }
+    });
+  });
 }

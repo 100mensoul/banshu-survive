@@ -104,11 +104,6 @@
   margin-top: 0;
 }
 
-/* 瓦版だけ上書き（より詳細度で .scroll-container--kawara の text-align:right を維持） */
-.news-section .scroll-container.scroll-container--kawara {
-  text-align: right;
-}
-
 .news-section__rail .scroll-container {
   margin-top: 0;
 }
@@ -155,16 +150,28 @@
   border: none;
   box-shadow: none;
   border-radius: 0;
+  /*
+   * text-align:right + inline-flex はベースライン下揃いに見えたり、
+   * 横スクロール幅の計算が不安定になることがある。
+   * flex + flex-end で「短いときは右（スパイン側）、長いときは左へスクロールで古い札」にする。
+   */
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: flex-start;
+  white-space: normal;
 }
 
 .scroll-content--kawara {
-  display: inline-flex;
+  display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: stretch;
+  flex: 0 0 auto;
   gap: 0.9rem;
   padding: 0 0.35rem;
   min-height: min(70vh, 480px);
+  min-width: min-content;
 }
 
 /* 横書きフォールバック（未使用） */
