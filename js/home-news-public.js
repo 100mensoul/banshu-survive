@@ -1,7 +1,7 @@
 /**
- * トップ「播州事変」: news_posts と episodes を順に取得し、1回で #scrollContent を組み立てる。
- * DBニュースがあるときは [エピソード（古→新）][ニュース（古→新）] とし、右端＝最新のニュース。
- * DBニュースがないときは静的HTMLを残し、エピソードだけ末尾に追加（従来どおり）。
+ * トップ「播州事変」: news_posts と episodes を created_at 昇順で混在し、#scrollContent を1回で組み立てる。
+ * 古い登録が左、新しい登録が右。右端＝最新が初期表示（scrollKawaraToNewestEnd）。
+ * DBに公開データが無いときは index.html の静的HTMLをそのまま残す。
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -103,15 +103,14 @@ function mixHex(hexA, hexB, t) {
   return `rgb(${r} ${g} ${bl})`;
 }
 
+/* 案C+ 印なし版: 板は茶系統一、左=濃い 右=淡い */
 const KOU_PALETTE_REG = {
-  bg: ['#b8a690', '#e2d4bc'],
-  border: ['#1e1610', '#9c8262'],
-  outline: ['#3d3024', '#e8d4a8'],
+  bg: ['#5e4a38', '#a08c71'],
+  border: ['#2c1f14', '#2c1f14'],
 };
 const KOU_PALETTE_EP = {
-  bg: ['#a8967e', '#d8c8b0'],
-  border: ['#140e0a', '#8a6e52'],
-  outline: ['#2a1e14', '#d4b088'],
+  bg: ['#5e4a38', '#a08c71'],
+  border: ['#2c1f14', '#2c1f14'],
 };
 
 function applyKouToneToScroll() {
@@ -125,67 +124,64 @@ function applyKouToneToScroll() {
     const pal = el.classList.contains('news-item--episode') ? KOU_PALETTE_EP : KOU_PALETTE_REG;
     el.style.setProperty('--kou-bg-mixed', mixHex(pal.bg[0], pal.bg[1], t));
     el.style.setProperty('--kou-border-mixed', mixHex(pal.border[0], pal.border[1], t));
-    el.style.setProperty('--kou-outline-mixed', mixHex(pal.outline[0], pal.outline[1], t));
   }
 }
 
-function buildNewsFragment(rows) {
-  const frag = document.createDocumentFragment();
-  for (const row of rows) {
-    const hasLink = row.link_url && String(row.link_url).trim() !== '';
-    const item = document.createElement(hasLink ? 'a' : 'div');
-    item.className = 'news-item news-item--vertical' + (hasLink ? ' news-item--link' : '');
-    if (hasLink) {
-      item.href = String(row.link_url);
-      item.target = '_blank';
-      item.rel = 'noopener noreferrer';
-    }
-    const bodyTail = row.body ? '｜' + row.body : '';
-    item.innerHTML =
-      '<div class="news-title">' +
-      esc(row.title) +
-      bodyTail +
-      '</div>' +
-      '<div class="news-date">' +
-      esc(formatWarekiKanjiFromDate(row.happened_on)) +
-      '</div>';
-    frag.appendChild(item);
+function buildNewsCard(row) {
+  const hasLink = row.link_url && String(row.link_url).trim() !== '';
+  const item = document.createElement(hasLink ? 'a' : 'div');
+  item.className = 'news-item news-item--vertical' + (hasLink ? ' news-item--link' : '');
+  if (hasLink) {
+    item.href = String(row.link_url);
+    item.target = '_blank';
+    item.rel = 'noopener noreferrer';
   }
-  return frag;
+  const bodyTail = row.body ? '｜' + row.body : '';
+  item.innerHTML =
+    '<div class="news-title">' +
+    esc(row.title) +
+    bodyTail +
+    '</div>' +
+    '<div class="news-date">' +
+    esc(formatWarekiKanjiFromDate(row.happened_on)) +
+    '</div>';
+  return item;
 }
 
-function buildEpisodeFragment(rows) {
-  const frag = document.createDocumentFragment();
-  for (const row of rows) {
-    const slug = String(row.slug || '').trim();
-    if (!slug) continue;
+function buildEpisodeCard(row) {
+  const slug = String(row.slug || '').trim();
+  if (!slug) return null;
 
-    const card = document.createElement('a');
-    card.className = 'news-item news-item--vertical news-item--episode news-item--link';
-    card.href = 'html/episode.html?slug=' + encodeURIComponent(slug);
+  const card = document.createElement('a');
+  card.className = 'news-item news-item--vertical news-item--episode news-item--link';
+  card.href = 'html/episode.html?slug=' + encodeURIComponent(slug);
 
-    const titleWrap = document.createElement('div');
-    titleWrap.className = 'news-title';
-    const epLabel =
-      row.episode_number != null && Number.isFinite(Number(row.episode_number))
-        ? `第${row.episode_number}話 `
-        : '';
-    titleWrap.textContent = (epLabel + (row.title || slug)).trim();
+  const titleWrap = document.createElement('div');
+  titleWrap.className = 'news-title';
+  const epLabel =
+    row.episode_number != null && Number.isFinite(Number(row.episode_number))
+      ? `第${row.episode_number}話 `
+      : '';
+  titleWrap.textContent = (epLabel + (row.title || slug)).trim();
 
-    const dateEl = document.createElement('div');
-    dateEl.className = 'news-date';
-    dateEl.textContent = '更新 ' + formatWarekiKanji(row.updated_at);
+  const dateEl = document.createElement('div');
+  dateEl.className = 'news-date';
+  dateEl.textContent = '更新 ' + formatWarekiKanji(row.updated_at);
 
-    const kicker = document.createElement('div');
-    kicker.className = 'news-kicker';
-    kicker.textContent = 'エピソード';
+  const kicker = document.createElement('div');
+  kicker.className = 'news-kicker';
+  kicker.textContent = 'エピソード';
 
-    card.appendChild(titleWrap);
-    card.appendChild(dateEl);
-    card.appendChild(kicker);
-    frag.appendChild(card);
-  }
-  return frag;
+  card.appendChild(titleWrap);
+  card.appendChild(dateEl);
+  card.appendChild(kicker);
+  return card;
+}
+
+function createdAtMs(v) {
+  if (v == null || v === '') return 0;
+  const t = new Date(v).getTime();
+  return Number.isNaN(t) ? 0 : t;
 }
 
 const root = document.getElementById('scrollContent');
@@ -202,32 +198,50 @@ if (root && keyOk && urlOk) {
 
   const { data: newsRows, error: newsErr } = await supabase
     .from('news_posts')
-    .select('title, body, link_url, happened_on')
+    .select('title, body, link_url, happened_on, created_at')
     .eq('status', 'published')
-    .order('sort_order', { ascending: true })
-    .order('happened_on', { ascending: true })
-    .order('updated_at', { ascending: true });
+    .order('created_at', { ascending: true });
 
   const { data: epRows, error: epErr } = await supabase
     .from('episodes')
-    .select('slug,title,episode_number,updated_at')
+    .select('slug, title, episode_number, created_at, updated_at')
     .eq('status', 'published')
-    .order('updated_at', { ascending: true })
-    .limit(5);
+    .order('created_at', { ascending: true })
+    .limit(20);
 
   const hasNews = !newsErr && newsRows && newsRows.length > 0;
   const hasEp = !epErr && epRows && epRows.length > 0;
 
+  const unified = [];
+
   if (hasNews) {
-    root.innerHTML = '';
-    const epFrag = hasEp ? buildEpisodeFragment(epRows) : null;
-    const newsFrag = buildNewsFragment(newsRows);
-    if (epFrag && epFrag.childNodes.length) {
-      root.appendChild(epFrag);
+    for (const row of newsRows) {
+      unified.push({ kind: 'news', sortKey: row.created_at, row });
     }
-    root.appendChild(newsFrag);
-  } else if (hasEp) {
-    root.appendChild(buildEpisodeFragment(epRows));
+  }
+
+  if (hasEp) {
+    for (const row of epRows) {
+      unified.push({ kind: 'episode', sortKey: row.created_at, row });
+    }
+  }
+
+  unified.sort((a, b) => {
+    const ta = createdAtMs(a.sortKey);
+    const tb = createdAtMs(b.sortKey);
+    if (ta !== tb) return ta - tb;
+    if (a.kind !== b.kind) return a.kind === 'news' ? -1 : 1;
+    return 0;
+  });
+
+  if (unified.length > 0) {
+    root.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    for (const item of unified) {
+      const el = item.kind === 'news' ? buildNewsCard(item.row) : buildEpisodeCard(item.row);
+      if (el) frag.appendChild(el);
+    }
+    root.appendChild(frag);
   }
 
   applyKouToneToScroll();

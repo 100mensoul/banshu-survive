@@ -52,7 +52,6 @@
         <label>本文（任意）<textarea id="body"></textarea></label>
         <label>リンクURL（任意）<input id="link_url" type="url" placeholder="https://..."></label>
         <label>日付<input id="happened_on" type="date"></label>
-        <label>並び順（ニュース同士の並び。小さいほど左／大きいほど右。同じ数字なら日付が古いほど左）<input id="sort_order" type="number" min="0" step="1" value="100"></label>
         <label>公開状態
           <select id="status">
             <option value="draft">下書き</option>
@@ -89,12 +88,11 @@
       document.getElementById('body').value = row.body || '';
       document.getElementById('link_url').value = row.link_url || '';
       document.getElementById('happened_on').value = row.happened_on || '';
-      document.getElementById('sort_order').value = row.sort_order ?? 100;
       document.getElementById('status').value = row.status || 'draft';
     }
 
     function clearForm() {
-      fillForm({ id: '', title: '', body: '', link_url: '', happened_on: '', sort_order: 100, status: 'draft' });
+      fillForm({ id: '', title: '', body: '', link_url: '', happened_on: '', status: 'draft' });
       list.querySelectorAll('li').forEach((li) => li.classList.remove('active'));
     }
 
@@ -102,9 +100,7 @@
       const { data, error } = await supabase
         .from('news_posts')
         .select('*')
-        .order('sort_order', { ascending: true })
-        .order('happened_on', { ascending: true })
-        .order('updated_at', { ascending: true });
+        .order('created_at', { ascending: true });
       if (error) {
         showMsg('一覧取得エラー: ' + error.message, false);
         return;
@@ -132,7 +128,6 @@
         body: document.getElementById('body').value.trim() || null,
         link_url: document.getElementById('link_url').value.trim() || null,
         happened_on: document.getElementById('happened_on').value || null,
-        sort_order: parseInt(document.getElementById('sort_order').value || '100', 10),
         status: document.getElementById('status').value,
       };
       if (!payload.title) {

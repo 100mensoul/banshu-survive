@@ -8,16 +8,16 @@
 @keyframes kou-fuda-hover {
   0%,
   100% {
-    transform: translateY(-5px) scale(1.02) translateX(0) rotate(0deg);
+    transform: translateY(-7px) scale(1.035) translateX(0) rotate(0deg);
   }
   25% {
-    transform: translateY(-5px) scale(1.02) translateX(-2px) rotate(-0.45deg);
+    transform: translateY(-7px) scale(1.035) translateX(-2px) rotate(-0.45deg);
   }
   50% {
-    transform: translateY(-5px) scale(1.02) translateX(1.5px) rotate(0.3deg);
+    transform: translateY(-7px) scale(1.035) translateX(1.5px) rotate(0.3deg);
   }
   75% {
-    transform: translateY(-5px) scale(1.02) translateX(-1px) rotate(-0.2deg);
+    transform: translateY(-7px) scale(1.035) translateX(-1px) rotate(-0.2deg);
   }
 }
 
@@ -32,12 +32,11 @@
   max-width: none;
   margin: 0;
   padding: 2.75rem 0 3.25rem;
-  font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
-  /* 上を暗く・下を明るく（帯のトーン） */
+  font-family: 'Shippori Mincho B1', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
   background-color: #1a1610;
   background-image:
-    linear-gradient(165deg, rgba(0, 0, 0, 0.18) 0%, transparent 48%),
-    linear-gradient(180deg, #0e0c0a 0%, #16120e 28%, #221c18 58%, #2e2820 100%);
+    radial-gradient(ellipse at 50% 40%, rgba(120, 90, 55, 0.1) 0%, transparent 60%),
+    linear-gradient(180deg, #0b0907 0%, #14100c 30%, #221c16 65%, #2e2820 100%);
   border-top: 2px solid #1a1510;
   border-bottom: 2px solid #0f0c08;
 }
@@ -151,27 +150,37 @@
   box-shadow: none;
   border-radius: 0;
   /*
-   * text-align:right + inline-flex はベースライン下揃いに見えたり、
-   * 横スクロール幅の計算が不安定になることがある。
-   * flex + flex-end で「短いときは右（スパイン側）、長いときは左へスクロールで古い札」にする。
+   * 外側は block + overflow-x:auto。内側 .scroll-content--kawara が
+   * min-width:100% + justify-content:flex-end で、狭いときは右寄せ・
+   * はみ出し時は素直に横スクロール（外側 flex-end だと左端到達や幅計算が不安定）。
    */
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  align-items: flex-start;
-  white-space: normal;
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(196, 165, 116, 0.4) transparent;
+  /* Safari: inline-flex 子の min-height だけだと高さ計算が不安定になり下に黒帯が出るため、親で確保 */
+  min-height: min(70vh, 480px);
+}
+
+.scroll-container--kawara:focus-visible {
+  outline: 2px solid #c4a574;
+  outline-offset: -4px;
 }
 
 .scroll-content--kawara {
-  display: flex;
+  display: inline-flex;
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: stretch;
-  flex: 0 0 auto;
+  justify-content: flex-end;
   gap: 0.9rem;
   padding: 0 0.35rem;
-  min-height: min(70vh, 480px);
-  min-width: min-content;
+  height: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
 }
 
 /* 横書きフォールバック（未使用） */
@@ -192,10 +201,11 @@
  * 長文は列を増やしてボックス幅が広がる（max-width で1枚の上限）。
  */
 .news-item--vertical {
+  position: relative;
   writing-mode: vertical-rl;
   text-orientation: upright;
-  font-family: inherit;
-  color: #14110d;
+  font-family: 'Shippori Mincho B1', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  color: #15100a;
   box-sizing: border-box;
 
   /* 左＝古い＝暗め、右＝新しい＝明め（--kou-*-mixed は JS で rgb にセット。color-mix は Safari 等で崩れるため未使用） */
@@ -210,48 +220,70 @@
   flex: 0 0 auto;
   scroll-snap-align: center;
 
-  padding: 0.85rem 0.65rem;
+  padding: 1rem 0.7rem 1.1rem;
   white-space: normal;
 
-  background-color: var(--kou-bg-mixed, #d2c2a8);
-  background-image: linear-gradient(
-    90deg,
-    rgba(255, 248, 235, 0.14) 0%,
-    transparent 35%,
-    transparent 65%,
-    rgba(0, 0, 0, 0.06) 100%
-  );
-  border: 1px solid var(--kou-border-mixed, #5c4838);
-  outline: 3px solid var(--kou-outline-mixed, #a89070);
-  outline-offset: -1px;
+  background-color: var(--kou-bg-mixed, #7a6652);
+  background-image:
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.35) 100%),
+    repeating-linear-gradient(92deg, rgba(40, 25, 14, 0.16) 0px, rgba(40, 25, 14, 0.16) 1px, transparent 1px, transparent 5px),
+    repeating-linear-gradient(88deg, rgba(255, 240, 210, 0.06) 0px, rgba(255, 240, 210, 0.06) 1px, transparent 1px, transparent 13px),
+    linear-gradient(94deg, rgba(70, 45, 25, 0.28) 0%, rgba(120, 90, 60, 0.02) 18%, rgba(70, 45, 25, 0.1) 48%, rgba(120, 90, 60, 0.03) 78%, rgba(40, 25, 14, 0.3) 100%);
+  border: 1px solid var(--kou-border-mixed, #2c1f14);
+  border-radius: 2px;
   box-shadow:
-    2px 6px 14px rgba(0, 0, 0, 0.35),
-    inset 0 0 0 1px rgba(230, 215, 190, 0.45);
+    2px 7px 16px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(230, 205, 170, 0.14),
+    inset 3px 0 10px rgba(0, 0, 0, 0.25),
+    inset -3px 0 10px rgba(255, 225, 180, 0.06);
 }
 
-a.news-item--link {
+.news-item--vertical::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 2px;
+  bottom: 2px;
+  width: 4px;
+  background: linear-gradient(180deg, #1c120a 0%, #2a1c10 50%, #1c120a 100%);
+  border-radius: 1px 0 0 1px;
+  box-shadow: -1px 0 2px rgba(0, 0, 0, 0.6);
+}
+
+a.news-item--link,
+a.news-item--link:link,
+a.news-item--link:visited {
   cursor: pointer;
   text-decoration: none;
-  color: inherit;
+  color: #15100a;
   animation: none;
   transition:
-    box-shadow 0.22s ease,
-    filter 0.2s ease,
-    outline-color 0.2s ease,
-    border-color 0.2s ease,
-    outline-width 0.2s ease;
+    transform 0.36s cubic-bezier(0.2, 0.75, 0.2, 1),
+    box-shadow 0.42s cubic-bezier(0.2, 0.75, 0.2, 1),
+    filter 0.32s ease,
+    border-color 0.28s ease;
 }
 
 a.news-item--link:hover {
-  animation: kou-fuda-hover 0.48s ease-in-out infinite;
+  animation: kou-fuda-hover 0.58s ease-in-out infinite;
   box-shadow:
-    3px 12px 26px rgba(0, 0, 0, 0.42),
-    inset 0 0 0 1px rgba(235, 220, 195, 0.55);
-  filter: brightness(1.05);
-  outline-width: 4px;
-  /* 木枠：内側の線＋外側の「枠」色を少し明るい茶に */
-  border-color: #6a5340;
-  outline-color: #ddb87a;
+    0 0 12px rgba(130, 101, 56, 0.2),
+    0 14px 30px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(240, 215, 180, 0.25),
+    inset 3px 0 10px rgba(0, 0, 0, 0.3),
+    inset -3px 0 10px rgba(255, 225, 180, 0.08);
+  filter: brightness(1.03);
+  border-color: #1c120a;
+}
+
+/* 札にカーソルが乗った時だけ、文字を落ち着いた黄みで発光 */
+a.news-item--link:hover .news-title,
+a.news-item--link:hover .news-date,
+a.news-item--link:hover .news-kicker {
+  color: #e2d4b7;
+  text-shadow:
+    0 1px 0 rgba(34, 24, 12, 0.3),
+    0 0 2px rgba(210, 185, 130, 0.2);
 }
 
 a.news-item--link:active {
@@ -274,8 +306,7 @@ a.news-item--link:active {
 }
 
 .news-item--episode.news-item--link:hover {
-  border-color: #5c4434;
-  outline-color: #c49a6e;
+  border-color: #1c120a;
 }
 
 a.news-item--link:focus-visible {
@@ -287,8 +318,9 @@ a.news-item--link:focus-visible {
 .news-item--vertical .news-date {
   text-orientation: mixed;
   font-size: 0.72rem;
-  color: #4a4034;
-  margin: 0;
+  color: #2b1e12;
+  opacity: 0.82;
+  margin: 0.4em 0 0 0;
   letter-spacing: 0.18em;
   font-weight: 500;
   font-feature-settings: 'palt' 1;
@@ -298,9 +330,10 @@ a.news-item--link:focus-visible {
   text-orientation: upright;
   font-size: 0.95rem;
   font-weight: 700;
-  line-height: 1.9;
+  line-height: 1.95;
   letter-spacing: 0.22em;
   font-feature-settings: 'palt' 1;
+  text-shadow: 0 1px 0 rgba(255, 240, 210, 0.25);
 }
 
 .news-item--vertical .news-title a {
@@ -309,7 +342,7 @@ a.news-item--link:focus-visible {
 }
 
 .news-item--vertical .news-title a:hover {
-  color: #3d2a1a;
+  color: #15100a;
   text-decoration: underline;
   text-underline-offset: 0.25em;
 }
@@ -317,14 +350,15 @@ a.news-item--link:focus-visible {
 .news-kicker {
   text-orientation: upright;
   font-size: 0.68rem;
-  letter-spacing: 0.35em;
-  color: #4a3524;
+  letter-spacing: 0.4em;
+  color: #3a2a1a;
   font-weight: 700;
   font-family: inherit;
+  margin-top: 0.5em;
 }
 
 .news-item--episode .news-kicker {
-  color: #4a3524;
+  color: #3a2a1a;
 }
 
 .news-date {
@@ -384,17 +418,18 @@ a.news-item--link:focus-visible {
     scroll-padding-inline: 0.75rem;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+    min-height: min(58vh, 420px);
   }
 
   .scroll-content--kawara {
     gap: 0.65rem;
-    min-height: min(58vh, 420px);
+    height: 100%;
   }
 
   .news-item--vertical {
     height: min(58vh, 420px);
     max-width: 92vw;
-    padding: 0.65rem 0.5rem;
+    padding: 0.8rem 0.55rem 0.9rem;
   }
 
   .news-item:not(.news-item--vertical) {
