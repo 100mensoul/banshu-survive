@@ -105,11 +105,11 @@ function mixHex(hexA, hexB, t) {
 
 /* 案C+ 印なし版: 板は茶系統一、左=濃い 右=淡い */
 const KOU_PALETTE_REG = {
-  bg: ['#5e4a38', '#a08c71'],
+  bg: ['#5e4a38', '#bca889'],
   border: ['#2c1f14', '#2c1f14'],
 };
 const KOU_PALETTE_EP = {
-  bg: ['#5e4a38', '#a08c71'],
+  bg: ['#5e4a38', '#bca889'],
   border: ['#2c1f14', '#2c1f14'],
 };
 

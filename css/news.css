@@ -228,14 +228,21 @@
     radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.35) 100%),
     repeating-linear-gradient(92deg, rgba(40, 25, 14, 0.16) 0px, rgba(40, 25, 14, 0.16) 1px, transparent 1px, transparent 5px),
     repeating-linear-gradient(88deg, rgba(255, 240, 210, 0.06) 0px, rgba(255, 240, 210, 0.06) 1px, transparent 1px, transparent 13px),
-    linear-gradient(94deg, rgba(70, 45, 25, 0.28) 0%, rgba(120, 90, 60, 0.02) 18%, rgba(70, 45, 25, 0.1) 48%, rgba(120, 90, 60, 0.03) 78%, rgba(40, 25, 14, 0.3) 100%);
+    linear-gradient(
+      94deg,
+      rgba(64, 40, 22, 0.34) 0%,
+      rgba(118, 88, 58, 0.04) 16%,
+      rgba(95, 68, 42, 0.08) 46%,
+      rgba(215, 184, 136, 0.48) 78%,
+      rgba(246, 224, 182, 0.64) 100%
+    );
   border: 1px solid var(--kou-border-mixed, #2c1f14);
   border-radius: 2px;
   box-shadow:
     2px 7px 16px rgba(0, 0, 0, 0.45),
     inset 0 0 0 1px rgba(230, 205, 170, 0.14),
     inset 3px 0 10px rgba(0, 0, 0, 0.25),
-    inset -3px 0 10px rgba(255, 225, 180, 0.06);
+    inset -4px 0 14px rgba(255, 231, 190, 0.2);
 }
 
 .news-item--vertical::before {
