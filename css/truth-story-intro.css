@@ -1,3 +1,28 @@
+/* トップ：ヒーロー〜ナビ〜真実のストーリー（幅で並びと高さ確保を切替） */
+.home-top-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * DOM 順は ヒーロー → ナビ → 真実のストーリー（デスクトップの見た目・フォーカス順と一致）。
+ * モバイルでは見た目を ヒーロー → 真実 → ナビ にしたいため flex の order を指定。
+ * ブレークポイントは nav-ishigaki.css のナビ 3 列化（900px）と揃える。
+ */
+@media screen and (max-width: 900px) {
+  .home-top-stack > .hero {
+    order: 1;
+  }
+
+  .home-top-stack > .truth-story {
+    order: 2;
+  }
+
+  .home-top-stack > .nav-bar {
+    order: 3;
+  }
+}
+
 /* トップ：真実のストーリー（順次表示テキスト） */
 .truth-story {
   margin: 0;
@@ -13,7 +38,47 @@
   max-width: 40rem;
   margin: 0 auto;
   box-sizing: border-box;
-  /* min-height は付けない＝帯は本文の高さぴったり（下に黒余白が溜まらない） */
+}
+
+/* モバイルのみ：ゴーストで最終文量の高さを先に確保（アニメでナビが押し下がらない） */
+@media screen and (max-width: 900px) {
+  .truth-story__inner {
+    position: relative;
+  }
+
+  .truth-story__ghost {
+    visibility: hidden;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .truth-story__live {
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+  }
+}
+
+/* デスクトップ：ナビが本文より上にあるためゴーストは使わない */
+@media screen and (min-width: 901px) {
+  .truth-story__ghost {
+    display: none;
+  }
+
+  .truth-story__live {
+    position: static;
+    inset: auto;
+  }
+}
+
+/* prefers-reduced-motion 時（JS が .truth-story--reduced を付与） */
+.truth-story--reduced .truth-story__ghost {
+  display: none;
+}
+
+.truth-story--reduced .truth-story__live {
+  position: static;
+  inset: auto;
 }
 
 .truth-story__title {

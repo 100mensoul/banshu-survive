@@ -16,7 +16,8 @@
         { text: '実在の人物や団体、施設などとは', bold: false },
         { text: '一切関係があるようで、ないようで、', bold: true },
         { br: true },
-        { text: 'やっぱりあるかもしれません。', bold: true },
+        { text: 'やっぱり', bold: false },
+        { text: 'あるかもしれません。', bold: true },
       ],
       [
         { text: '物語としての「現実」', bold: true },
@@ -85,6 +86,7 @@
   }
 
   function fillStatic() {
+    section.classList.add('truth-story--reduced');
     titleEl.textContent = DATA.title;
     proseEl.innerHTML =
       '<p>' +
