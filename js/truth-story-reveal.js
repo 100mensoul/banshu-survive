@@ -5,7 +5,7 @@
   if (!titleEl || !proseEl || !section) return;
 
   var DATA = {
-    title: '真実のストーリー',
+    title: '真実のフィクション',
     paragraphs: [
       [
         { text: 'この物語は、', bold: false },
@@ -92,7 +92,7 @@
       '<p>' +
       'この物語は、<strong>真実であり、虚構でも</strong>あります。' +
       '</p><p>' +
-      '実在の人物や団体、施設などとは<strong>一切関係があるようで、ないようで、<br>やっぱりあるかもしれません。</strong>' +
+      '実在の人物や団体、施設などとは<strong>一切関係があるようで、ないようで、</strong><br>やっぱり<strong>あるかもしれません。</strong>' +
       '</p><p>' +
       '<strong>物語としての「現実」</strong> をどうぞお楽しみください。' +
       '</p>';
