@@ -83,8 +83,8 @@
   opacity: 0.8;
 }
 
-/* トップ「公式SNS」内：Instagram / YouTube 埋め込み
- * Instagram 列の幅に近づけ、YouTube はやや広い 16:9 に留める（画面いっぱいにしない）。
+/* トップ「公式SNS」内：Instagram 2枠 + YouTube
+ * 700px 以上: Instagram を小さめの 2 列で横並び。未満は縦積み（読みやすさ）。
  */
 .home-external-feeds__grid {
   display: grid;
@@ -111,22 +111,64 @@
     flex-direction: column;
     align-items: center;
   }
+}
 
-  /* 投稿数が少ないときはウィジェットを細めに置き、下の YouTube を大きく */
-  .home-external-feeds__cell:first-child .home-external-feeds__frame--instagram {
-    max-width: 480px;
+/* 2アカウント: 狭い画面は縦積み、700px 以上で小さめの横並び */
+.home-external-feeds__row--instagram-dual {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: min(400px, 100%);
+  margin-inline: auto;
+  justify-items: stretch;
+}
+
+@media screen and (min-width: 700px) {
+  .home-external-feeds__row--instagram-dual {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 0.75rem;
+    align-items: start;
+    max-width: min(680px, calc(100vw - 2rem));
+    justify-items: center;
+  }
+
+  .home-external-feeds__row--instagram-dual .home-external-feeds__cell--insta {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .home-external-feeds__row--instagram-dual .home-external-feeds__frame--instagram {
+    max-width: 100%;
+    width: 100%;
   }
 }
 
 .home-external-feeds__subhead {
-  font-size: 1.1rem;
-  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  margin: 0 0 0.5rem;
   color: #333;
   font-weight: 700;
 }
 
+.home-external-feeds__row--instagram-dual .home-external-feeds__subhead {
+  font-size: 0.95rem;
+  margin-bottom: 0.35rem;
+}
+
+.home-external-feeds__subhead-meta {
+  display: inline-block;
+  font-size: 0.88em;
+  font-weight: 600;
+  color: #555;
+}
+
 .home-external-feeds__cell {
   min-width: 0;
+}
+
+.home-external-feeds__cell--insta {
+  width: 100%;
 }
 
 .home-external-feeds__frame {
@@ -135,7 +177,7 @@
   margin: 0 auto;
 }
 
-/* .home-external-feeds__frame の max-width:560 に負けないよう二重クラスで上書き。Instagram より少しだけ広い程度に抑える */
+/* .home-external-feeds__frame の max-width:560 に負けないよう二重クラスで上書き */
 .home-external-feeds__frame.home-external-feeds__frame--youtube {
   max-width: min(680px, calc(100vw - 2rem));
   width: 100%;
@@ -163,7 +205,64 @@
   background: #fafafa;
 }
 
-/* 投稿が増えたら height の clamp 上限を上げてもよい（下が切れるときは上限を上げる） */
+/* 埋め込み下: プロフィールへの CTA（コンパクト・右下揃え）
+ * 非表示にする: index.html の .home-external-feeds__grid に
+ *   home-external-feeds--insta-open-btn-off を付ける（試行中は付与済み）。
+ * 戻す: そのクラス名を外すだけ（HTML・CSS は削除しない）。
+ */
+.home-external-feeds--insta-open-btn-off .home-external-feeds__insta-open-wrap {
+  display: none;
+}
+
+.home-external-feeds__insta-open-wrap {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  align-self: stretch;
+  max-width: 320px;
+  width: 100%;
+  margin: 0.35rem auto 0;
+  padding-right: 1px;
+  box-sizing: border-box;
+}
+
+.home-external-feeds__insta-open-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  padding: 0.28rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+  background: linear-gradient(45deg, #e8892e 0%, #d94a6c 45%, #a43a9a 100%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  transition: filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.home-external-feeds__insta-open-btn:hover {
+  color: #fff;
+  filter: brightness(1.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+}
+
+.home-external-feeds__insta-open-btn:active {
+  filter: brightness(0.97);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.home-external-feeds__insta-open-btn:focus-visible {
+  outline: 2px solid #a43a9a;
+  outline-offset: 2px;
+}
+
+/* 単体セル用の既定（2枠内は下で上書き） */
 .home-external-feeds__iframe--instagram {
   width: 100%;
   max-width: 540px;
@@ -172,4 +271,24 @@
   border: 0;
   display: block;
   margin: 0 auto;
+}
+
+/* 横並び時は幅・高さともコンパクト。縦積み時は読みやすく少し高め */
+.home-external-feeds__row--instagram-dual .home-external-feeds__iframe--instagram {
+  max-width: 100%;
+  width: 100%;
+}
+
+@media screen and (max-width: 699px) {
+  .home-external-feeds__row--instagram-dual .home-external-feeds__iframe--instagram {
+    height: clamp(380px, 52vh, 580px);
+    min-height: 360px;
+  }
+}
+
+@media screen and (min-width: 700px) {
+  .home-external-feeds__row--instagram-dual .home-external-feeds__iframe--instagram {
+    height: clamp(260px, 34vh, 400px);
+    min-height: 240px;
+  }
 }
