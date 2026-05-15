@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css?v=navmichi48">
+  <link rel="stylesheet" href="css/main.css?v=navmichi54">
 </head>
 <body>
 
@@ -239,24 +239,41 @@
   </div>
 </section>
 
- <section id="chat-room" class="chat-room">
-  <h2 class="section-title">熊庵の縁側 <span class="en">Chat Room</span></h2>
-  <div class="chat-box">
-    <div class="messages">
-      <p><strong>優夏：</strong> 今日もヒメジは晴れとるで〜</p>
-      <p><strong>柳楽：</strong> フラワータウンで朝市やってたな。</p>
+<!-- 公式SNSセクション（埋め込み URL は下記コメント参照） -->
+<section class="social-links" aria-labelledby="social-heading">
+  <h2 id="social-heading" class="section-title">公式SNS <span class="en">FOLLOW US</span></h2>
+  <div class="home-external-feeds__grid">
+    <div class="home-external-feeds__cell">
+      <h3 class="home-external-feeds__subhead">Instagram</h3>
+      <!-- 暫定: https://www.instagram.com/ban.kisha/ プロフィール埋め込み。変更時は src のユーザー名部分を差し替え -->
+      <div class="home-external-feeds__frame home-external-feeds__frame--instagram">
+        <iframe
+          class="home-external-feeds__iframe home-external-feeds__iframe--instagram"
+          title="Instagram（@ban.kisha・暫定）"
+          loading="lazy"
+          src="https://www.instagram.com/ban.kisha/embed/"
+          allowfullscreen
+          width="540"
+          height="720"
+        ></iframe>
+      </div>
     </div>
-    <form class="chat-form">
-      <input type="text" placeholder="役名（任意）" />
-      <input type="text" placeholder="語る" />
-      <button type="submit">送信</button>
-    </form>
-  </div><!-- /.chat-box -->
-</section><!-- /#chat-room -->
-
-<!-- 公式SNSセクション -->
-<section class="social-links">
-  <h2 class="section-title">公式SNS <span class="en">FOLLOW US</span></h2>
+    <div class="home-external-feeds__cell home-external-feeds__cell--youtube-below">
+      <h3 class="home-external-feeds__subhead">YouTube</h3>
+      <!-- 暫定: チャンネル https://www.youtube.com/channel/UCLm9areBvYLAi-1PA27fmXA （ももじろうのケムリ小屋）アップロード一覧を videoseries で表示。チャンネル差し替え時は list= のプレイリストIDを再取得 -->
+      <div class="home-external-feeds__frame home-external-feeds__frame--youtube">
+        <iframe
+          class="home-external-feeds__iframe"
+          title="YouTube チャンネル（暫定）"
+          loading="lazy"
+          src="https://www.youtube.com/embed/videoseries?list=UULm9areBvYLAi-1PA27fmXA"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          referrerpolicy="strict-origin-when-cross-origin"
+        ></iframe>
+      </div>
+    </div>
+  </div>
 </section>
 
   <!-- フッター -->
@@ -266,31 +283,6 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    const form = document.querySelector('.chat-form');
-    const messages = document.querySelector('.messages');
-    if (form && messages) {
-      const nameInput = form.querySelectorAll('input')[0];
-      const messageInput = form.querySelectorAll('input')[1];
-
-      if (nameInput && messageInput) {
-        form.addEventListener('submit', function (e) {
-          e.preventDefault(); // ページリロード防止
-
-          const name = nameInput.value.trim() || '名無し'; // 空なら「名無し」
-          const message = messageInput.value.trim();
-
-          if (message !== '') {
-            const newMessage = document.createElement('p');
-            newMessage.innerHTML = '<strong>' + name + '：</strong> ' + message;
-            messages.appendChild(newMessage);
-
-            messages.scrollTop = messages.scrollHeight;
-            messageInput.value = '';
-          }
-        });
-      }
-    }
-
     // ドロップダウン: クリック／タップで開閉（ホバーと併用）
     document.querySelectorAll('.nav-bar .dropdown > .dropbtn').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
