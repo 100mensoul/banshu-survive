@@ -269,6 +269,123 @@
 }
 html.himejin-modal-open { overflow: hidden; }
 
+/* 今日のひめじん */
+.himejin-spotlight-wrap { margin-bottom: 0.5rem; }
+.himejin-spotlight {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 241, 0, 0.35);
+  background: linear-gradient(135deg, rgba(255, 241, 0, 0.12) 0%, rgba(255, 255, 255, 0.06) 55%);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.himejin-spotlight:hover,
+.himejin-spotlight:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+.himejin-spotlight__badge {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  padding: 0.25rem 0.45rem;
+  border-radius: 4px;
+  background: #fff100;
+  color: #1a1a1a;
+  font-weight: 700;
+}
+.himejin-spotlight__photo {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+}
+.himejin-spotlight__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.himejin-spotlight__body { flex: 1; min-width: 0; }
+.himejin-spotlight__name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+.himejin-spotlight__tagline {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  font-style: italic;
+  opacity: 0.88;
+}
+
+/* タイル演出 */
+.himejin-tile {
+  animation: himejin-tile-in 0.45s ease backwards;
+}
+.himejin-tile:nth-child(3n + 1) { animation-delay: 0.02s; }
+.himejin-tile:nth-child(3n + 2) { animation-delay: 0.07s; }
+.himejin-tile:nth-child(3n) { animation-delay: 0.12s; }
+@keyframes himejin-tile-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.himejin-tile[data-category="banshujin"] {
+  border-left: 3px solid rgba(197, 220, 197, 0.75);
+}
+.himejin-tile[data-category="nbt"] {
+  border-left: 3px solid rgba(255, 241, 0, 0.55);
+}
+.himejin-tile[data-category="himejin"] {
+  border-left: 3px solid rgba(160, 200, 255, 0.55);
+}
+.himejin-tile__peek {
+  display: block;
+  max-height: 0;
+  overflow: hidden;
+  font-size: 0.68rem;
+  font-style: italic;
+  opacity: 0;
+  transition: max-height 0.25s ease, opacity 0.2s ease, margin 0.2s ease;
+  margin-top: 0;
+}
+.himejin-tile:hover .himejin-tile__peek,
+.himejin-tile:focus-visible .himejin-tile__peek {
+  max-height: 3em;
+  opacity: 0.9;
+  margin-top: 0.25rem;
+}
+.himejin-modal__panel {
+  animation: himejin-modal-in 0.28s ease;
+}
+@keyframes himejin-modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .himejin-tile,
+  .himejin-modal__panel,
+  .himejin-spotlight {
+    animation: none;
+    transition: none;
+  }
+  .himejin-tile__peek {
+    max-height: none;
+    opacity: 0.85;
+    margin-top: 0.2rem;
+  }
+}
+
 @media (max-width: 600px) {
   .himejin-card { flex-direction: column; align-items: center; text-align: center; }
   .himejin-photo { width: 100px; height: 100px; }
@@ -309,7 +426,7 @@ html.himejin-modal-open { overflow: hidden; }
       <div class="dropdown">
         <div class="dropbtn" tabindex="0">キャスト</div>
         <div class="dropdown-content">
-          <a href="chart.html">相関図・登場人物</a>
+          <a href="chart.html">相関図</a>
           <a href="himejin.html">ひめじんファイル</a>
         </div>
       </div>
@@ -366,6 +483,11 @@ html.himejin-modal-open { overflow: hidden; }
         <span aria-hidden="true"> · </span>
         <a href="guide0503.html#himeji-clans">シン播磨風土記（姫路クラン）</a>
       </p>
+    </section>
+
+    <section aria-labelledby="himejin-spotlight-heading" class="himejin-spotlight-wrap" hidden id="himejin-spotlight-section">
+      <h2 id="himejin-spotlight-heading" class="himejin-section-title">今日のひめじん</h2>
+      <div id="himejin-spotlight-root" class="himejin-spotlight"></div>
     </section>
 
     <section aria-labelledby="himejin-cards-heading">
@@ -454,6 +576,6 @@ html.himejin-modal-open { overflow: hidden; }
   </script>
   <script src="../js/supabase-public-config.js"></script>
   <script type="module" src="../js/home-episode-nav.js"></script>
-  <script type="module" src="../js/himejin-public.js?v=2"></script>
+  <script type="module" src="../js/himejin-public.js?v=3"></script>
 </body>
 </html>

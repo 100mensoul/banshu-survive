@@ -2,81 +2,13 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>キャスト｜播州サバイブ</title>
+  <title>相関図｜播州サバイブ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="毎夢ドラマ『播州サバイブ』相関図。登場人物の関係性がひと目でわかるビジュアルチャート。写真をクリックすると詳細をご覧いただけます。">
   <link rel="stylesheet" href="../css/main.css?v=navmichi7">
-  <style>
-.chart-page {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem 1rem 2.5rem;
-  line-height: 1.75;
-}
-.chart-page h1 {
-  font-size: 1.6rem;
-  margin: 1.25rem 0 1rem;
-  text-align: center;
-}
-.chart-page h2 {
-  font-size: 1.25rem;
-  margin: 2rem 0 1rem;
-  padding-bottom: 0.35rem;
-  border-bottom: 2px solid #e8e8a0;
-}
-.chart-page .cast-entry h3 {
-  font-size: 1.05rem;
-  margin: 1.25rem 0 0.5rem;
-}
-.chart-page .cast-entry p {
-  margin: 0 0 1rem;
-}
-.chart-page .char-image {
-  text-align: center;
-  margin: 1rem 0;
-  /* 画面端に画像がぴったり付かないよう余白（左が「切れた」ように見えるのを緩和） */
-  padding: 0 0.75rem;
-  box-sizing: border-box;
-}
-.chart-page .char-image img {
-  width: 100%;
-  max-width: 800px;
-  height: auto;
-  vertical-align: middle;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  object-fit: contain;
-}
-.chart-himejin {
-  margin-top: 2.5rem;
-}
-.chart-page .himejin-link-btn {
-  display: inline-block;
-  margin-top: 0.75rem;
-  padding: 0.55rem 1.25rem;
-  background: #fff100;
-  color: #111;
-  text-decoration: none;
-  font-weight: bold;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-.chart-page .himejin-link-btn:hover {
-  background: #f5e850;
-}
-.chart-footer {
-  text-align: center;
-  margin-top: 2.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid #ddd;
-  font-size: 0.9rem;
-}
-.chart-footer a {
-  color: #333;
-}
-  </style>
+  <link rel="stylesheet" href="../css/chart-page.css?v=3">
 </head>
-<body>
+<body class="page-chart">
 
   <nav class="nav-bar">
     <div class="nav-group">
@@ -110,7 +42,7 @@
       <div class="dropdown">
         <div class="dropbtn" tabindex="0">キャスト</div>
         <div class="dropdown-content">
-          <a href="chart.html">相関図・登場人物</a>
+          <a href="chart.html" aria-current="page">相関図</a>
           <a href="himejin.html">ひめじんファイル</a>
         </div>
       </div>
@@ -146,39 +78,40 @@
     </div>
   </nav>
 
-  <main class="chart-page">
-    <section aria-labelledby="chart-correlation">
+  <main class="chart-shell">
+    <header class="chart-hero">
       <h1 id="chart-correlation">相関図</h1>
-      <div class="char-image">
-        <img src="../images/chart.png" alt="相関図">
-      </div>
+      <p class="chart-hero__en">CHART</p>
+      <p class="chart-hero__note">※写真をクリック／タップすると詳細をご覧いただけます。</p>
+    </header>
+
+    <section class="chart-poster" aria-label="全体相関図ビジュアル">
+      <p class="chart-poster__label">OVERVIEW — 人物相関の全体像</p>
+      <img src="../images/chart.png" alt="播州サバイブ 人物相関図（全体ビジュアル）" width="800" height="600" loading="lazy">
     </section>
 
-    <section aria-labelledby="cast-main">
-      <h2 id="cast-main">主な登場人物</h2>
-
-      <div class="cast-entry">
-        <h3>R（アール）</h3>
-        <p>フォークノード計画、ヒメモリの地を推進する女性。姫路に拠点を構えようとしている。枠にとらわれない自由な発想で、ワクワクすることを起こす。収束より拡散が得意。湧き出るアイデアの泉を持ち、全国を飛び回ってネタを発掘し、可能性を持ってくる。原動力はふるさとの自然への愛。</p>
-      </div>
-
-      <div class="cast-entry">
-        <h3>平尾（ひらお）</h3>
-        <p>Rの夫。東京ネイティブ。メモ魔にして、播州の地で妻が紡ぐ夢を語りつぐ見届け人。ヒメログ通信の広報部長。</p>
-      </div>
+    <section class="chart-board-wrap" aria-label="登場人物（クリックで詳細）">
+      <div id="chart-board-root" class="chart-board"></div>
     </section>
 
-    <section class="chart-himejin" aria-labelledby="himejin-file">
+    <section class="chart-himejin-cta" aria-labelledby="himejin-file">
       <h2 id="himejin-file">ひめじんファイル</h2>
       <p>播州サバイブに登場する &quot;ひめじん&quot; たちの記録</p>
       <p><a href="himejin.html" class="himejin-link-btn">ひめじんファイルを見る →</a></p>
     </section>
   </main>
 
-  <footer class="chart-footer chart-page">
+  <footer class="chart-footer chart-shell">
     <p><a href="../index.html">トップへ戻る</a></p>
     <p>© 2026 播州サバイブ</p>
   </footer>
+
+  <div id="chart-modal" class="chart-modal" hidden role="dialog" aria-modal="true" aria-labelledby="chart-modal-title">
+    <div class="chart-modal__panel">
+      <button type="button" class="chart-modal__close" data-close-modal aria-label="閉じる">×</button>
+      <div id="chart-modal-body"></div>
+    </div>
+  </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -202,6 +135,9 @@
     });
   </script>
   <script src="../js/supabase-public-config.js"></script>
+  <script src="../js/chart-cast-data.js?v=2"></script>
+  <script src="../js/chart-page.js?v=4"></script>
+  <script type="module" src="../js/chart-cast-public.js?v=2"></script>
   <script type="module" src="../js/home-episode-nav.js"></script>
 </body>
 </html>

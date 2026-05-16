@@ -55,6 +55,64 @@ function bindModalUi() {
   });
 }
 
+function buildModalHtml(row, clanTitle) {
+  const clanBlock =
+    clanTitle
+      ? '<p class="himejin-modal__clan"><strong>姫路クラン</strong> ' + esc(clanTitle) + '</p>'
+      : '';
+  return (
+    '<div class="himejin-modal__head">' +
+    '<h3 id="himejin-modal-title" class="himejin-modal__title">' +
+    esc(row.name) +
+    '</h3>' +
+    '<p class="himejin-modal__tribe"><strong>種族</strong> ' +
+    esc(row.tribe_label || '未判明') +
+    '</p>' +
+    clanBlock +
+    (row.tagline ? '<p class="himejin-modal__tagline">' + esc(row.tagline) + '</p>' : '') +
+    '</div>' +
+    '<div class="himejin-modal__body">' +
+    '<p class="himejin-modal__intro">' +
+    esc(row.intro || '（紹介文は準備中です）') +
+    '</p></div>'
+  );
+}
+
+function pickSpotlightIndex(count) {
+  if (count < 1) return -1;
+  const day = new Date();
+  const seed = day.getFullYear() * 10000 + (day.getMonth() + 1) * 100 + day.getDate();
+  return seed % count;
+}
+
+function renderSpotlight(row, clanTitle, onOpen) {
+  const section = document.getElementById('himejin-spotlight-section');
+  const root = document.getElementById('himejin-spotlight-root');
+  if (!section || !root || !row) return;
+
+  section.hidden = false;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'himejin-spotlight';
+  btn.setAttribute('aria-label', row.name + 'の詳細を見る');
+  btn.innerHTML =
+    '<span class="himejin-spotlight__badge">PICK UP</span>' +
+    '<div class="himejin-spotlight__photo">' +
+    photoBlock(row.photo_url, row.name) +
+    '</div>' +
+    '<div class="himejin-spotlight__body">' +
+    '<p class="himejin-spotlight__name">' +
+    esc(row.name) +
+    '</p>' +
+    (row.tagline
+      ? '<p class="himejin-spotlight__tagline">' + esc(row.tagline) + '</p>'
+      : '<p class="himejin-spotlight__tagline">' + esc(row.tribe_label || '') + '</p>') +
+    '</div>';
+  btn.addEventListener('click', () => onOpen(row, clanTitle));
+  root.innerHTML = '';
+  root.appendChild(btn);
+}
+
 if (keyOk && urlOk) {
   bindModalUi();
   const supabase = createClient(url, key);
@@ -106,8 +164,19 @@ if (keyOk && urlOk) {
       cardsRoot.innerHTML = '';
       cardsRoot.classList.add('himejin-cards--grid');
 
+      const openForRow = (row, clanTitle) => {
+        openModal(buildModalHtml(row, clanTitle));
+      };
+
+      const spotlightIdx = pickSpotlightIndex(profiles.length);
+      if (spotlightIdx >= 0) {
+        const sp = profiles[spotlightIdx];
+        const spClan = sp.clan_code ? clanTitleByCode.get(sp.clan_code) : null;
+        renderSpotlight(sp, spClan, openForRow);
+      }
+
       const frag = document.createDocumentFragment();
-      for (const row of profiles) {
+      profiles.forEach((row, index) => {
         const clanTitle = row.clan_code ? clanTitleByCode.get(row.clan_code) : null;
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -115,6 +184,9 @@ if (keyOk && urlOk) {
         btn.setAttribute('data-slug', row.slug || '');
         btn.setAttribute('data-category', row.tribe_code || 'unknown');
         btn.setAttribute('aria-haspopup', 'dialog');
+        if (index === spotlightIdx) {
+          btn.setAttribute('data-spotlight', '1');
+        }
 
         const metaBits = [esc(row.tribe_label || '')];
         if (clanTitle) metaBits.push(esc(clanTitle));
@@ -130,36 +202,12 @@ if (keyOk && urlOk) {
           '<span class="himejin-tile__tags">' +
           metaBits.join(' · ') +
           '</span>' +
+          (row.tagline ? '<span class="himejin-tile__peek">' + esc(row.tagline) + '</span>' : '') +
           '</div>';
 
-        btn.addEventListener('click', () => {
-          const clanBlock =
-            clanTitle
-              ? '<p class="himejin-modal__clan"><strong>姫路クラン</strong> ' + esc(clanTitle) + '</p>'
-              : '';
-          const html =
-            '<div class="himejin-modal__head">' +
-            '<h3 id="himejin-modal-title" class="himejin-modal__title">' +
-            esc(row.name) +
-            '</h3>' +
-            '<p class="himejin-modal__tribe"><strong>種族</strong> ' +
-            esc(row.tribe_label || '未判明') +
-            '</p>' +
-            clanBlock +
-            (row.tagline
-              ? '<p class="himejin-modal__tagline">' + esc(row.tagline) + '</p>'
-              : '') +
-            '</div>' +
-            '<div class="himejin-modal__body">' +
-            '<p class="himejin-modal__intro">' +
-            esc(row.intro || '（紹介文は準備中です）') +
-            '</p>' +
-            '</div>';
-          openModal(html);
-        });
-
+        btn.addEventListener('click', () => openForRow(row, clanTitle));
         frag.appendChild(btn);
-      }
+      });
       cardsRoot.appendChild(frag);
     }
   }

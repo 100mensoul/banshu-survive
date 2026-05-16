@@ -1,0 +1,411 @@
+/* 相関図ページ — ドラマ公式サイト風 */
+
+.page-chart {
+  --chart-bg: #c8dde8;
+  --chart-ink: #1a1a1a;
+  --chart-muted: #4a5568;
+  --chart-card: #fff;
+  --chart-modal: #2f5f5f;
+  --chart-accent: #e8e8a0;
+  background: var(--chart-bg);
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.45) 0%, transparent 42%),
+    radial-gradient(circle at 88% 92%, rgba(194, 59, 42, 0.08) 0%, transparent 38%);
+  color: var(--chart-ink);
+  min-height: 100vh;
+}
+
+.page-chart .chart-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+}
+
+.page-chart .chart-hero {
+  text-align: center;
+  padding: 1.25rem 0 0.5rem;
+}
+
+.page-chart .chart-hero h1 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  margin: 0 0 0.15rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.page-chart .chart-hero__en {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.35em;
+  color: #6b4f8a;
+  font-weight: 700;
+}
+
+.page-chart .chart-hero__note {
+  margin: 0.85rem auto 0;
+  max-width: 28em;
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--chart-muted);
+}
+
+/* 全体ビジュアル（AI生成相関図） */
+.page-chart .chart-poster {
+  margin: 1.5rem 0 2rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.page-chart .chart-poster__label {
+  font-size: 0.75rem;
+  text-align: center;
+  margin: 0 0 0.5rem;
+  color: var(--chart-muted);
+  letter-spacing: 0.08em;
+}
+
+.page-chart .chart-poster img {
+  display: block;
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 6px;
+}
+
+/* インタラクティブ相関図 */
+.page-chart .chart-board {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.page-chart .chart-group {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.page-chart .chart-group__head {
+  padding: 0.55rem 1rem;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+
+.page-chart .chart-group__body {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.85rem;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--group-tint, #4a7a9e) 12%, rgba(255, 255, 255, 0.5));
+}
+
+.page-chart .chart-card {
+  flex: 0 1 148px;
+  max-width: 168px;
+  min-width: 120px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: var(--chart-card);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  text-align: center;
+  font: inherit;
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.page-chart .chart-card:hover,
+.page-chart .chart-card:focus-visible {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+  outline: 2px solid rgba(61, 107, 107, 0.45);
+  outline-offset: 2px;
+}
+
+.page-chart .chart-card__photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 10px 10px 0 0;
+  background: #e8e8e8;
+}
+
+.page-chart .chart-card__photo--placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--card-tint, #4a7a9e) 18%, #fff) 0%,
+    color-mix(in srgb, var(--card-tint, #4a7a9e) 42%, #e6e2d8) 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+.page-chart .chart-card__photo--placeholder::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.45), transparent 55%);
+  pointer-events: none;
+}
+.page-chart .chart-card__photo-initial {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(1.8rem, 6vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1;
+  color: color-mix(in srgb, var(--card-tint, #333) 70%, #1a1a1a);
+  opacity: 0.72;
+  letter-spacing: 0.06em;
+}
+.page-chart .chart-card__photo-pending {
+  position: relative;
+  z-index: 1;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  color: #666;
+  opacity: 0.75;
+}
+.page-chart .chart-modal__photo--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.85rem;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.2) 0%, rgba(0, 0, 0, 0.12) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+.page-chart .chart-modal__photo-initial {
+  font-size: 2.5rem;
+  font-weight: 800;
+  opacity: 0.85;
+  letter-spacing: 0.08em;
+}
+
+.page-chart .chart-card__name {
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 0.45rem 0.35rem 0.1rem;
+}
+
+.page-chart .chart-card__role {
+  display: block;
+  font-size: 0.72rem;
+  color: #555;
+  padding: 0 0.35rem 0.15rem;
+  line-height: 1.35;
+}
+.page-chart .chart-card__tagline {
+  display: block;
+  font-size: 0.65rem;
+  color: #777;
+  font-style: italic;
+  padding: 0 0.35rem 0.5rem;
+  line-height: 1.3;
+}
+
+/* 主な登場人物 */
+.page-chart .chart-featured {
+  margin-top: 2.5rem;
+}
+
+.page-chart .chart-featured h2 {
+  font-size: 1.25rem;
+  margin: 0 0 1rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 3px solid var(--chart-accent);
+}
+
+.page-chart .chart-featured__item {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.1rem;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 10px;
+  border-left: 4px solid #3d6b6b;
+}
+
+.page-chart .chart-featured__item h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.08rem;
+}
+
+.page-chart .chart-featured__item p {
+  margin: 0;
+  line-height: 1.8;
+  font-size: 0.95rem;
+}
+
+.page-chart .chart-himejin-cta {
+  margin-top: 2.5rem;
+  text-align: center;
+}
+
+.page-chart .chart-himejin-cta h2 {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 3px solid var(--chart-accent);
+}
+
+.page-chart .himejin-link-btn {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.55rem 1.25rem;
+  background: #fff100;
+  color: #111;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.page-chart .himejin-link-btn:hover {
+  background: #f5e850;
+}
+
+.page-chart .chart-footer {
+  text-align: center;
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  font-size: 0.9rem;
+}
+
+.page-chart .chart-footer a {
+  color: #333;
+}
+
+/* モーダル */
+.chart-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.chart-modal[hidden] {
+  display: none;
+}
+
+.chart-modal__panel {
+  position: relative;
+  width: min(100%, 360px);
+  max-height: min(90vh, 640px);
+  overflow-y: auto;
+  padding: 1.5rem 1.25rem 1.35rem;
+  border-radius: 16px;
+  background: var(--chart-modal);
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.chart-modal__close {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chart-modal__close:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.chart-modal__photo {
+  width: 56%;
+  max-width: 200px;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 8px;
+  margin: 0 auto 0.85rem;
+  display: block;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.chart-modal__reading {
+  margin: 0;
+  font-size: 0.75rem;
+  opacity: 0.85;
+  letter-spacing: 0.12em;
+}
+
+.chart-modal__name {
+  margin: 0.15rem 0 0.25rem;
+  font-size: 1.55rem;
+  font-weight: 800;
+}
+
+.chart-modal__role {
+  margin: 0 0 0.65rem;
+  font-size: 0.9rem;
+  opacity: 0.92;
+}
+
+.chart-modal__tagline {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  font-style: italic;
+  opacity: 0.88;
+}
+
+.chart-modal__bio {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.75;
+  text-align: left;
+}
+
+.chart-modal__link {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--chart-modal);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.chart-modal__link:hover {
+  background: #f0fafa;
+}
+
+html.chart-modal-open {
+  overflow: hidden;
+}
+
+@media (max-width: 520px) {
+  .page-chart .chart-group__body {
+    gap: 0.65rem;
+  }
+  .page-chart .chart-card {
+    flex: 0 1 calc(50% - 0.5rem);
+    max-width: none;
+  }
+}

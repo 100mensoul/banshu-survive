@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>相関図・登場人物管理｜播州サバイブ</title>
+  <style>
+    body { margin: 0; padding: 16px; background: #eef3f8; font-family: system-ui, sans-serif; }
+    .panel { background: #fff; border: 1px solid #d0d8e0; border-radius: 10px; padding: 12px; }
+    .layout { display: grid; gap: 12px; max-width: 1240px; margin: 0 auto; }
+    @media (min-width: 960px) { .layout { grid-template-columns: 300px 1fr; } }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .tabs button { flex: 1; padding: 10px; border: 1px solid #bbb; background: #f5f5f5; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .tabs button.active { background: #fff7ad; border-color: #333; }
+    .ok, .err { padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+    .ok { border: 1px solid #4a7c59; background: #e8f5e9; }
+    .err { border: 1px solid #a44; background: #ffe8e8; }
+    ul { list-style: none; padding: 0; margin: 0; max-height: 65vh; overflow: auto; }
+    li { border: 1px solid #ddd; border-radius: 8px; margin: 0 0 8px; padding: 8px; cursor: pointer; font-size: 13px; }
+    li.active { border-color: #333; background: #fff7ad; }
+    label { display: block; font-weight: 600; margin-top: 10px; font-size: 13px; }
+    input, textarea, select { width: 100%; box-sizing: border-box; padding: 8px; margin-top: 4px; }
+    textarea { min-height: 100px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    .hint { font-size: 12px; color: #555; margin-top: 4px; }
+    [data-pane] { display: none; }
+    [data-pane].active { display: block; }
+  </style>
+</head>
+<body>
+  <h1>相関図・登場人物管理</h1>
+  <div class="toolbar">
+    <a href="../html/chart.html">公開ページ（相関図）</a>
+    <span>·</span>
+    <a href="news-editor.html">高札場</a>
+    <span>·</span>
+    <a href="himejin-editor.html">ひめじん</a>
+    <span>·</span>
+    <a href="tribes-editor.html">種族説明</a>
+    <span>·</span>
+    <a href="clan-editor.html">姫路クラン</a>
+  </div>
+  <p class="hint">Supabase で <code>content-cms-migration-phase3-cast-chart.sql</code> を実行してから使ってください。</p>
+  <div id="msg" hidden></div>
+
+  <div class="panel" id="auth-panel">
+    <strong>ログイン</strong>
+    <label>メール<input id="email" type="email" autocomplete="username"></label>
+    <label>パスワード<input id="password" type="password" autocomplete="current-password"></label>
+    <div style="margin-top:8px;display:flex;gap:8px;">
+      <button type="button" id="btn-signin">ログイン</button>
+      <button type="button" id="btn-signout">ログアウト</button>
+    </div>
+  </div>
+
+  <div id="app" hidden>
+    <div class="tabs">
+      <button type="button" class="active" data-tab="groups">グループ</button>
+      <button type="button" data-tab="members">登場人物</button>
+    </div>
+
+    <div id="pane-groups" data-pane="groups" class="active layout">
+      <div class="panel">
+        <button type="button" id="btn-new-group" style="width:100%;">＋ 新規グループ</button>
+        <ul id="group-list"></ul>
+      </div>
+      <div class="panel">
+        <form id="form-group">
+          <input id="group-code-orig" type="hidden">
+          <label>コード（英数字・ハイフン）<input id="group-code" required pattern="[a-z0-9\-]+"></label>
+          <label>グループ名<input id="group-title" required></label>
+          <label>テーマ色（ヘッダー背景）<input id="group-theme" type="color" value="#4a7a9e"></label>
+          <label>並び順（小さいほど上）<input id="group-sort" type="number" min="0" value="100"></label>
+          <label>公開状態
+            <select id="group-status">
+              <option value="draft">下書き</option>
+              <option value="published">公開</option>
+            </select>
+          </label>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <button type="submit">保存</button>
+            <button type="button" id="btn-delete-group">削除</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="pane-members" data-pane="members" class="layout">
+      <div class="panel">
+        <button type="button" id="btn-new-member" style="width:100%;">＋ 新規登場人物</button>
+        <ul id="member-list"></ul>
+      </div>
+      <div class="panel">
+        <form id="form-member">
+          <input id="member-id" type="hidden">
+          <label>slug<input id="member-slug" required pattern="[a-z0-9\-]+"></label>
+          <label>所属グループ
+            <select id="member-group" required></select>
+          </label>
+          <label>名前<input id="member-name" required></label>
+          <label>よみ<input id="member-reading"></label>
+          <label>役柄・肩書き<input id="member-role"></label>
+          <label>タグライン（短い一言）<input id="member-tagline"></label>
+          <label>写真URL<input id="member-photo" type="text" placeholder="../images/... または https://..."></label>
+          <label>紹介文（ポップアップに表示）<textarea id="member-bio"></textarea></label>
+          <label>並び順<input id="member-sort" type="number" min="0" value="100"></label>
+          <label>公開状態
+            <select id="member-status">
+              <option value="draft">下書き</option>
+              <option value="published">公開</option>
+            </select>
+          </label>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <button type="submit">保存</button>
+            <button type="button" id="btn-delete-member">削除</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
+    const msg = document.getElementById('msg');
+    const app = document.getElementById('app');
+    const authPanel = document.getElementById('auth-panel');
+    const groupList = document.getElementById('group-list');
+    const memberList = document.getElementById('member-list');
+    const memberGroupSel = document.getElementById('member-group');
+
+    function showMsg(text, ok) {
+      msg.hidden = false;
+      msg.className = ok ? 'ok' : 'err';
+      msg.textContent = text;
+    }
+
+    document.querySelectorAll('.tabs button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tabs button').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.getAttribute('data-tab');
+        document.querySelectorAll('[data-pane]').forEach((p) => {
+          p.classList.toggle('active', p.getAttribute('data-pane') === tab);
+        });
+      });
+    });
+
+    function fillGroupForm(row) {
+      document.getElementById('group-code-orig').value = row.code || '';
+      document.getElementById('group-code').value = row.code || '';
+      document.getElementById('group-code').readOnly = !!row.code;
+      document.getElementById('group-title').value = row.title || '';
+      document.getElementById('group-theme').value = row.theme || '#4a7a9e';
+      document.getElementById('group-sort').value = row.sort_order ?? 100;
+      document.getElementById('group-status').value = row.status || 'draft';
+    }
+
+    function clearGroupForm() {
+      fillGroupForm({ code: '', title: '', theme: '#4a7a9e', sort_order: 100, status: 'draft' });
+      document.getElementById('group-code').readOnly = false;
+      groupList.querySelectorAll('li').forEach((li) => li.classList.remove('active'));
+    }
+
+    async function loadGroups() {
+      const { data, error } = await supabase
+        .from('cast_chart_groups')
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .order('code', { ascending: true });
+      if (error) {
+        showMsg('グループ取得エラー: ' + error.message, false);
+        return [];
+      }
+      groupList.innerHTML = '';
+      memberGroupSel.innerHTML = '';
+      for (const row of data || []) {
+        const li = document.createElement('li');
+        li.innerHTML = '<strong>' + (row.title || '-') + '</strong><br><small>' + row.code + ' / ' + row.status + '</small>';
+        li.addEventListener('click', () => {
+          groupList.querySelectorAll('li').forEach((x) => x.classList.remove('active'));
+          li.classList.add('active');
+          fillGroupForm(row);
+        });
+        groupList.appendChild(li);
+
+        const opt = document.createElement('option');
+        opt.value = row.code;
+        opt.textContent = row.title + ' (' + row.code + ')';
+        memberGroupSel.appendChild(opt);
+      }
+      return data || [];
+    }
+
+    function fillMemberForm(row) {
+      document.getElementById('member-id').value = row.id || '';
+      document.getElementById('member-slug').value = row.slug || '';
+      document.getElementById('member-slug').readOnly = !!row.id;
+      document.getElementById('member-group').value = row.group_code || '';
+      document.getElementById('member-name').value = row.name || '';
+      document.getElementById('member-reading').value = row.reading || '';
+      document.getElementById('member-role').value = row.role || '';
+      document.getElementById('member-tagline').value = row.tagline || '';
+      document.getElementById('member-photo').value = row.photo_url || '';
+      document.getElementById('member-bio').value = row.bio || '';
+      document.getElementById('member-sort').value = row.sort_order ?? 100;
+      document.getElementById('member-status').value = row.status || 'draft';
+    }
+
+    function clearMemberForm() {
+      fillMemberForm({
+        id: '',
+        slug: '',
+        group_code: memberGroupSel.value || '',
+        name: '',
+        sort_order: 100,
+        status: 'draft',
+      });
+      document.getElementById('member-slug').readOnly = false;
+      memberList.querySelectorAll('li').forEach((li) => li.classList.remove('active'));
+    }
+
+    async function loadMembers() {
+      const { data, error } = await supabase
+        .from('cast_chart_members')
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .order('slug', { ascending: true });
+      if (error) {
+        showMsg('登場人物取得エラー: ' + error.message, false);
+        return;
+      }
+      memberList.innerHTML = '';
+      for (const row of data || []) {
+        const li = document.createElement('li');
+        li.innerHTML =
+          '<strong>' +
+          (row.name || '-') +
+          '</strong><br><small>' +
+          row.slug +
+          ' · ' +
+          row.group_code +
+          ' / ' +
+          row.status +
+          '</small>';
+        li.addEventListener('click', () => {
+          memberList.querySelectorAll('li').forEach((x) => x.classList.remove('active'));
+          li.classList.add('active');
+          fillMemberForm(row);
+        });
+        memberList.appendChild(li);
+      }
+    }
+
+    document.getElementById('btn-new-group').addEventListener('click', clearGroupForm);
+    document.getElementById('btn-new-member').addEventListener('click', clearMemberForm);
+
+    document.getElementById('form-group').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const orig = document.getElementById('group-code-orig').value.trim();
+      const code = document.getElementById('group-code').value.trim();
+      const payload = {
+        code,
+        title: document.getElementById('group-title').value.trim(),
+        theme: document.getElementById('group-theme').value,
+        sort_order: parseInt(document.getElementById('group-sort').value || '100', 10),
+        status: document.getElementById('group-status').value,
+      };
+      if (!payload.code || !payload.title) {
+        showMsg('コードとグループ名は必須です', false);
+        return;
+      }
+      let error;
+      if (orig && orig !== code) {
+        showMsg('グループコードの変更は未対応です。新規作成してください。', false);
+        return;
+      }
+      if (orig) {
+        ({ error } = await supabase.from('cast_chart_groups').update(payload).eq('code', orig));
+      } else {
+        ({ error } = await supabase.from('cast_chart_groups').insert(payload));
+      }
+      if (error) {
+        showMsg('保存エラー: ' + error.message, false);
+        return;
+      }
+      showMsg('グループを保存しました', true);
+      clearGroupForm();
+      await loadGroups();
+      await loadMembers();
+    });
+
+    document.getElementById('btn-delete-group').addEventListener('click', async () => {
+      const code = document.getElementById('group-code-orig').value.trim();
+      if (!code) {
+        showMsg('削除するグループを選択してください', false);
+        return;
+      }
+      if (!confirm('このグループを削除しますか？（所属人物があると失敗します）')) return;
+      const { error } = await supabase.from('cast_chart_groups').delete().eq('code', code);
+      if (error) {
+        showMsg('削除エラー: ' + error.message, false);
+        return;
+      }
+      showMsg('削除しました', true);
+      clearGroupForm();
+      await loadGroups();
+    });
+
+    document.getElementById('form-member').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('member-id').value;
+      const payload = {
+        slug: document.getElementById('member-slug').value.trim(),
+        group_code: document.getElementById('member-group').value,
+        name: document.getElementById('member-name').value.trim(),
+        reading: document.getElementById('member-reading').value.trim() || null,
+        role: document.getElementById('member-role').value.trim() || null,
+        tagline: document.getElementById('member-tagline').value.trim() || null,
+        photo_url: document.getElementById('member-photo').value.trim() || null,
+        bio: document.getElementById('member-bio').value.trim() || null,
+        featured: false,
+        profile_href: null,
+        sort_order: parseInt(document.getElementById('member-sort').value || '100', 10),
+        status: document.getElementById('member-status').value,
+      };
+      if (!payload.slug || !payload.name || !payload.group_code) {
+        showMsg('slug / 名前 / グループ は必須です', false);
+        return;
+      }
+      let error;
+      if (id) {
+        ({ error } = await supabase.from('cast_chart_members').update(payload).eq('id', id));
+      } else {
+        ({ error } = await supabase.from('cast_chart_members').insert(payload));
+      }
+      if (error) {
+        showMsg('保存エラー: ' + error.message, false);
+        return;
+      }
+      showMsg('登場人物を保存しました', true);
+      clearMemberForm();
+      await loadMembers();
+    });
+
+    document.getElementById('btn-delete-member').addEventListener('click', async () => {
+      const id = document.getElementById('member-id').value;
+      if (!id) {
+        showMsg('削除する人物を選択してください', false);
+        return;
+      }
+      if (!confirm('この登場人物を削除しますか？')) return;
+      const { error } = await supabase.from('cast_chart_members').delete().eq('id', id);
+      if (error) {
+        showMsg('削除エラー: ' + error.message, false);
+        return;
+      }
+      showMsg('削除しました', true);
+      clearMemberForm();
+      await loadMembers();
+    });
+
+    document.getElementById('btn-signin').addEventListener('click', async () => {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+      });
+      if (error) showMsg('ログイン失敗: ' + error.message, false);
+      else showMsg('ログインしました', true);
+    });
+    document.getElementById('btn-signout').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      showMsg('ログアウトしました', true);
+    });
+
+    function setUi(session) {
+      if (session) {
+        authPanel.hidden = true;
+        app.hidden = false;
+        loadGroups().then(() => loadMembers());
+      } else {
+        authPanel.hidden = false;
+        app.hidden = true;
+      }
+    }
+    supabase.auth.onAuthStateChange((_e, session) => setUi(session));
+    const { data: { session } } = await supabase.auth.getSession();
+    setUi(session);
+  </script>
+</body>
+</html>

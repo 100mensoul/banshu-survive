@@ -195,3 +195,65 @@ for all
 to authenticated
 using (true)
 with check (true);
+
+-- 5) 相関図（グループ + 登場人物）— 詳細マイグレーションは content-cms-migration-phase3-cast-chart.sql
+create table if not exists public.cast_chart_groups (
+  code text primary key,
+  title text not null,
+  theme text not null default '#4a7a9e',
+  sort_order integer not null default 100,
+  status text not null default 'draft' check (status in ('draft', 'published')),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.cast_chart_members (
+  id uuid primary key default gen_random_uuid(),
+  slug text unique not null,
+  group_code text not null references public.cast_chart_groups(code) on delete restrict,
+  name text not null,
+  reading text,
+  role text,
+  tagline text,
+  photo_url text,
+  bio text,
+  featured boolean not null default false,
+  profile_href text,
+  sort_order integer not null default 100,
+  status text not null default 'draft' check (status in ('draft', 'published')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists trg_cast_chart_groups_updated_at on public.cast_chart_groups;
+create trigger trg_cast_chart_groups_updated_at
+before update on public.cast_chart_groups
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_cast_chart_members_updated_at on public.cast_chart_members;
+create trigger trg_cast_chart_members_updated_at
+before update on public.cast_chart_members
+for each row execute function public.set_updated_at();
+
+alter table public.cast_chart_groups enable row level security;
+alter table public.cast_chart_members enable row level security;
+
+drop policy if exists "cast groups published read" on public.cast_chart_groups;
+drop policy if exists "cast groups auth all" on public.cast_chart_groups;
+drop policy if exists "cast members published read" on public.cast_chart_members;
+drop policy if exists "cast members auth all" on public.cast_chart_members;
+
+create policy "cast groups published read"
+on public.cast_chart_groups for select to anon, authenticated
+using (status = 'published');
+
+create policy "cast members published read"
+on public.cast_chart_members for select to anon, authenticated
+using (status = 'published');
+
+create policy "cast groups auth all"
+on public.cast_chart_groups for all to authenticated
+using (true) with check (true);
+
+create policy "cast members auth all"
+on public.cast_chart_members for all to authenticated
+using (true) with check (true);
