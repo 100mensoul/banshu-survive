@@ -1,6 +1,5 @@
 /**
  * はりまノはれま — Supabase 連携版
- * 行優先・15列。5/20（田植え前）〜 9/25。
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -11,6 +10,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   var SEASON_START = '2026-05-20';
   var SEASON_END = '2026-09-25';
   var PLANTING_ISO = '2026-05-25';
+  var SEASON_DAYS = [];
 
   var WEATHER_LABELS = {
     future: '（この日はまだ来ていません）',
@@ -26,6 +26,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
   var dayMap = {};
   var photoMap = {};
+  var activeIso = null;
+  var activePhotoIndex = 0;
+
+  var prevDayBtn = document.getElementById('harema-modal-prev-day');
+  var nextDayBtn = document.getElementById('harema-modal-next-day');
+  var prevPhotoBtn = document.getElementById('harema-modal-prev-photo');
+  var nextPhotoBtn = document.getElementById('harema-modal-next-photo');
 
   function normalizeIso(value) {
     if (value == null || value === '') return '';
@@ -47,13 +54,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   }
 
   function getDay(iso) {
-    var key = normalizeIso(iso);
-    return dayMap[key] || null;
+    return dayMap[normalizeIso(iso)] || null;
   }
 
   function getPhotos(iso) {
-    var key = normalizeIso(iso);
-    return photoMap[key] || [];
+    return photoMap[normalizeIso(iso)] || [];
   }
 
   function parseIso(iso) {
@@ -99,7 +104,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     return '★'.repeat(level) + '☆'.repeat(5 - level);
   }
 
-  /** 表示ラベルからマスの色用区分を推定（「晴れ」表記なら黄色など） */
+  function dayIndex(iso) {
+    return SEASON_DAYS.indexOf(normalizeIso(iso));
+  }
+
   function kindFromLabel(label) {
     var t = (label || '').trim();
     if (!t) return null;
@@ -110,25 +118,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     return null;
   }
 
-  /**
-   * マス・モーダルヘッダーの色用。
-   * 表示ラベル（手記の体感）を API の weather より優先する。
-   * （自動取得で cloudy、ラベルだけ「晴れ」のとき色が付かない問題の対策）
-   */
   function inferKindFromRec(rec) {
     if (!rec) return null;
-
     var fromLabel = kindFromLabel(rec.weather_label);
     if (fromLabel) return fromLabel;
-
     if (rec.weather) return rec.weather;
-
     var pr = rec.precip_mm != null ? Number(rec.precip_mm) : null;
     if (pr != null && !isNaN(pr)) {
       if (pr >= 25) return 'heavy-rain';
       if (pr > 0) return 'rain';
     }
-
     if (
       rec.journal ||
       rec.harema_level ||
@@ -137,13 +136,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     ) {
       return 'sunny';
     }
-
     return null;
   }
 
   function resolveKind(iso) {
-    var inferred = inferKindFromRec(getDay(iso));
-    return inferred || 'future';
+    return inferKindFromRec(getDay(iso)) || 'future';
   }
 
   function displayLabel(iso, kind) {
@@ -154,7 +151,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
   function renderGrid() {
     gridEl.innerHTML = '';
-    var rows = chunkRows(eachDay(SEASON_START, SEASON_END));
+    var rows = chunkRows(SEASON_DAYS);
     rows.forEach(function (rowDays) {
       var row = document.createElement('div');
       row.className = 'harima-harema__row';
@@ -171,7 +168,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         if (iso === PLANTING_ISO) btn.classList.add('is-planting');
         if (getPhotos(iso).length) btn.classList.add('is-has-photo');
         btn.addEventListener('click', function () {
-          openModal(iso);
+          openModal(iso, 0);
         });
         row.appendChild(btn);
       });
@@ -179,42 +176,72 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     });
   }
 
-  function openModal(iso) {
-    var rec = getDay(iso);
-    var kind = resolveKind(iso);
-    var label = displayLabel(iso, kind);
+  function renderPhotoCarousel(iso) {
+    var wrap = document.getElementById('harema-modal-photos-wrap');
+    var img = document.getElementById('harema-modal-photo-img');
+    var countEl = document.getElementById('harema-modal-photo-count');
+    var photos = getPhotos(iso);
+
+    if (!photos.length) {
+      wrap.hidden = true;
+      img.removeAttribute('src');
+      img.alt = '';
+      countEl.hidden = true;
+      if (prevPhotoBtn) prevPhotoBtn.disabled = true;
+      if (nextPhotoBtn) nextPhotoBtn.disabled = true;
+      return;
+    }
+
+    if (activePhotoIndex < 0) activePhotoIndex = 0;
+    if (activePhotoIndex >= photos.length) {
+      activePhotoIndex = photos.length - 1;
+    }
+
+    wrap.hidden = false;
+    var p = photos[activePhotoIndex];
+    img.src = p.url;
+    img.alt = p.caption ? p.caption : formatJaDate(iso) + ' の記録写真（' + (activePhotoIndex + 1) + '枚目）';
+
+    if (photos.length > 1) {
+      countEl.hidden = false;
+      countEl.textContent = activePhotoIndex + 1 + ' / ' + photos.length;
+      if (prevPhotoBtn) prevPhotoBtn.disabled = false;
+      if (nextPhotoBtn) nextPhotoBtn.disabled = false;
+    } else {
+      countEl.hidden = true;
+      if (prevPhotoBtn) prevPhotoBtn.disabled = true;
+      if (nextPhotoBtn) nextPhotoBtn.disabled = true;
+    }
+  }
+
+  function updateDayNavButtons(iso) {
+    var idx = dayIndex(iso);
+    if (prevDayBtn) prevDayBtn.disabled = idx <= 0;
+    if (nextDayBtn) nextDayBtn.disabled = idx < 0 || idx >= SEASON_DAYS.length - 1;
+  }
+
+  function fillModal(iso) {
+    activeIso = normalizeIso(iso);
+    var rec = getDay(activeIso);
+    var kind = resolveKind(activeIso);
+    var label = displayLabel(activeIso, kind);
 
     var heroEl = document.getElementById('harema-modal-hero');
-    var dateEl = document.getElementById('harema-modal-date');
     var weatherEl = document.getElementById('harema-modal-weather');
+    var dateEl = document.getElementById('harema-modal-date');
     var statsEl = document.getElementById('harema-modal-stats');
     var haremaEl = document.getElementById('harema-modal-harema');
     var starsEl = document.getElementById('harema-modal-stars');
     var journalWrap = document.getElementById('harema-modal-journal-wrap');
     var journalEl = document.getElementById('harema-modal-journal');
-    var photosEl = document.getElementById('harema-modal-photos');
 
     heroEl.dataset.kind = kind;
     weatherEl.textContent = label;
-    dateEl.textContent = formatJaDate(iso);
+    dateEl.textContent = formatJaDate(activeIso);
 
-    /* 写真（ヘッダー直下） */
-    var photos = getPhotos(iso);
-    photosEl.innerHTML = '';
-    if (photos.length) {
-      photosEl.hidden = false;
-      photos.forEach(function (p) {
-        var img = document.createElement('img');
-        img.src = p.url;
-        img.alt = p.caption ? p.caption : formatJaDate(iso) + ' の記録写真';
-        img.loading = 'lazy';
-        photosEl.appendChild(img);
-      });
-    } else {
-      photosEl.hidden = true;
-    }
+    renderPhotoCarousel(activeIso);
+    updateDayNavButtons(activeIso);
 
-    /* ハレマ度（写真の下） */
     if (rec && rec.harema_level) {
       haremaEl.hidden = false;
       starsEl.textContent = starsText(rec.harema_level);
@@ -223,7 +250,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       starsEl.textContent = '';
     }
 
-    /* 気温・降水 */
     statsEl.innerHTML = '';
     if (kind === 'future') {
       var chip = document.createElement('li');
@@ -248,7 +274,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       });
     }
 
-    /* ハレアメ手記 */
     if (rec && rec.journal) {
       journalWrap.hidden = false;
       journalEl.textContent = rec.journal;
@@ -256,16 +281,86 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       journalWrap.hidden = true;
       journalEl.textContent = '';
     }
+  }
 
-    if (typeof dialog.showModal === 'function') dialog.showModal();
-    else dialog.setAttribute('open', '');
+  function openModal(iso, photoIndex) {
+    activePhotoIndex = photoIndex != null ? photoIndex : 0;
+    fillModal(iso);
+    if (!dialog.open) {
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.setAttribute('open', '');
+    }
+  }
+
+  function shiftDay(delta) {
+    if (!activeIso) return;
+    var idx = dayIndex(activeIso);
+    if (idx < 0) return;
+    var next = idx + delta;
+    if (next < 0 || next >= SEASON_DAYS.length) return;
+    activePhotoIndex = 0;
+    fillModal(SEASON_DAYS[next]);
+  }
+
+  function shiftPhoto(delta) {
+    var photos = getPhotos(activeIso);
+    if (photos.length <= 1) return;
+    activePhotoIndex = (activePhotoIndex + delta + photos.length) % photos.length;
+    renderPhotoCarousel(activeIso);
   }
 
   document.getElementById('harema-modal-close').addEventListener('click', function () {
     dialog.close();
+    activeIso = null;
   });
+
   dialog.addEventListener('click', function (ev) {
-    if (ev.target === dialog) dialog.close();
+    if (ev.target === dialog) {
+      dialog.close();
+      activeIso = null;
+    }
+  });
+
+  dialog.addEventListener('close', function () {
+    activeIso = null;
+  });
+
+  if (prevDayBtn) {
+    prevDayBtn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      shiftDay(-1);
+    });
+  }
+  if (nextDayBtn) {
+    nextDayBtn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      shiftDay(1);
+    });
+  }
+  if (prevPhotoBtn) {
+    prevPhotoBtn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      shiftPhoto(-1);
+    });
+  }
+  if (nextPhotoBtn) {
+    nextPhotoBtn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      shiftPhoto(1);
+    });
+  }
+
+  dialog.addEventListener('keydown', function (ev) {
+    if (!dialog.open) return;
+    if (ev.key === 'ArrowLeft') {
+      ev.preventDefault();
+      if (ev.shiftKey) shiftPhoto(-1);
+      else shiftDay(-1);
+    } else if (ev.key === 'ArrowRight') {
+      ev.preventDefault();
+      if (ev.shiftKey) shiftPhoto(1);
+      else shiftDay(1);
+    }
   });
 
   async function loadFromSupabase() {
@@ -283,9 +378,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         .lte('day_date', SEASON_END);
       if (!daysRes.error && daysRes.data) {
         daysRes.data.forEach(function (r) {
-          var key = normalizeIso(r.day_date);
-          r.day_date = key;
-          dayMap[key] = r;
+          var k = normalizeIso(r.day_date);
+          r.day_date = k;
+          dayMap[k] = r;
         });
       }
       var photosRes = await supabase
@@ -296,14 +391,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         .order('sort_order', { ascending: true });
       if (!photosRes.error && photosRes.data) {
         photosRes.data.forEach(function (p) {
-          var key = normalizeIso(p.day_date);
-          (photoMap[key] = photoMap[key] || []).push(p);
+          var k = normalizeIso(p.day_date);
+          (photoMap[k] = photoMap[k] || []).push(p);
         });
       }
     } catch (e) {
       /* 失敗時は空グリッド */
     }
   }
+
+  SEASON_DAYS = eachDay(SEASON_START, SEASON_END);
 
   (async function init() {
     await loadFromSupabase();

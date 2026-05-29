@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css?v=navmichi75">
+  <link rel="stylesheet" href="css/main.css?v=navmichi76">
 </head>
 <body>
 
@@ -256,11 +256,24 @@
   <dialog class="harima-harema__dialog" id="harema-modal" aria-labelledby="harema-modal-date">
     <div class="harima-harema__dialog-inner">
       <header class="harima-harema__dialog-hero" id="harema-modal-hero">
-        <p class="harima-harema__dialog-weather" id="harema-modal-weather"></p>
-        <p class="harima-harema__dialog-date" id="harema-modal-date"></p>
+        <div class="harima-harema__dialog-hero-nav">
+          <button type="button" class="harima-harema__dialog-arrow" id="harema-modal-prev-day" aria-label="前の日">‹</button>
+          <div class="harima-harema__dialog-hero-center">
+            <p class="harima-harema__dialog-weather" id="harema-modal-weather"></p>
+            <p class="harima-harema__dialog-date" id="harema-modal-date"></p>
+          </div>
+          <button type="button" class="harima-harema__dialog-arrow" id="harema-modal-next-day" aria-label="次の日">›</button>
+        </div>
       </header>
 
-      <div class="harima-harema__dialog-photos" id="harema-modal-photos" hidden></div>
+      <div class="harima-harema__dialog-photos" id="harema-modal-photos-wrap" hidden>
+        <button type="button" class="harima-harema__dialog-arrow harima-harema__dialog-arrow--photo" id="harema-modal-prev-photo" aria-label="前の写真">‹</button>
+        <figure class="harima-harema__dialog-photo-frame">
+          <img class="harima-harema__dialog-photo-img" id="harema-modal-photo-img" alt="" decoding="async">
+        </figure>
+        <button type="button" class="harima-harema__dialog-arrow harima-harema__dialog-arrow--photo" id="harema-modal-next-photo" aria-label="次の写真">›</button>
+        <p class="harima-harema__dialog-photo-count" id="harema-modal-photo-count" hidden></p>
+      </div>
 
       <div class="harima-harema__dialog-body">
         <p class="harima-harema__dialog-harema" id="harema-modal-harema" hidden>
@@ -412,7 +425,7 @@
   <script defer src="js/kawara-scroll-mobile.js?v=2"></script>
   <script type="module" src="js/home-episode-nav.js"></script>
   <script type="module" src="js/home-news-public.js?v=8"></script>
-  <script type="module" src="js/harima-harema.js?v=8"></script>
+  <script type="module" src="js/harima-harema.js?v=9"></script>
   <script defer src="js/truth-story-reveal.js?v=5"></script>
 </body>
 </html>

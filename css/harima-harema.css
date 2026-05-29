@@ -250,9 +250,52 @@
 
 .harima-harema__dialog-hero {
   position: relative;
-  padding: 1.6rem 2rem 1.35rem;
+  padding: 1.25rem 0.5rem 1.15rem;
   text-align: center;
   color: #1a1610;
+}
+
+.harima-harema__dialog-hero-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.harima-harema__dialog-hero-center {
+  flex: 1;
+  min-width: 0;
+}
+
+.harima-harema__dialog-arrow {
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #1a1610;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.harima-harema__dialog-arrow:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.harima-harema__dialog-arrow:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.harima-harema__dialog-hero[data-kind='rain'] .harima-harema__dialog-arrow,
+.harima-harema__dialog-hero[data-kind='heavy-rain'] .harima-harema__dialog-arrow {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.15);
+  color: #fff;
 }
 
 .harima-harema__dialog-hero[data-kind='sunny'] {
@@ -389,12 +432,14 @@
   white-space: pre-wrap;
 }
 
-/* 写真（ヘッダー直下） */
+/* 写真カルーセル（ヘッダー直下・複数枚） */
 .harima-harema__dialog-photos {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.25rem;
   margin: 0;
+  padding: 0.35rem 0.25rem 0.5rem;
   background: #f4f2ea;
 }
 
@@ -402,16 +447,36 @@
   display: none;
 }
 
-.harima-harema__dialog-photos img {
+.harima-harema__dialog-arrow--photo {
+  align-self: center;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.harima-harema__dialog-photo-frame {
+  margin: 0;
+  min-width: 0;
+}
+
+.harima-harema__dialog-photo-img {
   display: block;
   width: 100%;
   max-height: 18rem;
   object-fit: cover;
   vertical-align: middle;
+  background: #e8e6de;
 }
 
-.harima-harema__dialog-photos img + img {
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+.harima-harema__dialog-photo-count {
+  grid-column: 1 / -1;
+  margin: 0;
+  text-align: center;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: #7a7872;
+}
+
+.harima-harema__dialog-photo-count[hidden] {
+  display: none;
 }
 
 .harima-harema__dialog-close {

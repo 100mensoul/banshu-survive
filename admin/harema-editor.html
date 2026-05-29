@@ -105,7 +105,7 @@
 
         <label>写真（複数可）</label>
         <input type="file" id="photo-files" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
-        <p class="hint">アップロードすると下に追加されます（先にこの日を保存しておくと確実です）。</p>
+        <p class="hint">複数枚選べます。大きい写真はアップロード前に自動で縮小（長辺1600px・JPEG/WebP）します。先にこの日を保存しておくと確実です。</p>
         <div class="photos" id="photo-list"></div>
 
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
@@ -119,6 +119,7 @@
   <script src="../js/supabase-public-config.js"></script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { resizeImageForUpload } from '../js/harema-image-resize.js';
 
     const LAT = 34.84;
     const LON = 134.74;
@@ -328,21 +329,30 @@
         document.getElementById('day_date').value = iso;
         const files = Array.from(e.target.files || []);
         let n = 0;
+        let ok = 0;
         for (const file of files) {
-          const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+          showMsg('画像を最適化しています… (' + (ok + 1) + '/' + files.length + ')', true);
+          let uploadFile = file;
+          try {
+            uploadFile = await resizeImageForUpload(file);
+          } catch (err) {
+            console.warn('resize skipped', err);
+          }
+          const safe = uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
           const path = 'days/' + iso + '/' + Date.now() + '-' + (n++) + '-' + safe;
           const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET)
-            .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false });
+            .upload(path, uploadFile, { contentType: uploadFile.type || 'image/jpeg', upsert: false });
           if (upErr) { showMsg('アップロード失敗: ' + upErr.message, false); continue; }
           const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
           const { error: insErr } = await supabase.from('harema_day_photos')
             .insert({ day_date: iso, url: pub.publicUrl, sort_order: Date.now() % 100000 });
-          if (insErr) { showMsg('写真登録失敗: ' + insErr.message, false); }
+          if (insErr) { showMsg('写真登録失敗: ' + insErr.message, false); continue; }
+          ok++;
         }
         e.target.value = '';
         await loadPhotos(iso);
         await loadList();
-        showMsg('写真を追加しました', true);
+        showMsg(ok ? ('写真を' + ok + '枚追加しました（必要なら自動縮小済み）') : '写真を追加できませんでした', !!ok);
       });
 
       async function deletePhoto(p) {
