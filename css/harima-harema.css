@@ -388,10 +388,42 @@
   color: #2a2824;
 }
 
+/* モバイル：15列を画面幅にフィット（マスは自動で縮小）＋背景を全面 cover */
+@media (max-width: 700px) {
+  .harima-harema {
+    --harema-gap: 4px;
+    padding: 1.6rem 0 2.25rem;
+  }
+
+  /* 縦長画面でもグレーの余白を出さないよう、写真をセクション全面に敷く */
+  .harima-harema__bg {
+    background-size: cover, cover;
+    background-position: center, center;
+  }
+
+  .harima-harema__inner {
+    padding: 0 0.6rem;
+  }
+
+  .harima-harema__grid {
+    width: 100%;
+  }
+
+  .harima-harema__row {
+    grid-template-columns: repeat(15, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .harima-harema__cell {
+    width: auto;
+    height: auto;
+    aspect-ratio: 1;
+  }
+}
+
 @media (max-width: 480px) {
   .harima-harema {
-    --harema-cell: 38px;
-    --harema-gap: 6px;
+    --harema-gap: 3px;
   }
 
   .harima-harema__dialog-hero {
