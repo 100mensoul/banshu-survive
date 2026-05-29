@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css?v=navmichi63">
+  <link rel="stylesheet" href="css/main.css?v=navmichi71">
 </head>
 <body>
 
@@ -239,6 +239,54 @@
   </div>
 </section>
 
+<!-- はりまノはれま（プロトタイプ） -->
+<section class="harima-harema" aria-labelledby="harima-harema-heading">
+  <div class="harima-harema__bg" aria-hidden="true"></div>
+  <div class="harima-harema__inner">
+    <header class="harima-harema__header">
+      <h2 id="harima-harema-heading">
+        <span class="harima-harema__title-en">HARIMANOHAREMA</span>
+        <span class="harima-harema__title-ja">はりまノはれま</span>
+      </h2>
+    </header>
+
+    <div class="harima-harema__grid" id="harema-grid-rows" aria-label="田植え前から収穫までの天気（5月20日から）"></div>
+
+    <div class="harima-harema__proto-bar">
+      <label class="harima-harema__demo-toggle">
+        <input type="checkbox" id="harema-demo-colors">
+        開発用：ランダム色ですべて埋める
+      </label>
+    </div>
+    <p class="harima-harema__proto-note">
+      5/20〜5/29 のサンプルのみ色付き。6月以降は未記録（透明）。タップで詳細。
+    </p>
+  </div>
+
+  <dialog class="harima-harema__dialog" id="harema-modal" aria-labelledby="harema-modal-date">
+    <div class="harima-harema__dialog-inner">
+      <header class="harima-harema__dialog-hero" id="harema-modal-hero">
+        <p class="harima-harema__dialog-weather" id="harema-modal-weather"></p>
+        <p class="harima-harema__dialog-date" id="harema-modal-date"></p>
+        <span class="harima-harema__dialog-badge" id="harema-modal-badge" hidden>手修正</span>
+      </header>
+
+      <div class="harima-harema__dialog-body">
+        <ul class="harima-harema__dialog-chips" id="harema-modal-stats"></ul>
+        <p class="harima-harema__dialog-note" id="harema-modal-note" hidden></p>
+
+        <figure class="harima-harema__dialog-photo-figure" id="harema-modal-photo-figure" hidden>
+          <img class="harima-harema__dialog-photo-img" id="harema-modal-photo" alt="">
+        </figure>
+
+        <p class="harima-harema__dialog-foot" id="harema-modal-proto"></p>
+      </div>
+
+      <button type="button" class="harima-harema__dialog-close" id="harema-modal-close">とじる</button>
+    </div>
+  </dialog>
+</section>
+
 <!-- 公式SNSセクション（埋め込み URL は下記コメント参照） -->
 <section class="social-links" aria-labelledby="social-heading">
   <h2 id="social-heading" class="section-title">公式SNS <span class="en">FOLLOW US</span></h2>
@@ -370,6 +418,7 @@
   <script defer src="js/kawara-scroll-mobile.js?v=2"></script>
   <script type="module" src="js/home-episode-nav.js"></script>
   <script type="module" src="js/home-news-public.js?v=8"></script>
+  <script defer src="js/harima-harema.js?v=5"></script>
   <script defer src="js/truth-story-reveal.js?v=5"></script>
 </body>
 </html>

@@ -1,0 +1,322 @@
+/* はりまノはれま — 上原田の稲作期天気カレンダー（プロトタイプ） */
+
+.harima-harema {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  padding: 2.5rem 1rem 3rem;
+  color: #f8f6f0;
+}
+
+.harima-harema__bg {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(12, 18, 14, 0.55) 0%, rgba(8, 12, 10, 0.72) 45%, rgba(6, 10, 8, 0.82) 100%),
+    url('../images/taue.jpg') center center / cover no-repeat;
+  z-index: 0;
+}
+
+.harima-harema__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.harima-harema__header {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.harima-harema__title-en {
+  display: block;
+  font-family: 'Zen Kaku Gothic New', 'Hiragino Sans', sans-serif;
+  font-size: clamp(1.35rem, 4.5vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-indent: 0.22em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+.harima-harema__title-ja {
+  display: block;
+  margin-top: 0.35rem;
+  font-family: 'Shippori Mincho B1', 'Yu Mincho', serif;
+  font-size: clamp(0.95rem, 3vw, 1.1rem);
+  letter-spacing: 0.35em;
+  text-indent: 0.35em;
+  opacity: 0.92;
+}
+
+.harima-harema__lead {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  opacity: 0.85;
+  letter-spacing: 0.08em;
+}
+
+.harima-harema__block {
+  margin-bottom: 1rem;
+}
+
+.harima-harema__block-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  opacity: 0.8;
+}
+
+.harima-harema__row {
+  display: grid;
+  grid-template-columns: repeat(15, minmax(0, 1fr));
+  gap: clamp(3px, 1vw, 6px);
+}
+
+.harima-harema__row--alpha {
+  max-width: calc((100% / 15) * 7 + clamp(3px, 1vw, 6px) * 6);
+}
+
+.harima-harema__cell {
+  aspect-ratio: 1;
+  width: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.harima-harema__cell:hover,
+.harima-harema__cell:focus-visible {
+  transform: scale(1.12);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 1px;
+  z-index: 2;
+}
+
+.harima-harema__cell[data-weather='future'] {
+  background: rgba(220, 224, 228, 0.42);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.harima-harema__cell[data-weather='sunny'] {
+  background: linear-gradient(145deg, #ffe566 0%, #f5a623 100%);
+}
+
+.harima-harema__cell[data-weather='cloudy'] {
+  background: #8a9098;
+}
+
+.harima-harema__cell[data-weather='rain'] {
+  background: #1e4a7a;
+}
+
+.harima-harema__cell[data-weather='heavy-rain'] {
+  background: linear-gradient(160deg, #0f2d52 0%, #061a30 100%);
+}
+
+.harima-harema__cell.is-today {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px rgba(245, 166, 35, 0.85);
+}
+
+.harima-harema__cell.is-edited::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #c4a028;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.harima-harema__cell {
+  position: relative;
+}
+
+.harima-harema__legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem 1rem;
+  margin: 1.1rem 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.7rem;
+}
+
+.harima-harema__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.harima-harema__swatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 2px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.harima-harema__swatch--future {
+  background: rgba(220, 224, 228, 0.42);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.harima-harema__swatch--sunny {
+  background: linear-gradient(145deg, #ffe566, #f5a623);
+}
+
+.harima-harema__swatch--cloudy {
+  background: #8a9098;
+}
+
+.harima-harema__swatch--rain {
+  background: #1e4a7a;
+}
+
+.harima-harema__swatch--heavy-rain {
+  background: #0f2d52;
+}
+
+.harima-harema__proto-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.68rem;
+  opacity: 0.88;
+}
+
+.harima-harema__demo-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.harima-harema__demo-toggle input {
+  accent-color: #f5a623;
+}
+
+.harima-harema__proto-note {
+  margin: 0;
+  text-align: center;
+  font-size: 0.65rem;
+  opacity: 0.75;
+  line-height: 1.5;
+}
+
+/* モーダル */
+.harima-harema__dialog {
+  margin: auto;
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: #faf8f2;
+  color: #1a1610;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.harima-harema__dialog::backdrop {
+  background: rgba(8, 12, 10, 0.65);
+}
+
+.harima-harema__dialog-inner {
+  padding: 1.15rem 1.25rem 1rem;
+}
+
+.harima-harema__dialog-date {
+  margin: 0 0 0.35rem;
+  font-family: 'Shippori Mincho B1', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.harima-harema__dialog-weather {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.harima-harema__dialog-weather[data-kind='sunny'] {
+  color: #c47a10;
+}
+
+.harima-harema__dialog-weather[data-kind='cloudy'] {
+  color: #5a6068;
+}
+
+.harima-harema__dialog-weather[data-kind='rain'],
+.harima-harema__dialog-weather[data-kind='heavy-rain'] {
+  color: #1e4a7a;
+}
+
+.harima-harema__dialog-weather[data-kind='future'] {
+  color: #6a7078;
+}
+
+.harima-harema__dialog-stats {
+  margin: 0 0 0.65rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.harima-harema__dialog-note {
+  margin: 0 0 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: #444;
+}
+
+.harima-harema__dialog-badge {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.65rem;
+  background: #e8d45a;
+  color: #1a1610;
+  border-radius: 3px;
+}
+
+.harima-harema__dialog-close {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  background: #2e4a32;
+  color: #f8f6f0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.harima-harema__dialog-close:hover {
+  background: #3d6242;
+}
+
+@media (max-width: 400px) {
+  .harima-harema {
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+  }
+
+  .harima-harema__row {
+    gap: 2px;
+  }
+}
