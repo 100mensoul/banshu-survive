@@ -1,14 +1,16 @@
 /**
- * はりまノはれま — プロトタイプ
+ * はりまノはれま — Supabase 連携版
  * 行優先・15列。5/20（田植え前）〜 9/25。
- * サンプル天気は SAMPLE_DAYS のみ。写真は localStorage（本番 Supabase 予定）。
  */
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 (function () {
   'use strict';
 
   var COLS = 15;
   var SEASON_START = '2026-05-20';
   var SEASON_END = '2026-09-25';
+  var PLANTING_ISO = '2026-05-25';
 
   var WEATHER_LABELS = {
     future: '（この日はまだ来ていません）',
@@ -18,82 +20,52 @@
     'heavy-rain': '大雨',
   };
 
-  var SAMPLE_DAYS = {
-    '2026-05-20': {
-      kind: 'sunny',
-      label: '晴れ',
-      note: '田植え前 — 圃場まわりの準備',
-    },
-    '2026-05-21': {
-      kind: 'sunny',
-      label: '晴れ',
-      note: '田の海をかきまぜ、土よせ',
-    },
-    '2026-05-22': {
-      kind: 'cloudy',
-      label: '曇り',
-      note: '田植え前',
-    },
-    '2026-05-23': {
-      kind: 'sunny',
-      label: '晴れ',
-      note: '苗迎えの準備',
-    },
-    '2026-05-24': {
-      kind: 'cloudy',
-      label: '曇り',
-      note: '田植え前日',
-    },
-    '2026-05-25': {
-      kind: 'sunny',
-      label: '晴れ',
-      note: '田植え',
-      imageUrl: 'images/taue.jpg',
-    },
-    '2026-05-26': {
-      kind: 'sunny',
-      label: '晴れ',
-    },
-    '2026-05-27': {
-      kind: 'rain',
-      label: '曇りのち雨',
-      precip: 6,
-      tMin: 17,
-      tMax: 22,
-    },
-    '2026-05-28': {
-      kind: 'cloudy',
-      label: '曇り',
-    },
-    '2026-05-29': {
-      kind: 'sunny',
-      label: '晴れ',
-    },
-  };
-
   var gridEl = document.getElementById('harema-grid-rows');
   var dialog = document.getElementById('harema-modal');
-  var demoToggle = document.getElementById('harema-demo-colors');
+  if (!gridEl || !dialog) return;
 
-  var activeIso = null;
-  var activeDemoAll = false;
+  var dayMap = {};
+  var photoMap = {};
 
-  if (!gridEl || !dialog) {
-    return;
+  function normalizeIso(value) {
+    if (value == null || value === '') return '';
+    var s = String(value);
+    if (s.length >= 10 && s.charAt(4) === '-' && s.charAt(7) === '-') {
+      return s.slice(0, 10);
+    }
+    var d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      return (
+        d.getFullYear() +
+        '-' +
+        String(d.getMonth() + 1).padStart(2, '0') +
+        '-' +
+        String(d.getDate()).padStart(2, '0')
+      );
+    }
+    return s;
+  }
+
+  function getDay(iso) {
+    var key = normalizeIso(iso);
+    return dayMap[key] || null;
+  }
+
+  function getPhotos(iso) {
+    var key = normalizeIso(iso);
+    return photoMap[key] || [];
   }
 
   function parseIso(iso) {
     var p = iso.split('-');
     return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
   }
-
   function toIso(date) {
     var y = date.getFullYear();
     var m = String(date.getMonth() + 1).padStart(2, '0');
     var d = String(date.getDate()).padStart(2, '0');
     return y + '-' + m + '-' + d;
   }
-
   function eachDay(startIso, endIso) {
     var list = [];
     var cur = parseIso(startIso);
@@ -104,154 +76,102 @@
     }
     return list;
   }
-
   function startOfToday() {
     var t = new Date();
     return new Date(t.getFullYear(), t.getMonth(), t.getDate());
   }
-
   function isToday(iso) {
     return toIso(startOfToday()) === iso;
   }
-
-  function getSample(iso) {
-    return SAMPLE_DAYS[iso] || null;
-  }
-
-  function getPhotoUrl(iso) {
-    var sample = getSample(iso);
-    return sample && sample.imageUrl ? sample.imageUrl : '';
-  }
-
-  function hashWeather(iso) {
-    var h = 0;
-    for (var i = 0; i < iso.length; i++) {
-      h = (h * 31 + iso.charCodeAt(i)) | 0;
-    }
-    var r = Math.abs(h) % 100;
-    if (r < 42) return 'sunny';
-    if (r < 68) return 'cloudy';
-    if (r < 88) return 'rain';
-    return 'heavy-rain';
-  }
-
-  function mockStats(iso, kind) {
-    var h = 0;
-    for (var i = 0; i < iso.length; i++) {
-      h = (h * 17 + iso.charCodeAt(i)) | 0;
-    }
-    var n = Math.abs(h);
-    var precip = 0;
-    if (kind === 'rain') precip = (n % 28) + 2;
-    if (kind === 'heavy-rain') precip = (n % 55) + 30;
-    var tMax = 18 + (n % 14);
-    var tMin = tMax - (4 + (n % 6));
-    return {
-      precip: precip,
-      tMax: tMax,
-      tMin: tMin,
-    };
-  }
-
-  function resolveKind(iso, demoAll) {
-    var sample = getSample(iso);
-    if (sample) return sample.kind;
-    if (demoAll) return hashWeather(iso);
-    return 'future';
-  }
-
   function chunkRows(days) {
     var rows = [];
-    for (var i = 0; i < days.length; i += COLS) {
-      rows.push(days.slice(i, i + COLS));
-    }
+    for (var i = 0; i < days.length; i += COLS) rows.push(days.slice(i, i + COLS));
     return rows;
   }
-
   function formatJaDate(iso) {
     var d = parseIso(iso);
     var reiwa = d.getFullYear() - 2018;
     var w = ['日', '月', '火', '水', '木', '金', '土'][d.getDay()];
-    return (
-      '令和' +
-      reiwa +
-      '年' +
-      (d.getMonth() + 1) +
-      '月' +
-      d.getDate() +
-      '日（' +
-      w +
-      '）'
-    );
+    return '令和' + reiwa + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日（' + w + '）';
+  }
+  function starsText(level) {
+    level = Math.max(0, Math.min(5, parseInt(level, 10) || 0));
+    return '★'.repeat(level) + '☆'.repeat(5 - level);
   }
 
-  function formatShortDate(iso) {
-    var d = parseIso(iso);
-    return d.getMonth() + 1 + ' / ' + d.getDate();
+  /** 表示ラベルからマスの色用区分を推定（「晴れ」表記なら黄色など） */
+  function kindFromLabel(label) {
+    var t = (label || '').trim();
+    if (!t) return null;
+    if (/大雨|豪雨/.test(t)) return 'heavy-rain';
+    if (/雨/.test(t)) return 'rain';
+    if (/曇/.test(t)) return 'cloudy';
+    if (/晴/.test(t)) return 'sunny';
+    return null;
   }
 
-  function buildDayRecord(iso, demoAll) {
-    var sample = getSample(iso);
-    var kind = resolveKind(iso, demoAll);
-    var label =
-      sample && sample.label
-        ? sample.label
-        : WEATHER_LABELS[kind] || WEATHER_LABELS.future;
-    var stats = null;
-    if (kind !== 'future') {
-      if (
-        sample &&
-        (sample.precip !== undefined ||
-          sample.tMin !== undefined ||
-          sample.tMax !== undefined)
-      ) {
-        var base = mockStats(iso, kind);
-        stats = {
-          precip: sample.precip !== undefined ? sample.precip : base.precip,
-          tMin: sample.tMin !== undefined ? sample.tMin : base.tMin,
-          tMax: sample.tMax !== undefined ? sample.tMax : base.tMax,
-        };
-      } else {
-        stats = mockStats(iso, kind);
-      }
+  /**
+   * マス・モーダルヘッダーの色用。
+   * 表示ラベル（手記の体感）を API の weather より優先する。
+   * （自動取得で cloudy、ラベルだけ「晴れ」のとき色が付かない問題の対策）
+   */
+  function inferKindFromRec(rec) {
+    if (!rec) return null;
+
+    var fromLabel = kindFromLabel(rec.weather_label);
+    if (fromLabel) return fromLabel;
+
+    if (rec.weather) return rec.weather;
+
+    var pr = rec.precip_mm != null ? Number(rec.precip_mm) : null;
+    if (pr != null && !isNaN(pr)) {
+      if (pr >= 25) return 'heavy-rain';
+      if (pr > 0) return 'rain';
     }
-    return {
-      iso: iso,
-      kind: kind,
-      label: label,
-      stats: stats,
-      note: sample && sample.note ? sample.note : '',
-      edited: !!(sample && sample.edited),
-      today: isToday(iso),
-      hasSample: !!sample,
-      photoUrl: getPhotoUrl(iso),
-    };
+
+    if (
+      rec.journal ||
+      rec.harema_level ||
+      rec.temp_min != null ||
+      rec.temp_max != null
+    ) {
+      return 'sunny';
+    }
+
+    return null;
   }
 
-  function renderGrid(demoAll) {
+  function resolveKind(iso) {
+    var inferred = inferKindFromRec(getDay(iso));
+    return inferred || 'future';
+  }
+
+  function displayLabel(iso, kind) {
+    var rec = getDay(iso);
+    if (rec && rec.weather_label) return rec.weather_label;
+    return WEATHER_LABELS[kind] || WEATHER_LABELS.future;
+  }
+
+  function renderGrid() {
     gridEl.innerHTML = '';
-    var days = eachDay(SEASON_START, SEASON_END);
-    var rows = chunkRows(days);
+    var rows = chunkRows(eachDay(SEASON_START, SEASON_END));
     rows.forEach(function (rowDays) {
       var row = document.createElement('div');
       row.className = 'harima-harema__row';
       rowDays.forEach(function (iso) {
-        var rec = buildDayRecord(iso, demoAll);
+        var kind = resolveKind(iso);
+        var label = displayLabel(iso, kind);
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'harima-harema__cell';
         btn.dataset.date = iso;
-        btn.dataset.weather = rec.kind;
-        btn.setAttribute(
-          'aria-label',
-          iso.replace(/-/g, '/') + ' ' + rec.label
-        );
-        if (rec.today) btn.classList.add('is-today');
-        if (rec.edited) btn.classList.add('is-edited');
-        if (iso === '2026-05-25') btn.classList.add('is-planting');
-        if (rec.photoUrl) btn.classList.add('is-has-photo');
+        btn.dataset.weather = kind;
+        btn.setAttribute('aria-label', iso.replace(/-/g, '/') + ' ' + label);
+        if (isToday(iso)) btn.classList.add('is-today');
+        if (iso === PLANTING_ISO) btn.classList.add('is-planting');
+        if (getPhotos(iso).length) btn.classList.add('is-has-photo');
         btn.addEventListener('click', function () {
-          openModal(rec, demoAll);
+          openModal(iso);
         });
         row.appendChild(btn);
       });
@@ -259,50 +179,67 @@
     });
   }
 
-  function renderPhotoSection(iso) {
-    var figure = document.getElementById('harema-modal-photo-figure');
-    var img = document.getElementById('harema-modal-photo');
-    var url = getPhotoUrl(iso);
-
-    if (url) {
-      figure.hidden = false;
-      img.src = url;
-      img.alt = formatJaDate(iso) + ' の記録写真';
-    } else {
-      figure.hidden = true;
-      img.removeAttribute('src');
-      img.alt = '';
-    }
-  }
-
-  function openModal(rec, demoAll) {
-    activeIso = rec.iso;
-    activeDemoAll = demoAll;
+  function openModal(iso) {
+    var rec = getDay(iso);
+    var kind = resolveKind(iso);
+    var label = displayLabel(iso, kind);
 
     var heroEl = document.getElementById('harema-modal-hero');
     var dateEl = document.getElementById('harema-modal-date');
     var weatherEl = document.getElementById('harema-modal-weather');
     var statsEl = document.getElementById('harema-modal-stats');
-    var noteEl = document.getElementById('harema-modal-note');
-    var badgeEl = document.getElementById('harema-modal-badge');
-    var protoEl = document.getElementById('harema-modal-proto');
+    var haremaEl = document.getElementById('harema-modal-harema');
+    var starsEl = document.getElementById('harema-modal-stars');
+    var journalWrap = document.getElementById('harema-modal-journal-wrap');
+    var journalEl = document.getElementById('harema-modal-journal');
+    var photosEl = document.getElementById('harema-modal-photos');
 
-    heroEl.dataset.kind = rec.kind;
-    weatherEl.textContent = rec.label;
-    dateEl.textContent = formatJaDate(rec.iso);
+    heroEl.dataset.kind = kind;
+    weatherEl.textContent = label;
+    dateEl.textContent = formatJaDate(iso);
 
+    /* 写真（ヘッダー直下） */
+    var photos = getPhotos(iso);
+    photosEl.innerHTML = '';
+    if (photos.length) {
+      photosEl.hidden = false;
+      photos.forEach(function (p) {
+        var img = document.createElement('img');
+        img.src = p.url;
+        img.alt = p.caption ? p.caption : formatJaDate(iso) + ' の記録写真';
+        img.loading = 'lazy';
+        photosEl.appendChild(img);
+      });
+    } else {
+      photosEl.hidden = true;
+    }
+
+    /* ハレマ度（写真の下） */
+    if (rec && rec.harema_level) {
+      haremaEl.hidden = false;
+      starsEl.textContent = starsText(rec.harema_level);
+    } else {
+      haremaEl.hidden = true;
+      starsEl.textContent = '';
+    }
+
+    /* 気温・降水 */
     statsEl.innerHTML = '';
-    if (rec.kind === 'future' && !demoAll) {
+    if (kind === 'future') {
       var chip = document.createElement('li');
       chip.className = 'harima-harema__dialog-chip harima-harema__dialog-chip--muted';
       chip.textContent = 'この日が来ると天気を記録';
       statsEl.appendChild(chip);
-    } else if (rec.stats) {
-      var chips = [
-        rec.stats.tMin + '〜' + rec.stats.tMax + '℃',
-        '降水 ' + rec.stats.precip + ' mm',
-        '上原田',
-      ];
+    } else if (rec) {
+      var chips = [];
+      if (rec.temp_min != null || rec.temp_max != null) {
+        var tmin = rec.temp_min != null ? Math.round(rec.temp_min) : '–';
+        var tmax = rec.temp_max != null ? Math.round(rec.temp_max) : '–';
+        chips.push(tmin + '〜' + tmax + '℃');
+      }
+      if (rec.precip_mm != null) {
+        chips.push('降水 ' + (Math.round(rec.precip_mm * 10) / 10) + ' mm');
+      }
       chips.forEach(function (text) {
         var li = document.createElement('li');
         li.className = 'harima-harema__dialog-chip';
@@ -311,50 +248,65 @@
       });
     }
 
-    if (rec.note) {
-      noteEl.hidden = false;
-      noteEl.textContent = rec.note;
+    /* ハレアメ手記 */
+    if (rec && rec.journal) {
+      journalWrap.hidden = false;
+      journalEl.textContent = rec.journal;
     } else {
-      noteEl.hidden = true;
-      noteEl.textContent = '';
+      journalWrap.hidden = true;
+      journalEl.textContent = '';
     }
 
-    badgeEl.hidden = !rec.edited;
-    protoEl.textContent = rec.hasSample
-      ? 'サンプル（5月）'
-      : demoAll
-        ? '開発用ランダム色'
-        : '未記録の日';
-
-    renderPhotoSection(rec.iso);
-
-    if (typeof dialog.showModal === 'function') {
-      dialog.showModal();
-    } else {
-      dialog.setAttribute('open', '');
-    }
-  }
-
-  function renderAll() {
-    var demoAll = demoToggle && demoToggle.checked;
-    renderGrid(demoAll);
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
   }
 
   document.getElementById('harema-modal-close').addEventListener('click', function () {
     dialog.close();
-    activeIso = null;
   });
-
   dialog.addEventListener('click', function (ev) {
-    if (ev.target === dialog) {
-      dialog.close();
-      activeIso = null;
-    }
+    if (ev.target === dialog) dialog.close();
   });
 
-  if (demoToggle) {
-    demoToggle.addEventListener('change', renderAll);
+  async function loadFromSupabase() {
+    var url = window.__SB_URL;
+    var key = window.__SB_ANON_KEY;
+    if (!url || !key || !String(url).trim() || !String(key).trim()) {
+      return;
+    }
+    try {
+      var supabase = createClient(url, key);
+      var daysRes = await supabase
+        .from('harema_days')
+        .select('*')
+        .gte('day_date', SEASON_START)
+        .lte('day_date', SEASON_END);
+      if (!daysRes.error && daysRes.data) {
+        daysRes.data.forEach(function (r) {
+          var key = normalizeIso(r.day_date);
+          r.day_date = key;
+          dayMap[key] = r;
+        });
+      }
+      var photosRes = await supabase
+        .from('harema_day_photos')
+        .select('day_date,url,caption,sort_order')
+        .gte('day_date', SEASON_START)
+        .lte('day_date', SEASON_END)
+        .order('sort_order', { ascending: true });
+      if (!photosRes.error && photosRes.data) {
+        photosRes.data.forEach(function (p) {
+          var key = normalizeIso(p.day_date);
+          (photoMap[key] = photoMap[key] || []).push(p);
+        });
+      }
+    } catch (e) {
+      /* 失敗時は空グリッド */
+    }
   }
 
-  renderAll();
+  (async function init() {
+    await loadFromSupabase();
+    renderGrid();
+  })();
 })();

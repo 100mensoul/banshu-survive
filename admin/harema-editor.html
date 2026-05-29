@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>はりまノはれま管理｜播州サバイブ</title>
+  <style>
+    body { margin: 0; padding: 16px; background: #f0f2f0; font-family: system-ui, sans-serif; color: #1a1a1a; }
+    .panel { background: #fff; border: 1px solid #d9ddd9; border-radius: 10px; padding: 12px; }
+    .layout { display: grid; gap: 12px; max-width: 1100px; margin: 0 auto; }
+    @media (min-width: 900px) { .layout { grid-template-columns: 300px 1fr; } }
+    .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+    .ok, .err { padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+    .ok { border: 1px solid #4a7c59; background: #e8f5e9; }
+    .err { border: 1px solid #a44; background: #ffe8e8; }
+    ul.daylist { list-style: none; padding: 0; margin: 0; max-height: 70vh; overflow: auto; }
+    ul.daylist li { border: 1px solid #ddd; border-radius: 8px; margin: 0 0 6px; padding: 8px; cursor: pointer; font-size: 13px; }
+    ul.daylist li.active { border-color: #333; background: #fff7ad; }
+    ul.daylist li .dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+    label { display: block; font-weight: 600; margin-top: 12px; font-size: 13px; }
+    input, textarea, select { width: 100%; box-sizing: border-box; padding: 8px; margin-top: 4px; font-size: 14px; }
+    textarea { min-height: 110px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .stars { font-size: 28px; line-height: 1; margin-top: 6px; user-select: none; }
+    .stars span { cursor: pointer; color: #ccc; padding: 0 2px; }
+    .stars span.on { color: #f0a500; }
+    .photos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .photo-thumb { position: relative; width: 96px; }
+    .photo-thumb img { width: 96px; height: 96px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; }
+    .photo-thumb button { position: absolute; top: -8px; right: -8px; border-radius: 50%; width: 22px; height: 22px; padding: 0; border: none; background: #c0392b; color: #fff; cursor: pointer; }
+    .hint { font-size: 12px; color: #666; margin-top: 4px; }
+    .swatch-sunny { background: #f6b13e; } .swatch-cloudy { background: #c8ccd2; }
+    .swatch-rain { background: #5e87bb; } .swatch-heavy-rain { background: #3a5680; }
+    .swatch-none { background: #eee; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>はりまノはれま 管理</h1>
+  <div class="toolbar">
+    <a href="../index.html">サイトトップ</a>
+    <span>·</span>
+    <a href="news-editor.html">高札場ニュース</a>
+    <span>·</span>
+    <a href="episodes-editor.html">エピソード</a>
+    <span>·</span>
+    <a href="cast-editor.html">相関図</a>
+  </div>
+
+  <div id="config-missing" class="err" hidden>
+    Supabase 設定（js/supabase-public-config.js）が未設定です。
+  </div>
+  <div id="msg" hidden></div>
+
+  <div class="panel" id="auth-panel">
+    <strong>ログイン</strong>
+    <label>メール<input id="email" type="email" autocomplete="username"></label>
+    <label>パスワード<input id="password" type="password" autocomplete="current-password"></label>
+    <div style="margin-top:8px;display:flex;gap:8px;">
+      <button type="button" id="btn-signin">ログイン</button>
+      <button type="button" id="btn-signout">ログアウト</button>
+    </div>
+  </div>
+
+  <div id="app" class="layout" hidden>
+    <div class="panel">
+      <label for="pick-date">日付を選ぶ（5/20〜9/25）</label>
+      <input id="pick-date" type="date" min="2026-05-20" max="2026-09-25" value="2026-05-25">
+      <p class="hint">一覧は登録済みの日。新しい日は上の日付ピッカーから。</p>
+      <ul class="daylist" id="day-list"></ul>
+    </div>
+
+    <div class="panel">
+      <form id="form">
+        <input id="day_date" type="hidden">
+
+        <label>天気</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="weather" style="flex:1;">
+            <option value="">（未設定）</option>
+            <option value="sunny">晴れ</option>
+            <option value="cloudy">曇り</option>
+            <option value="rain">雨</option>
+            <option value="heavy-rain">大雨</option>
+          </select>
+          <button type="button" id="btn-fetch-weather" style="white-space:nowrap;">天気を自動取得</button>
+        </div>
+        <p class="hint" id="fetch-hint">Open-Meteo（姫路付近）から気温・降水量・天気区分を取得します。</p>
+
+        <label>表示ラベル（任意・例「曇りのち雨」）<input id="weather_label" placeholder="空なら天気から自動表記"></label>
+
+        <label>ハレマ度（体感・★0〜5）</label>
+        <div class="stars" id="stars" role="radiogroup" aria-label="ハレマ度">
+          <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+        </div>
+        <input id="harema_level" type="hidden" value="0">
+
+        <label>ハレアメ手記（自由記述）<textarea id="journal" placeholder="今日の空模様、田の様子など"></textarea></label>
+
+        <div class="row2">
+          <div><label>最低気温℃<input id="temp_min" type="number" step="0.1"></label></div>
+          <div><label>最高気温℃<input id="temp_max" type="number" step="0.1"></label></div>
+          <div><label>降水量mm<input id="precip_mm" type="number" step="0.1"></label></div>
+        </div>
+
+        <label>写真（複数可）</label>
+        <input type="file" id="photo-files" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
+        <p class="hint">アップロードすると下に追加されます（先にこの日を保存しておくと確実です）。</p>
+        <div class="photos" id="photo-list"></div>
+
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="submit">保存</button>
+          <button type="button" id="btn-delete">この日を削除</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const LAT = 34.84;
+    const LON = 134.74;
+
+    const url = window.__SB_URL;
+    const key = window.__SB_ANON_KEY;
+    const configOk = url && String(url).trim() && key && String(key).trim();
+    document.getElementById('config-missing').hidden = !!configOk;
+
+    if (configOk) {
+      const supabase = createClient(url, key);
+
+      const authPanel = document.getElementById('auth-panel');
+      const app = document.getElementById('app');
+      const msg = document.getElementById('msg');
+      const listEl = document.getElementById('day-list');
+      const form = document.getElementById('form');
+      const STORAGE_BUCKET = 'harema-photos';
+
+      const WEATHER_JA = { sunny: '晴れ', cloudy: '曇り', rain: '雨', 'heavy-rain': '大雨' };
+
+      function showMsg(text, ok) {
+        msg.textContent = text;
+        msg.className = ok ? 'ok' : 'err';
+        msg.hidden = false;
+        clearTimeout(showMsg._t);
+        showMsg._t = setTimeout(() => { msg.hidden = true; }, 6000);
+      }
+
+      function escapeHtml(s) {
+        return String(s || '')
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      /* ハレマ度の星 */
+      function setStars(v) {
+        v = Math.max(0, Math.min(5, parseInt(v, 10) || 0));
+        document.getElementById('harema_level').value = v;
+        document.querySelectorAll('#stars span').forEach((s) => {
+          s.classList.toggle('on', Number(s.dataset.v) <= v);
+        });
+      }
+      document.querySelectorAll('#stars span').forEach((s) => {
+        s.addEventListener('click', () => {
+          const clicked = Number(s.dataset.v);
+          const cur = Number(document.getElementById('harema_level').value);
+          setStars(clicked === cur ? clicked - 1 : clicked); /* 同じ星を再クリックで1段下げ */
+        });
+      });
+
+      function clearForm(keepDate) {
+        if (!keepDate) document.getElementById('day_date').value = '';
+        document.getElementById('weather').value = '';
+        document.getElementById('weather_label').value = '';
+        document.getElementById('journal').value = '';
+        document.getElementById('temp_min').value = '';
+        document.getElementById('temp_max').value = '';
+        document.getElementById('precip_mm').value = '';
+        setStars(0);
+        document.getElementById('photo-list').innerHTML = '';
+      }
+
+      function fillForm(row) {
+        document.getElementById('day_date').value = row.day_date;
+        document.getElementById('pick-date').value = row.day_date;
+        document.getElementById('weather').value = row.weather || '';
+        document.getElementById('weather_label').value = row.weather_label || '';
+        document.getElementById('journal').value = row.journal || '';
+        document.getElementById('temp_min').value = row.temp_min ?? '';
+        document.getElementById('temp_max').value = row.temp_max ?? '';
+        document.getElementById('precip_mm').value = row.precip_mm ?? '';
+        setStars(row.harema_level || 0);
+      }
+
+      async function loadList() {
+        const { data, error } = await supabase
+          .from('harema_days')
+          .select('*')
+          .order('day_date', { ascending: true });
+        if (error) { showMsg('一覧取得エラー: ' + error.message, false); return; }
+        listEl.innerHTML = '';
+        (data || []).forEach((row) => {
+          const li = document.createElement('li');
+          li.dataset.date = row.day_date;
+          const cls = row.weather ? ('swatch-' + row.weather) : 'swatch-none';
+          const stars = '★'.repeat(row.harema_level || 0) + '☆'.repeat(5 - (row.harema_level || 0));
+          li.innerHTML = '<span class="dot ' + cls + '"></span><strong>' + row.day_date + '</strong> '
+            + (row.weather ? WEATHER_JA[row.weather] : '未設定')
+            + '<br><span style="opacity:.7">' + stars + '</span>';
+          li.addEventListener('click', () => selectDate(row.day_date));
+          listEl.appendChild(li);
+        });
+        highlightActive();
+      }
+
+      function highlightActive() {
+        const cur = document.getElementById('day_date').value;
+        listEl.querySelectorAll('li').forEach((li) => {
+          li.classList.toggle('active', li.dataset.date === cur);
+        });
+      }
+
+      async function selectDate(iso) {
+        const { data, error } = await supabase
+          .from('harema_days').select('*').eq('day_date', iso).maybeSingle();
+        if (error) { showMsg('取得エラー: ' + error.message, false); return; }
+        if (data) {
+          fillForm(data);
+        } else {
+          clearForm(false);
+          document.getElementById('day_date').value = iso;
+          document.getElementById('pick-date').value = iso;
+        }
+        await loadPhotos(iso);
+        highlightActive();
+      }
+
+      document.getElementById('pick-date').addEventListener('change', (e) => {
+        selectDate(e.target.value);
+      });
+
+      /* 天気の自動取得（Open-Meteo） */
+      function codeToKind(code, precip) {
+        if (precip != null && precip >= 25) return 'heavy-rain';
+        if ([95, 96, 99, 82].includes(code)) return 'heavy-rain';
+        if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || (code >= 71 && code <= 77)) return 'rain';
+        if ([2, 3, 45, 48].includes(code)) return 'cloudy';
+        if ([0, 1].includes(code)) return 'sunny';
+        return 'cloudy';
+      }
+
+      async function fetchWeather(iso) {
+        const daily = 'temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode';
+        const tz = 'Asia%2FTokyo';
+        const fc = 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT + '&longitude=' + LON
+          + '&daily=' + daily + '&timezone=' + tz + '&start_date=' + iso + '&end_date=' + iso + '&past_days=92';
+        const ar = 'https://archive-api.open-meteo.com/v1/archive?latitude=' + LAT + '&longitude=' + LON
+          + '&daily=' + daily + '&timezone=' + tz + '&start_date=' + iso + '&end_date=' + iso;
+        let d = await tryFetch(fc, iso);
+        if (!d) d = await tryFetch(ar, iso);
+        return d;
+      }
+
+      async function tryFetch(apiUrl, iso) {
+        try {
+          const res = await fetch(apiUrl);
+          if (!res.ok) return null;
+          const j = await res.json();
+          if (!j.daily || !j.daily.time) return null;
+          const idx = j.daily.time.indexOf(iso);
+          if (idx < 0) return null;
+          const tmax = j.daily.temperature_2m_max?.[idx];
+          const tmin = j.daily.temperature_2m_min?.[idx];
+          const prcp = j.daily.precipitation_sum?.[idx];
+          const code = j.daily.weathercode?.[idx];
+          if (tmax == null && tmin == null && prcp == null && code == null) return null;
+          return { tmax, tmin, prcp, code };
+        } catch (e) {
+          return null;
+        }
+      }
+
+      document.getElementById('btn-fetch-weather').addEventListener('click', async () => {
+        const iso = document.getElementById('day_date').value || document.getElementById('pick-date').value;
+        if (!iso) { showMsg('日付がありません', false); return; }
+        showMsg('天気を取得中…', true);
+        const d = await fetchWeather(iso);
+        if (!d) { showMsg('天気データが取得できませんでした（未来の遠い日付や未公開の可能性）', false); return; }
+        if (d.tmin != null) document.getElementById('temp_min').value = Math.round(d.tmin * 10) / 10;
+        if (d.tmax != null) document.getElementById('temp_max').value = Math.round(d.tmax * 10) / 10;
+        if (d.prcp != null) document.getElementById('precip_mm').value = Math.round(d.prcp * 10) / 10;
+        if (d.code != null) document.getElementById('weather').value = codeToKind(d.code, d.prcp);
+        showMsg('天気を反映しました（このあと保存）', true);
+      });
+
+      /* 写真 */
+      async function loadPhotos(iso) {
+        const box = document.getElementById('photo-list');
+        box.innerHTML = '';
+        if (!iso) return;
+        const { data, error } = await supabase
+          .from('harema_day_photos').select('*')
+          .eq('day_date', iso).order('sort_order', { ascending: true });
+        if (error) { showMsg('写真取得エラー: ' + error.message, false); return; }
+        (data || []).forEach((p) => {
+          const div = document.createElement('div');
+          div.className = 'photo-thumb';
+          div.innerHTML = '<img src="' + escapeHtml(p.url) + '" alt=""><button type="button" title="削除">×</button>';
+          div.querySelector('button').addEventListener('click', () => deletePhoto(p));
+          box.appendChild(div);
+        });
+      }
+
+      async function ensureDaySaved(iso) {
+        const { error } = await supabase.from('harema_days')
+          .upsert({ day_date: iso }, { onConflict: 'day_date' });
+        return !error;
+      }
+
+      document.getElementById('photo-files').addEventListener('change', async (e) => {
+        const iso = document.getElementById('day_date').value || document.getElementById('pick-date').value;
+        if (!iso) { showMsg('先に日付を選んでください', false); return; }
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { showMsg('写真アップロードにはログインが必要です', false); return; }
+        await ensureDaySaved(iso);
+        document.getElementById('day_date').value = iso;
+        const files = Array.from(e.target.files || []);
+        let n = 0;
+        for (const file of files) {
+          const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const path = 'days/' + iso + '/' + Date.now() + '-' + (n++) + '-' + safe;
+          const { error: upErr } = await supabase.storage.from(STORAGE_BUCKET)
+            .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false });
+          if (upErr) { showMsg('アップロード失敗: ' + upErr.message, false); continue; }
+          const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+          const { error: insErr } = await supabase.from('harema_day_photos')
+            .insert({ day_date: iso, url: pub.publicUrl, sort_order: Date.now() % 100000 });
+          if (insErr) { showMsg('写真登録失敗: ' + insErr.message, false); }
+        }
+        e.target.value = '';
+        await loadPhotos(iso);
+        await loadList();
+        showMsg('写真を追加しました', true);
+      });
+
+      async function deletePhoto(p) {
+        if (!confirm('この写真を削除しますか？')) return;
+        const { error } = await supabase.from('harema_day_photos').delete().eq('id', p.id);
+        if (error) { showMsg('写真削除エラー: ' + error.message, false); return; }
+        await loadPhotos(p.day_date);
+        showMsg('写真を削除しました', true);
+      }
+
+      /* 保存・削除 */
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const iso = document.getElementById('day_date').value || document.getElementById('pick-date').value;
+        if (!iso) { showMsg('日付がありません', false); return; }
+        const num = (id) => {
+          const v = document.getElementById(id).value;
+          return v === '' ? null : Number(v);
+        };
+        let weather = document.getElementById('weather').value || null;
+        const weatherLabel = document.getElementById('weather_label').value.trim() || null;
+        /* 表示ラベルと天気区分が食い違うとマスの色がずれるので、ラベルで区分を揃える */
+        if (weatherLabel) {
+          if (/大雨|豪雨/.test(weatherLabel)) weather = 'heavy-rain';
+          else if (/雨/.test(weatherLabel)) weather = 'rain';
+          else if (/曇/.test(weatherLabel)) weather = 'cloudy';
+          else if (/晴/.test(weatherLabel)) weather = 'sunny';
+        }
+        const payload = {
+          day_date: iso,
+          weather: weather,
+          weather_label: weatherLabel,
+          harema_level: Number(document.getElementById('harema_level').value) || 0,
+          journal: document.getElementById('journal').value.trim() || null,
+          temp_min: num('temp_min'),
+          temp_max: num('temp_max'),
+          precip_mm: num('precip_mm'),
+          updated_at: new Date().toISOString(),
+        };
+        const { error } = await supabase.from('harema_days')
+          .upsert(payload, { onConflict: 'day_date' });
+        if (error) { showMsg('保存エラー: ' + error.message, false); return; }
+        document.getElementById('day_date').value = iso;
+        await loadList();
+        showMsg('保存しました', true);
+      });
+
+      document.getElementById('btn-delete').addEventListener('click', async () => {
+        const iso = document.getElementById('day_date').value;
+        if (!iso) { showMsg('保存済みの日だけ削除できます', false); return; }
+        if (!confirm(iso + ' のデータと写真を削除しますか？（元に戻せません）')) return;
+        const { error } = await supabase.from('harema_days').delete().eq('day_date', iso);
+        if (error) { showMsg('削除エラー: ' + error.message, false); return; }
+        clearForm(false);
+        await loadList();
+        showMsg('削除しました', true);
+      });
+
+      /* Auth */
+      document.getElementById('btn-signin').addEventListener('click', async () => {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) { showMsg('ログイン失敗: ' + error.message, false); return; }
+        showMsg('ログインしました', true);
+      });
+      document.getElementById('btn-signout').addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        showMsg('ログアウトしました', true);
+      });
+
+      function setUiSession(session) {
+        if (session) {
+          authPanel.hidden = true;
+          app.hidden = false;
+          loadList();
+          selectDate(document.getElementById('pick-date').value);
+        } else {
+          authPanel.hidden = false;
+          app.hidden = true;
+          listEl.innerHTML = '';
+        }
+      }
+
+      supabase.auth.onAuthStateChange((_e, session) => setUiSession(session));
+      const { data: { session } } = await supabase.auth.getSession();
+      setUiSession(session);
+    }
+  </script>
+</body>
+</html>
