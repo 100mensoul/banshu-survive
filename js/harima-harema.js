@@ -20,9 +20,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     'heavy-rain': '大雨',
   };
 
+  var sectionEl = document.querySelector('.harima-harema');
   var gridEl = document.getElementById('harema-grid-rows');
   var dialog = document.getElementById('harema-modal');
-  if (!gridEl || !dialog) return;
+  var modalShell = document.getElementById('harema-modal-shell');
+  if (!gridEl || !dialog || !modalShell) return;
 
   var dayMap = {};
   var photoMap = {};
@@ -85,8 +87,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     var t = new Date();
     return new Date(t.getFullYear(), t.getMonth(), t.getDate());
   }
+  function todayIso() {
+    return toIso(startOfToday());
+  }
   function isToday(iso) {
-    return toIso(startOfToday()) === iso;
+    return todayIso() === iso;
   }
   function chunkRows(days) {
     var rows = [];
@@ -108,34 +113,43 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     return SEASON_DAYS.indexOf(normalizeIso(iso));
   }
 
-  function kindFromLabel(label) {
-    var t = (label || '').trim();
+  /** テキストから晴/曇/雨を推定（表示ラベル・手記の両方に使う） */
+  function kindFromText(text) {
+    var t = (text || '').trim();
     if (!t) return null;
     if (/大雨|豪雨/.test(t)) return 'heavy-rain';
     if (/雨/.test(t)) return 'rain';
     if (/曇/.test(t)) return 'cloudy';
-    if (/晴/.test(t)) return 'sunny';
+    if (/晴|快晴|日差し|日焼け|暑い|猛暑/.test(t)) return 'sunny';
     return null;
   }
 
   function inferKindFromRec(rec) {
     if (!rec) return null;
-    var fromLabel = kindFromLabel(rec.weather_label);
+
+    var fromLabel = kindFromText(rec.weather_label);
     if (fromLabel) return fromLabel;
+
+    /* API天気より手記を優先（「晴天」と書いたのに曇り色になる問題の対策） */
+    var fromJournal = kindFromText(rec.journal);
+    if (fromJournal) return fromJournal;
+
     if (rec.weather) return rec.weather;
+
     var pr = rec.precip_mm != null ? Number(rec.precip_mm) : null;
     if (pr != null && !isNaN(pr)) {
       if (pr >= 25) return 'heavy-rain';
       if (pr > 0) return 'rain';
     }
+
     if (
-      rec.journal ||
       rec.harema_level ||
       rec.temp_min != null ||
       rec.temp_max != null
     ) {
       return 'sunny';
     }
+
     return null;
   }
 
@@ -146,11 +160,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
   function displayLabel(iso, kind) {
     var rec = getDay(iso);
     if (rec && rec.weather_label) return rec.weather_label;
+    if (rec && rec.journal && kindFromText(rec.journal) === kind) {
+      if (/晴/.test(rec.journal)) return '晴れ';
+      if (/曇/.test(rec.journal)) return '曇り';
+      if (/雨/.test(rec.journal)) return '雨';
+    }
     return WEATHER_LABELS[kind] || WEATHER_LABELS.future;
   }
 
   function renderGrid() {
     gridEl.innerHTML = '';
+    var cellIndex = 0;
     var rows = chunkRows(SEASON_DAYS);
     rows.forEach(function (rowDays) {
       var row = document.createElement('div');
@@ -163,32 +183,86 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         btn.className = 'harima-harema__cell';
         btn.dataset.date = iso;
         btn.dataset.weather = kind;
+        btn.dataset.animIndex = String(cellIndex);
         btn.setAttribute('aria-label', iso.replace(/-/g, '/') + ' ' + label);
-        if (isToday(iso)) btn.classList.add('is-today');
+        if (isToday(iso) && kind !== 'future') btn.classList.add('is-today');
         if (iso === PLANTING_ISO) btn.classList.add('is-planting');
         if (getPhotos(iso).length) btn.classList.add('is-has-photo');
         btn.addEventListener('click', function () {
           openModal(iso, 0);
         });
         row.appendChild(btn);
+        cellIndex++;
       });
       gridEl.appendChild(row);
     });
+    setupScrollReveal();
+  }
+
+  function setupScrollReveal() {
+    if (!sectionEl) return;
+    var todayIdx = dayIndex(todayIso());
+    if (todayIdx < 0) todayIdx = SEASON_DAYS.length - 1;
+
+    var cells = gridEl.querySelectorAll('.harima-harema__cell');
+    cells.forEach(function (btn) {
+      var i = parseInt(btn.dataset.animIndex, 10) || 0;
+      if (i <= todayIdx && btn.dataset.weather !== 'future') {
+        btn.classList.add('is-anim-ready');
+        btn.style.setProperty('--harema-anim-i', String(i));
+      } else {
+        btn.style.opacity = '1';
+        btn.style.transform = 'none';
+      }
+    });
+
+    if (sectionEl.classList.contains('is-revealed')) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      sectionEl.classList.add('is-revealed');
+      return;
+    }
+
+    function isSectionInRevealZone() {
+      var rect = sectionEl.getBoundingClientRect();
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      var lead = vh * 0.1;
+      return rect.top < vh + lead && rect.bottom > 0;
+    }
+
+    if (isSectionInRevealZone()) {
+      sectionEl.classList.add('is-revealed');
+      return;
+    }
+
+    var obs = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting) {
+            sectionEl.classList.add('is-revealed');
+            obs.disconnect();
+          }
+        });
+      },
+      { threshold: 0.03, rootMargin: '0px 0px 10% 0px' }
+    );
+    obs.observe(sectionEl);
   }
 
   function renderPhotoCarousel(iso) {
-    var wrap = document.getElementById('harema-modal-photos-wrap');
     var img = document.getElementById('harema-modal-photo-img');
+    var emptyEl = document.getElementById('harema-modal-photo-empty');
     var countEl = document.getElementById('harema-modal-photo-count');
     var photos = getPhotos(iso);
 
     if (!photos.length) {
-      wrap.hidden = true;
+      img.hidden = true;
       img.removeAttribute('src');
       img.alt = '';
+      emptyEl.hidden = false;
       countEl.hidden = true;
-      if (prevPhotoBtn) prevPhotoBtn.disabled = true;
-      if (nextPhotoBtn) nextPhotoBtn.disabled = true;
+      if (prevPhotoBtn) prevPhotoBtn.hidden = true;
+      if (nextPhotoBtn) nextPhotoBtn.hidden = true;
       return;
     }
 
@@ -197,7 +271,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       activePhotoIndex = photos.length - 1;
     }
 
-    wrap.hidden = false;
+    emptyEl.hidden = true;
+    img.hidden = false;
     var p = photos[activePhotoIndex];
     img.src = p.url;
     img.alt = p.caption ? p.caption : formatJaDate(iso) + ' の記録写真（' + (activePhotoIndex + 1) + '枚目）';
@@ -205,19 +280,21 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     if (photos.length > 1) {
       countEl.hidden = false;
       countEl.textContent = activePhotoIndex + 1 + ' / ' + photos.length;
-      if (prevPhotoBtn) prevPhotoBtn.disabled = false;
-      if (nextPhotoBtn) nextPhotoBtn.disabled = false;
+      if (prevPhotoBtn) prevPhotoBtn.hidden = false;
+      if (nextPhotoBtn) nextPhotoBtn.hidden = false;
     } else {
       countEl.hidden = true;
-      if (prevPhotoBtn) prevPhotoBtn.disabled = true;
-      if (nextPhotoBtn) nextPhotoBtn.disabled = true;
+      if (prevPhotoBtn) prevPhotoBtn.hidden = true;
+      if (nextPhotoBtn) nextPhotoBtn.hidden = true;
     }
   }
 
   function updateDayNavButtons(iso) {
-    var idx = dayIndex(iso);
-    if (prevDayBtn) prevDayBtn.disabled = idx <= 0;
-    if (nextDayBtn) nextDayBtn.disabled = idx < 0 || idx >= SEASON_DAYS.length - 1;
+    var d = parseIso(iso);
+    var prev = toIso(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1));
+    var next = toIso(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1));
+    if (prevDayBtn) prevDayBtn.disabled = prev < SEASON_START;
+    if (nextDayBtn) nextDayBtn.disabled = next > SEASON_END;
   }
 
   function fillModal(iso) {
@@ -230,7 +307,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     var weatherEl = document.getElementById('harema-modal-weather');
     var dateEl = document.getElementById('harema-modal-date');
     var statsEl = document.getElementById('harema-modal-stats');
-    var haremaEl = document.getElementById('harema-modal-harema');
     var starsEl = document.getElementById('harema-modal-stars');
     var journalWrap = document.getElementById('harema-modal-journal-wrap');
     var journalEl = document.getElementById('harema-modal-journal');
@@ -242,13 +318,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     renderPhotoCarousel(activeIso);
     updateDayNavButtons(activeIso);
 
-    if (rec && rec.harema_level) {
-      haremaEl.hidden = false;
-      starsEl.textContent = starsText(rec.harema_level);
-    } else {
-      haremaEl.hidden = true;
-      starsEl.textContent = '';
-    }
+    starsEl.textContent = rec && rec.harema_level ? starsText(rec.harema_level) : '☆☆☆☆☆';
 
     statsEl.innerHTML = '';
     if (kind === 'future') {
@@ -275,31 +345,35 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     }
 
     if (rec && rec.journal) {
-      journalWrap.hidden = false;
+      journalWrap.classList.remove('is-empty');
       journalEl.textContent = rec.journal;
     } else {
-      journalWrap.hidden = true;
-      journalEl.textContent = '';
+      journalWrap.classList.add('is-empty');
+      journalEl.textContent = '（記録なし）';
     }
   }
 
   function openModal(iso, photoIndex) {
     activePhotoIndex = photoIndex != null ? photoIndex : 0;
+    modalShell.hidden = false;
     fillModal(iso);
-    if (!dialog.open) {
-      if (typeof dialog.showModal === 'function') dialog.showModal();
-      else dialog.setAttribute('open', '');
-    }
+    if (!dialog.open) dialog.show();
+  }
+
+  function closeModal() {
+    if (dialog.open) dialog.close();
+    modalShell.hidden = true;
+    activeIso = null;
   }
 
   function shiftDay(delta) {
     if (!activeIso) return;
-    var idx = dayIndex(activeIso);
-    if (idx < 0) return;
-    var next = idx + delta;
-    if (next < 0 || next >= SEASON_DAYS.length) return;
+    var d = parseIso(activeIso);
+    d.setDate(d.getDate() + delta);
+    var nextIso = toIso(d);
+    if (nextIso < SEASON_START || nextIso > SEASON_END) return;
     activePhotoIndex = 0;
-    fillModal(SEASON_DAYS[next]);
+    fillModal(nextIso);
   }
 
   function shiftPhoto(delta) {
@@ -309,30 +383,29 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     renderPhotoCarousel(activeIso);
   }
 
-  document.getElementById('harema-modal-close').addEventListener('click', function () {
-    dialog.close();
-    activeIso = null;
-  });
+  document.getElementById('harema-modal-close').addEventListener('click', closeModal);
+
+  document.getElementById('harema-modal-overlay').addEventListener('click', closeModal);
 
   dialog.addEventListener('click', function (ev) {
-    if (ev.target === dialog) {
-      dialog.close();
-      activeIso = null;
-    }
+    ev.stopPropagation();
   });
 
   dialog.addEventListener('close', function () {
+    modalShell.hidden = true;
     activeIso = null;
   });
 
   if (prevDayBtn) {
     prevDayBtn.addEventListener('click', function (ev) {
+      ev.preventDefault();
       ev.stopPropagation();
       shiftDay(-1);
     });
   }
   if (nextDayBtn) {
     nextDayBtn.addEventListener('click', function (ev) {
+      ev.preventDefault();
       ev.stopPropagation();
       shiftDay(1);
     });
@@ -360,6 +433,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
       ev.preventDefault();
       if (ev.shiftKey) shiftPhoto(1);
       else shiftDay(1);
+    } else if (ev.key === 'Escape') {
+      closeModal();
     }
   });
 

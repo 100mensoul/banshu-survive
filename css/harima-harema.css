@@ -5,6 +5,7 @@
 .harima-harema {
   --harema-cell: 44px;
   --harema-gap: 8px;
+  --harema-stagger: 250ms;
 
   position: relative;
   overflow: hidden;
@@ -107,6 +108,35 @@
     box-shadow 0.15s ease,
     filter 0.15s ease;
   -webkit-tap-highlight-color: transparent;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+/* スクロールでセクションが見えたら、左上→今日まで一定間隔で1マスずつ浮き出し */
+.harima-harema.is-revealed .harima-harema__cell.is-anim-ready {
+  animation: harema-cell-rise 0.6s ease-out forwards;
+  animation-delay: calc(var(--harema-anim-i, 0) * var(--harema-stagger));
+}
+
+@keyframes harema-cell-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .harima-harema__cell {
+    opacity: 1;
+    transform: none;
+  }
+  .harima-harema.is-revealed .harima-harema__cell.is-anim-ready {
+    animation: none;
+  }
 }
 
 .harima-harema__cell:hover,
@@ -153,15 +183,8 @@
   border-color: rgba(28, 38, 58, 0.5);
 }
 
-.harima-harema__cell.is-today {
-  border-color: rgba(232, 220, 180, 0.85);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 252, 240, 0.35),
-    0 0 0 1px rgba(232, 220, 180, 0.55);
-}
-
-/* 記録済みの今日は、枠線だけが目立ちすぎないよう控えめに */
 .harima-harema__cell.is-today:not([data-weather='future']) {
+  border-color: rgba(232, 220, 180, 0.85);
   box-shadow:
     inset 0 0 0 1px rgba(255, 252, 240, 0.25),
     0 0 0 1px rgba(232, 220, 180, 0.35);
@@ -225,10 +248,70 @@
   letter-spacing: 0.04em;
 }
 
-/* モーダル */
+/* モーダル（サイズ固定） */
+.harima-harema__modal-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  grid-template-columns: auto min(24rem, calc(100vw - 7rem)) auto;
+  align-items: center;
+  justify-content: center;
+  column-gap: 0.65rem;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.harima-harema__modal-shell[hidden] {
+  display: none;
+}
+
+.harima-harema__modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 9, 0.62);
+  backdrop-filter: blur(3px);
+  z-index: 0;
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.harima-harema__day-nav {
+  position: relative;
+  z-index: 2;
+  grid-row: 1;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 2px;
+  background: rgba(18, 20, 19, 0.72);
+  color: #f4f0e6;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.harima-harema__day-nav#harema-modal-prev-day {
+  grid-column: 1;
+  justify-self: end;
+}
+
 .harima-harema__dialog {
-  margin: auto;
-  max-width: min(24rem, calc(100vw - 1.5rem));
+  position: relative;
+  z-index: 2;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  align-self: center;
+  margin: 0;
+  width: 100%;
+  height: min(34rem, calc(100vh - 2rem));
+  max-width: 100%;
+  max-height: min(34rem, calc(100vh - 2rem));
   padding: 0;
   border: none;
   border-radius: 4px;
@@ -236,66 +319,42 @@
   background: #fffef8;
   color: #1a1610;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+}
+
+.harima-harema__day-nav#harema-modal-next-day {
+  grid-column: 3;
+  justify-self: start;
+}
+
+.harima-harema__day-nav:hover:not(:disabled) {
+  background: rgba(28, 32, 30, 0.88);
+}
+
+.harima-harema__day-nav:disabled {
+  opacity: 0.25;
+  cursor: default;
 }
 
 .harima-harema__dialog::backdrop {
-  background: rgba(8, 10, 9, 0.62);
-  backdrop-filter: blur(3px);
+  background: transparent;
 }
 
 .harima-harema__dialog-inner {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
 }
 
 .harima-harema__dialog-hero {
   position: relative;
-  padding: 1.25rem 0.5rem 1.15rem;
+  flex-shrink: 0;
+  padding: 1.35rem 1.5rem 1.15rem;
   text-align: center;
   color: #1a1610;
-}
-
-.harima-harema__dialog-hero-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.35rem;
-}
-
-.harima-harema__dialog-hero-center {
-  flex: 1;
-  min-width: 0;
-}
-
-.harima-harema__dialog-arrow {
-  flex-shrink: 0;
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.55);
-  color: #1a1610;
-  font-size: 1.35rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease;
-}
-
-.harima-harema__dialog-arrow:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.harima-harema__dialog-arrow:disabled {
-  opacity: 0.28;
-  cursor: default;
-}
-
-.harima-harema__dialog-hero[data-kind='rain'] .harima-harema__dialog-arrow,
-.harima-harema__dialog-hero[data-kind='heavy-rain'] .harima-harema__dialog-arrow {
-  border-color: rgba(255, 255, 255, 0.25);
-  background: rgba(0, 0, 0, 0.15);
-  color: #fff;
 }
 
 .harima-harema__dialog-hero[data-kind='sunny'] {
@@ -355,7 +414,12 @@
 }
 
 .harima-harema__dialog-body {
-  padding: 1.25rem 2rem 1.1rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.1rem 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .harima-harema__dialog-chips {
@@ -406,13 +470,22 @@
   color: #e0a52e;
 }
 
-/* ハレアメ手記 */
+/* ハレアメ手記（高さ固定でモーダル全体のサイズを揃える） */
 .harima-harema__dialog-journal {
-  margin: 0 0 1rem;
+  flex: 1;
+  min-height: 5.5rem;
+  margin: 0;
   padding: 0.7rem 0.9rem;
   background: #faf7ef;
   border-radius: 2px;
   border-left: 3px solid #d8a93e;
+  display: flex;
+  flex-direction: column;
+}
+
+.harima-harema__dialog-journal.is-empty .harima-harema__dialog-journal-body {
+  color: #b8b4aa;
+  font-style: normal;
 }
 
 .harima-harema__dialog-journal-label {
@@ -432,42 +505,77 @@
   white-space: pre-wrap;
 }
 
-/* 写真カルーセル（ヘッダー直下・複数枚） */
+.harima-harema__dialog-journal-body {
+  margin: 0;
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: #2a2418;
+  white-space: pre-wrap;
+  overflow-y: auto;
+}
+
+.harima-harema__dialog-arrow {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #1a1610;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.harima-harema__dialog-arrow:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+/* 写真エリア（高さ固定・全幅） */
 .harima-harema__dialog-photos {
+  flex-shrink: 0;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 2rem 1fr 2rem;
   align-items: center;
   gap: 0.25rem;
+  width: 100%;
   margin: 0;
-  padding: 0.35rem 0.25rem 0.5rem;
+  padding: 0.35rem 0.5rem 0.45rem;
   background: #f4f2ea;
+  min-height: 11.5rem;
+  box-sizing: border-box;
 }
 
-.harima-harema__dialog-photos[hidden] {
-  display: none;
-}
-
-.harima-harema__dialog-arrow--photo {
-  align-self: center;
-  background: rgba(255, 255, 255, 0.85);
+.harima-harema__dialog-arrow--photo#harema-modal-prev-photo {
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .harima-harema__dialog-photo-frame {
+  grid-column: 2;
+  grid-row: 1;
   margin: 0;
   min-width: 0;
+  width: 100%;
+  height: 10.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e6de;
 }
 
-.harima-harema__dialog-photo-img {
-  display: block;
-  width: 100%;
-  max-height: 18rem;
-  object-fit: cover;
-  vertical-align: middle;
-  background: #e8e6de;
+.harima-harema__dialog-arrow--photo#harema-modal-next-photo {
+  grid-column: 3;
+  grid-row: 1;
 }
 
 .harima-harema__dialog-photo-count {
   grid-column: 1 / -1;
+  grid-row: 2;
   margin: 0;
   text-align: center;
   font-size: 0.68rem;
@@ -475,12 +583,43 @@
   color: #7a7872;
 }
 
+.harima-harema__dialog-arrow--photo[hidden] {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.harima-harema__dialog-photo-img {
+  display: block;
+  width: 100%;
+  height: 10.5rem;
+  object-fit: cover;
+  vertical-align: middle;
+}
+
+.harima-harema__dialog-photo-img[hidden] {
+  display: none;
+}
+
+.harima-harema__dialog-photo-empty {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: #9a9894;
+}
+
+.harima-harema__dialog-photo-empty[hidden] {
+  display: none;
+}
+
 .harima-harema__dialog-photo-count[hidden] {
   display: none;
 }
 
 .harima-harema__dialog-close {
-  display: block;
+  flex-shrink: 0;
   width: 100%;
   padding: 0.85rem;
   border: none;
@@ -501,6 +640,23 @@
 
 /* モバイル：15列を画面幅にフィット（マスは自動で縮小）＋背景を全面 cover */
 @media (max-width: 700px) {
+  .harima-harema__modal-shell {
+    grid-template-columns: auto min(22rem, calc(100vw - 5.5rem)) auto;
+    column-gap: 0.35rem;
+    padding: 0.5rem;
+  }
+
+  .harima-harema__day-nav {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1.35rem;
+  }
+
+  .harima-harema__dialog {
+    height: min(32rem, calc(100vh - 1rem));
+    max-height: min(32rem, calc(100vh - 1rem));
+  }
+
   .harima-harema {
     --harema-gap: 4px;
     padding: 1.6rem 0 2.25rem;

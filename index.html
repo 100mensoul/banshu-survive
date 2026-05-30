@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css?v=navmichi76">
+  <link rel="stylesheet" href="css/main.css?v=navmichi79">
 </head>
 <body>
 
@@ -253,45 +253,48 @@
     <div class="harima-harema__grid" id="harema-grid-rows" aria-label="田植え前から収穫までの天気（5月20日から）"></div>
   </div>
 
-  <dialog class="harima-harema__dialog" id="harema-modal" aria-labelledby="harema-modal-date">
-    <div class="harima-harema__dialog-inner">
-      <header class="harima-harema__dialog-hero" id="harema-modal-hero">
-        <div class="harima-harema__dialog-hero-nav">
-          <button type="button" class="harima-harema__dialog-arrow" id="harema-modal-prev-day" aria-label="前の日">‹</button>
-          <div class="harima-harema__dialog-hero-center">
-            <p class="harima-harema__dialog-weather" id="harema-modal-weather"></p>
-            <p class="harima-harema__dialog-date" id="harema-modal-date"></p>
+  <!-- 日付ナビはモーダル外（サイズが変わってもボタン位置がブレない） -->
+  <div class="harima-harema__modal-shell" id="harema-modal-shell" hidden>
+    <div class="harima-harema__modal-overlay" id="harema-modal-overlay" aria-hidden="true"></div>
+    <button type="button" class="harima-harema__day-nav" id="harema-modal-prev-day" aria-label="前の日">‹</button>
+
+    <dialog class="harima-harema__dialog" id="harema-modal" aria-labelledby="harema-modal-date">
+      <div class="harima-harema__dialog-inner">
+        <header class="harima-harema__dialog-hero" id="harema-modal-hero">
+          <p class="harima-harema__dialog-weather" id="harema-modal-weather"></p>
+          <p class="harima-harema__dialog-date" id="harema-modal-date"></p>
+        </header>
+
+        <div class="harima-harema__dialog-photos" id="harema-modal-photos-wrap">
+          <button type="button" class="harima-harema__dialog-arrow harima-harema__dialog-arrow--photo" id="harema-modal-prev-photo" aria-label="前の写真" hidden>‹</button>
+          <figure class="harima-harema__dialog-photo-frame">
+            <img class="harima-harema__dialog-photo-img" id="harema-modal-photo-img" alt="" decoding="async" hidden>
+            <p class="harima-harema__dialog-photo-empty" id="harema-modal-photo-empty">写真なし</p>
+          </figure>
+          <button type="button" class="harima-harema__dialog-arrow harima-harema__dialog-arrow--photo" id="harema-modal-next-photo" aria-label="次の写真" hidden>›</button>
+          <p class="harima-harema__dialog-photo-count" id="harema-modal-photo-count" hidden></p>
+        </div>
+
+        <div class="harima-harema__dialog-body">
+          <p class="harima-harema__dialog-harema" id="harema-modal-harema">
+            <span class="harima-harema__dialog-harema-label">ハレマ度</span>
+            <span class="harima-harema__dialog-harema-stars" id="harema-modal-stars">☆☆☆☆☆</span>
+          </p>
+
+          <ul class="harima-harema__dialog-chips" id="harema-modal-stats"></ul>
+
+          <div class="harima-harema__dialog-journal" id="harema-modal-journal-wrap">
+            <p class="harima-harema__dialog-journal-label">ハレアメ手記</p>
+            <p class="harima-harema__dialog-journal-body" id="harema-modal-journal"></p>
           </div>
-          <button type="button" class="harima-harema__dialog-arrow" id="harema-modal-next-day" aria-label="次の日">›</button>
         </div>
-      </header>
 
-      <div class="harima-harema__dialog-photos" id="harema-modal-photos-wrap" hidden>
-        <button type="button" class="harima-harema__dialog-arrow harima-harema__dialog-arrow--photo" id="harema-modal-prev-photo" aria-label="前の写真">‹</button>
-        <figure class="harima-harema__dialog-photo-frame">
-          <img class="harima-harema__dialog-photo-img" id="harema-modal-photo-img" alt="" decoding="async">
-        </figure>
-        <button type="button" class="harima-harema__dialog-arrow harima-harema__dialog-arrow--photo" id="harema-modal-next-photo" aria-label="次の写真">›</button>
-        <p class="harima-harema__dialog-photo-count" id="harema-modal-photo-count" hidden></p>
+        <button type="button" class="harima-harema__dialog-close" id="harema-modal-close">とじる</button>
       </div>
+    </dialog>
 
-      <div class="harima-harema__dialog-body">
-        <p class="harima-harema__dialog-harema" id="harema-modal-harema" hidden>
-          <span class="harima-harema__dialog-harema-label">ハレマ度</span>
-          <span class="harima-harema__dialog-harema-stars" id="harema-modal-stars"></span>
-        </p>
-
-        <ul class="harima-harema__dialog-chips" id="harema-modal-stats"></ul>
-
-        <div class="harima-harema__dialog-journal" id="harema-modal-journal-wrap" hidden>
-          <p class="harima-harema__dialog-journal-label">ハレアメ手記</p>
-          <p class="harima-harema__dialog-journal-body" id="harema-modal-journal"></p>
-        </div>
-      </div>
-
-      <button type="button" class="harima-harema__dialog-close" id="harema-modal-close">とじる</button>
-    </div>
-  </dialog>
+    <button type="button" class="harima-harema__day-nav" id="harema-modal-next-day" aria-label="次の日">›</button>
+  </div>
 </section>
 
 <!-- 公式SNSセクション（埋め込み URL は下記コメント参照） -->
@@ -425,7 +428,7 @@
   <script defer src="js/kawara-scroll-mobile.js?v=2"></script>
   <script type="module" src="js/home-episode-nav.js"></script>
   <script type="module" src="js/home-news-public.js?v=8"></script>
-  <script type="module" src="js/harima-harema.js?v=9"></script>
+  <script type="module" src="js/harima-harema.js?v=17"></script>
   <script defer src="js/truth-story-reveal.js?v=5"></script>
 </body>
 </html>

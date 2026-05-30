@@ -27,8 +27,10 @@
     .stars span.on { color: #f0a500; }
     .photos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
     .photo-thumb { position: relative; width: 96px; }
-    .photo-thumb img { width: 96px; height: 96px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; }
-    .photo-thumb button { position: absolute; top: -8px; right: -8px; border-radius: 50%; width: 22px; height: 22px; padding: 0; border: none; background: #c0392b; color: #fff; cursor: pointer; }
+    .photo-thumb img { width: 96px; height: 96px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; display: block; }
+    .photo-thumb .photo-del { position: absolute; top: -8px; right: -8px; border-radius: 50%; width: 22px; height: 22px; padding: 0; border: none; background: #c0392b; color: #fff; cursor: pointer; }
+    .photo-thumb-controls { display: flex; gap: 4px; margin-top: 4px; justify-content: center; }
+    .photo-thumb-controls button { padding: 2px 8px; font-size: 12px; cursor: pointer; }
     .hint { font-size: 12px; color: #666; margin-top: 4px; }
     .swatch-sunny { background: #f6b13e; } .swatch-cloudy { background: #c8ccd2; }
     .swatch-rain { background: #5e87bb; } .swatch-heavy-rain { background: #3a5680; }
@@ -105,7 +107,7 @@
 
         <label>写真（複数可）</label>
         <input type="file" id="photo-files" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
-        <p class="hint">複数枚選べます。大きい写真はアップロード前に自動で縮小（長辺1600px・JPEG/WebP）します。先にこの日を保存しておくと確実です。</p>
+        <p class="hint">複数枚選べます。↑↓で表示順を変更。大きい写真は自動縮小（長辺1600px）してアップロードします。</p>
         <div class="photos" id="photo-list"></div>
 
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
@@ -297,6 +299,18 @@
       });
 
       /* 写真 */
+      let currentPhotos = [];
+
+      function kindFromText(text) {
+        const t = (text || '').trim();
+        if (!t) return null;
+        if (/大雨|豪雨/.test(t)) return 'heavy-rain';
+        if (/雨/.test(t)) return 'rain';
+        if (/曇/.test(t)) return 'cloudy';
+        if (/晴|快晴|日差し|日焼け|暑い|猛暑/.test(t)) return 'sunny';
+        return null;
+      }
+
       async function loadPhotos(iso) {
         const box = document.getElementById('photo-list');
         box.innerHTML = '';
@@ -305,13 +319,59 @@
           .from('harema_day_photos').select('*')
           .eq('day_date', iso).order('sort_order', { ascending: true });
         if (error) { showMsg('写真取得エラー: ' + error.message, false); return; }
-        (data || []).forEach((p) => {
+        currentPhotos = data || [];
+        currentPhotos.forEach((p, idx) => {
           const div = document.createElement('div');
           div.className = 'photo-thumb';
-          div.innerHTML = '<img src="' + escapeHtml(p.url) + '" alt=""><button type="button" title="削除">×</button>';
-          div.querySelector('button').addEventListener('click', () => deletePhoto(p));
+          const img = document.createElement('img');
+          img.src = p.url;
+          img.alt = '';
+          div.appendChild(img);
+          const del = document.createElement('button');
+          del.type = 'button';
+          del.className = 'photo-del';
+          del.title = '削除';
+          del.textContent = '×';
+          del.addEventListener('click', () => deletePhoto(p));
+          div.appendChild(del);
+          const ctrls = document.createElement('div');
+          ctrls.className = 'photo-thumb-controls';
+          const up = document.createElement('button');
+          up.type = 'button';
+          up.textContent = '↑';
+          up.disabled = idx === 0;
+          up.addEventListener('click', () => movePhoto(idx, -1));
+          const down = document.createElement('button');
+          down.type = 'button';
+          down.textContent = '↓';
+          down.disabled = idx === currentPhotos.length - 1;
+          down.addEventListener('click', () => movePhoto(idx, 1));
+          ctrls.appendChild(up);
+          ctrls.appendChild(down);
+          div.appendChild(ctrls);
           box.appendChild(div);
         });
+      }
+
+      async function movePhoto(index, delta) {
+        const iso = document.getElementById('day_date').value || document.getElementById('pick-date').value;
+        const newIndex = index + delta;
+        if (!iso || newIndex < 0 || newIndex >= currentPhotos.length) return;
+        const list = currentPhotos.slice();
+        const [item] = list.splice(index, 1);
+        list.splice(newIndex, 0, item);
+        for (let i = 0; i < list.length; i++) {
+          const { error } = await supabase
+            .from('harema_day_photos')
+            .update({ sort_order: (i + 1) * 10 })
+            .eq('id', list[i].id);
+          if (error) {
+            showMsg('順序変更エラー: ' + error.message, false);
+            return;
+          }
+        }
+        await loadPhotos(iso);
+        showMsg('写真の順序を変更しました', true);
       }
 
       async function ensureDaySaved(iso) {
@@ -374,19 +434,19 @@
         };
         let weather = document.getElementById('weather').value || null;
         const weatherLabel = document.getElementById('weather_label').value.trim() || null;
-        /* 表示ラベルと天気区分が食い違うとマスの色がずれるので、ラベルで区分を揃える */
+        const journal = document.getElementById('journal').value.trim() || null;
+        /* 表示ラベル → 手記 → API天気 の順で区分を揃える */
         if (weatherLabel) {
-          if (/大雨|豪雨/.test(weatherLabel)) weather = 'heavy-rain';
-          else if (/雨/.test(weatherLabel)) weather = 'rain';
-          else if (/曇/.test(weatherLabel)) weather = 'cloudy';
-          else if (/晴/.test(weatherLabel)) weather = 'sunny';
+          weather = kindFromText(weatherLabel) || weather;
+        } else if (journal) {
+          weather = kindFromText(journal) || weather;
         }
         const payload = {
           day_date: iso,
           weather: weather,
           weather_label: weatherLabel,
           harema_level: Number(document.getElementById('harema_level').value) || 0,
-          journal: document.getElementById('journal').value.trim() || null,
+          journal: journal,
           temp_min: num('temp_min'),
           temp_max: num('temp_max'),
           precip_mm: num('precip_mm'),
