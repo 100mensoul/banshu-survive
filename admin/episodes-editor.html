@@ -139,6 +139,23 @@
     }
     .ref-empty { color: #888; font-size: 0.85rem; margin: 0.25rem 0; }
 
+    /* 本文下ボタン行 */
+    .editor-actions {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .editor-actions-left,
+    .editor-actions-right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
     /* メモ（自由記述） */
     textarea#note-body {
       display: block; width: 100%; min-height: clamp(220px, 40vh, 520px);
@@ -224,13 +241,17 @@
     <!-- 右: 本文編集 -->
     <div class="panel">
       <label>本文（Markdown）<textarea id="md-body" placeholder="## 見出し&#10;&#10;段落…"></textarea></label>
-      <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
-        <button type="button" class="secondary" id="btn-open-image">画像</button>
-        <button type="button" id="btn-save">保存</button>
-        <button type="button" class="secondary" id="btn-reload">再読込</button>
-        <button type="button" class="danger" id="btn-delete">削除…</button>
-        <button type="button" class="secondary" id="btn-open-note" style="margin-left:auto;">メモ</button>
-        <button type="button" class="secondary" id="btn-open-ref">参照</button>
+      <div class="editor-actions">
+        <div class="editor-actions-left">
+          <button type="button" id="btn-save">保存</button>
+          <button type="button" class="secondary" id="btn-reload">再読込</button>
+          <button type="button" class="danger" id="btn-delete">削除…</button>
+        </div>
+        <div class="editor-actions-right">
+          <button type="button" class="secondary" id="btn-open-image">画像</button>
+          <button type="button" class="secondary" id="btn-open-note">メモ</button>
+          <button type="button" class="secondary" id="btn-open-ref">参照</button>
+        </div>
       </div>
     </div>
   </div>
