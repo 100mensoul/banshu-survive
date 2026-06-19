@@ -11,11 +11,9 @@
       color: #222;
     }
     body { margin: 0; padding: 1rem; background: #f0f2f0; }
-    h1 { font-size: 1.2rem; margin: 0 0 1rem; }
+    h1 { font-size: 1.2rem; margin: 0; }
     .err { background: #ffe8e8; border: 1px solid #e66; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
     .ok { background: #e8f5e9; border: 1px solid #4a7c59; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
-    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
-    .toolbar a { color: #1a5fb4; }
     button {
       padding: 0.45rem 1rem; cursor: pointer; border-radius: 6px; border: 1px solid #333;
       background: #fff100; font-weight: 600; font-size: 0.9rem;
@@ -23,28 +21,54 @@
     button.secondary { background: #e8e8e8; }
     button.danger { background: #ffcccc; border-color: #a44; }
     label { display: block; margin-top: 0.65rem; font-size: 0.85rem; font-weight: 600; }
-    input[type="text"], input[type="number"], select, textarea {
+    input[type="text"], input[type="number"], input[type="email"], input[type="password"], select, textarea {
       width: 100%; max-width: 100%; padding: 0.45rem; margin-top: 0.2rem; box-sizing: border-box;
       border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem;
     }
-    /* 本文: id は md-body（旧 #body だとスタイル未適用だった） */
+    /* 本文: id は md-body */
     textarea#md-body {
       display: block;
-      min-height: clamp(360px, 52vh, 820px);
+      min-height: clamp(420px, 64vh, 900px);
       resize: vertical;
       font-family: ui-monospace, 'Cascadia Code', monospace;
       font-size: 0.88rem;
       line-height: 1.65;
     }
+
+    /* ===== ヘッダー ===== */
+    .app-header {
+      display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem;
+      align-items: flex-start; justify-content: space-between;
+      background: #fff; border: 1px solid #ddd; border-radius: 10px;
+      padding: 0.7rem 1rem; margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      position: sticky; top: 0; z-index: 20;
+    }
+    .header-left { display: flex; flex-direction: column; gap: 0.15rem; }
+    .header-left a { color: #1a5fb4; font-size: 0.85rem; }
+    .header-info { display: flex; flex-wrap: wrap; gap: 0.45rem 0.9rem; align-items: center; }
+    .hfield { display: flex; align-items: center; gap: 0.3rem; }
+    .hfield > span.lbl { font-size: 0.72rem; font-weight: 700; color: #555; white-space: nowrap; }
+    .hfield input, .hfield select {
+      width: auto; margin-top: 0; padding: 0.3rem 0.4rem; font-size: 0.85rem;
+    }
+    #h-slug { width: 6rem; }
+    #season { width: 3.4rem; }
+    #episode_number { width: 3.4rem; }
+    #title { width: 13rem; }
+    #status { width: auto; }
+    .hfield #public-url-link { font-size: 0.8rem; color: #1a5fb4; word-break: break-all; max-width: 22rem; }
+
+    /* ===== レイアウト ===== */
     .layout {
       display: grid;
       gap: 1rem;
-      max-width: 1280px;
+      max-width: 1400px;
       margin: 0 auto;
     }
     @media (min-width: 900px) {
       .layout {
-        grid-template-columns: 220px minmax(280px, 1fr) minmax(280px, 1fr);
+        grid-template-columns: 220px minmax(280px, 1fr) minmax(320px, 1.05fr);
         align-items: start;
       }
     }
@@ -52,7 +76,7 @@
       background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 1rem;
       box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
-    #episode-list { list-style: none; padding: 0; margin: 0; max-height: 70vh; overflow-y: auto; }
+    #episode-list { list-style: none; padding: 0; margin: 0; max-height: 74vh; overflow-y: auto; }
     #episode-list li {
       margin: 0 0 0.35rem; padding: 0.5rem 0.6rem; border-radius: 6px; cursor: pointer;
       border: 1px solid #e0e0e0; font-size: 0.85rem;
@@ -64,8 +88,8 @@
     .badge-pub { background: #c8e6c9; }
     .preview-content {
       font-size: 0.95rem; line-height: 1.75;
-      min-height: clamp(280px, 48vh, 760px);
-      max-height: min(78vh, 860px);
+      min-height: clamp(360px, 60vh, 840px);
+      max-height: min(82vh, 920px);
       overflow-y: auto;
       padding: 0.5rem; border: 1px dashed #ccc; border-radius: 6px; background: #fafafa;
     }
@@ -74,26 +98,67 @@
     .preview-content img { max-width: 100%; height: auto; }
     #auth-panel label { max-width: 360px; }
     #msg { font-size: 0.9rem; }
-    .upload-row {
-      margin-top: 0.5rem; padding: 0.65rem; background: #f8faf8; border: 1px dashed #9abf9a;
-      border-radius: 8px; font-size: 0.82rem;
+
+    /* ===== 画像挿入モーダル ===== */
+    .modal[hidden] { display: none; }
+    .modal {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
     }
-    .upload-row input[type="file"] { max-width: 100%; margin-top: 0.35rem; font-size: 0.85rem; }
+    .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+    .modal-box {
+      position: relative; background: #fff; border-radius: 12px;
+      padding: 1.25rem; width: min(520px, 92vw);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .modal-box h2 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+    .modal-box .hint { font-size: 0.82rem; color: #555; margin: 0 0 0.75rem; }
+    .modal-box input[type="file"] { margin-top: 0.35rem; font-size: 0.85rem; }
+    .modal-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
   </style>
 </head>
 <body>
-
-  <h1>エピソード管理（Supabase）</h1>
 
   <div class="err" id="config-missing" hidden>
     <strong>Supabase 接続設定</strong>がありません。<code>js/supabase-public-config.js</code> に Project URL と anon キーを設定してください（本番と同じファイルです）。
   </div>
 
-  <div class="toolbar">
-    <a href="supabase-test.html">接続テスト</a>
-    <span>·</span>
-    <a href="../index.html">サイトトップ</a>
-  </div>
+  <!-- ヘッダー: 左=タイトル/リンク, 右=編集中エピソードの情報 -->
+  <header class="app-header">
+    <div class="header-left">
+      <h1>エピソード管理（Supabase）</h1>
+      <a href="../index.html">サイトトップ</a>
+    </div>
+    <div class="header-info" id="header-info" hidden>
+      <div class="hfield">
+        <span class="lbl">slug (ep-00)</span>
+        <input type="text" id="h-slug" required placeholder="ep-3">
+      </div>
+      <div class="hfield">
+        <span class="lbl">シーズン</span>
+        <input type="number" id="season" min="0" step="1" placeholder="1">
+      </div>
+      <div class="hfield">
+        <span class="lbl">話数</span>
+        <input type="number" id="episode_number" min="0" step="1" placeholder="3">
+      </div>
+      <div class="hfield">
+        <span class="lbl">タイトル</span>
+        <input type="text" id="title" required placeholder="エピソード3">
+      </div>
+      <div class="hfield">
+        <span class="lbl">状態</span>
+        <select id="status">
+          <option value="draft">下書き</option>
+          <option value="published">公開</option>
+        </select>
+      </div>
+      <div class="hfield">
+        <span class="lbl">公開URL</span>
+        <a id="public-url-link" href="#" target="_blank" rel="noopener"></a>
+      </div>
+    </div>
+  </header>
 
   <div id="msg" class="ok" hidden></div>
 
@@ -106,59 +171,48 @@
     <button type="button" class="secondary" id="btn-signout">ログアウト</button>
   </div>
 
-  <!-- メイン -->
+  <!-- メイン: 目次 / プレビュー / 編集 -->
   <div id="app" class="layout" hidden>
 
+    <input type="hidden" id="row-id" value="">
+
+    <!-- 左: エピソード目次 -->
     <div class="panel">
       <strong>一覧</strong>
-      <button type="button" id="btn-new" style="width:100%;margin-top:0.5rem;">＋ 新規</button>
+      <button type="button" class="secondary" id="btn-new" style="width:100%;margin-top:0.5rem;">＋ 新規</button>
       <ul id="episode-list"></ul>
     </div>
 
-    <div class="panel">
-      <strong>編集</strong>
-      <form id="form" spellcheck="true">
-        <input type="hidden" id="row-id" value="">
-        <label>slug（英数字・ハイフン）<input type="text" id="slug" required placeholder="ep-3"></label>
-        <div class="public-url-box" style="margin-top:0.5rem;padding:0.65rem;background:#f0f7f0;border:1px solid #9abf9a;border-radius:8px;font-size:0.82rem;">
-          <strong>公開ページ（このURLで閲覧）</strong>
-          <div style="margin-top:0.35rem;word-break:break-all;">
-            <a id="public-url-link" href="#" target="_blank" rel="noopener"></a>
-          </div>
-          <button type="button" class="secondary" id="btn-copy-public-url" style="margin-top:0.5rem;">URLをコピー</button>
-          <p style="margin:0.5rem 0 0;color:#555;">公開用は <code>html/episode.html?slug=…</code> です。<strong>新規エピソードのたびに HTML を増やす必要はありません</strong>（管理画面の保存・公開だけで反映されます）。</p>
-        </div>
-        <label>シーズン<input type="number" id="season" min="0" step="1" placeholder="1"></label>
-        <label>話数<input type="number" id="episode_number" min="0" step="1" placeholder="3"></label>
-        <label>タイトル<input type="text" id="title" required placeholder="エピソード3"></label>
-        <label>サブタイトル<input type="text" id="subtitle" placeholder="東京ネイティブ"></label>
-
-        <div class="upload-row">
-          <strong>画像（Supabase Storage）</strong>
-          <div>ログイン後、画像を選んで「本文に挿入」。初回は <code>admin/storage-policies.sql</code> を Supabase で実行してバケット <code>episode-images</code> を用意してください。</div>
-          <input type="file" id="image-file" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml">
-          <button type="button" class="secondary" id="btn-upload-image" style="margin-top:0.5rem;">アップロードして本文に挿入</button>
-        </div>
-
-        <label>本文（Markdown）<textarea id="md-body" placeholder="## 見出し&#10;&#10;段落…"></textarea></label>
-        <label>公開状態
-          <select id="status">
-            <option value="draft">下書き（draft）</option>
-            <option value="published">公開（published）</option>
-          </select>
-        </label>
-        <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.5rem;">
-          <button type="submit">保存</button>
-          <button type="button" class="secondary" id="btn-reload">再読込</button>
-          <button type="button" class="danger" id="btn-delete">削除…</button>
-        </div>
-      </form>
-    </div>
-
+    <!-- 中央: プレビュー -->
     <div class="panel">
       <strong>プレビュー</strong>（Markdown）
       <p style="font-size:0.8rem;color:#666;margin:0.25rem 0 0.5rem;">本文を入力すると自動で更新されます。</p>
       <div class="preview-content" id="preview"></div>
+    </div>
+
+    <!-- 右: 本文編集 -->
+    <div class="panel">
+      <label>本文（Markdown）<textarea id="md-body" placeholder="## 見出し&#10;&#10;段落…"></textarea></label>
+      <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.5rem;">
+        <button type="button" class="secondary" id="btn-open-image">画像</button>
+        <button type="button" id="btn-save">保存</button>
+        <button type="button" class="secondary" id="btn-reload">再読込</button>
+        <button type="button" class="danger" id="btn-delete">削除…</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 画像挿入モーダル -->
+  <div class="modal" id="image-modal" hidden>
+    <div class="modal-backdrop" id="image-modal-backdrop"></div>
+    <div class="modal-box">
+      <h2>画像の挿入（Supabase Storage）</h2>
+      <p class="hint">画像を選んで「本文に挿入」。初回は <code>admin/storage-policies.sql</code> を Supabase で実行してバケット <code>episode-images</code> を用意してください。</p>
+      <input type="file" id="image-file" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml">
+      <div class="modal-actions">
+        <button type="button" id="btn-upload-image">アップロードして本文に挿入</button>
+        <button type="button" class="secondary" id="btn-close-image">閉じる</button>
+      </div>
     </div>
   </div>
 
@@ -184,9 +238,9 @@
 
     const authPanel = document.getElementById('auth-panel');
     const app = document.getElementById('app');
+    const headerInfo = document.getElementById('header-info');
     const msg = document.getElementById('msg');
     const listEl = document.getElementById('episode-list');
-    const form = document.getElementById('form');
 
     function showMsg(text, ok) {
       msg.textContent = text;
@@ -208,10 +262,10 @@
     });
 
     function updatePublicUrl() {
-      const slug = document.getElementById('slug').value.trim();
+      const slug = document.getElementById('h-slug').value.trim();
       const a = document.getElementById('public-url-link');
       if (!slug) {
-        a.textContent = '（slug を入力すると表示されます）';
+        a.textContent = '（slug を入力すると表示）';
         a.removeAttribute('href');
         return;
       }
@@ -223,11 +277,10 @@
 
     function clearForm() {
       document.getElementById('row-id').value = '';
-      document.getElementById('slug').value = '';
+      document.getElementById('h-slug').value = '';
       document.getElementById('season').value = '';
       document.getElementById('episode_number').value = '';
       document.getElementById('title').value = '';
-      document.getElementById('subtitle').value = '';
       document.getElementById('md-body').value = '';
       document.getElementById('status').value = 'draft';
       listEl.querySelectorAll('li').forEach((li) => li.classList.remove('active'));
@@ -237,11 +290,10 @@
 
     function fillForm(row) {
       document.getElementById('row-id').value = row.id;
-      document.getElementById('slug').value = row.slug || '';
+      document.getElementById('h-slug').value = row.slug || '';
       document.getElementById('season').value = row.season != null ? row.season : '';
       document.getElementById('episode_number').value = row.episode_number != null ? row.episode_number : '';
       document.getElementById('title').value = row.title || '';
-      document.getElementById('subtitle').value = row.subtitle || '';
       document.getElementById('md-body').value = row.body || '';
       document.getElementById('status').value = row.status === 'published' ? 'published' : 'draft';
       renderPreview();
@@ -252,9 +304,9 @@
       const { data, error } = await supabase
         .from('episodes')
         .select('*')
-        .order('season', { ascending: true })
-        .order('episode_number', { ascending: true })
-        .order('slug');
+        .order('season', { ascending: false })
+        .order('episode_number', { ascending: false })
+        .order('slug', { ascending: false });
 
       if (error) {
         showMsg('一覧取得エラー: ' + error.message, false);
@@ -288,23 +340,18 @@
 
     document.getElementById('btn-new').addEventListener('click', clearForm);
 
-    document.getElementById('slug').addEventListener('input', updatePublicUrl);
+    document.getElementById('h-slug').addEventListener('input', updatePublicUrl);
 
-    document.getElementById('btn-copy-public-url').addEventListener('click', async () => {
-      const slug = document.getElementById('slug').value.trim();
-      if (!slug) {
-        showMsg('slug がありません', false);
-        return;
-      }
-      const u = new URL('../html/episode.html', window.location.href);
-      u.searchParams.set('slug', slug);
-      try {
-        await navigator.clipboard.writeText(u.toString());
-        showMsg('公開URLをコピーしました', true);
-      } catch {
-        showMsg('コピーに失敗しました（ブラウザの制限など）', false);
-      }
-    });
+    /* ===== 画像モーダル ===== */
+    const imageModal = document.getElementById('image-modal');
+    function openImageModal() { imageModal.hidden = false; }
+    function closeImageModal() {
+      imageModal.hidden = true;
+      document.getElementById('image-file').value = '';
+    }
+    document.getElementById('btn-open-image').addEventListener('click', openImageModal);
+    document.getElementById('btn-close-image').addEventListener('click', closeImageModal);
+    document.getElementById('image-modal-backdrop').addEventListener('click', closeImageModal);
 
     const STORAGE_BUCKET = 'episode-images';
 
@@ -330,8 +377,8 @@
         return;
       }
       const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-      const url = pub.publicUrl;
-      const md = '\n\n![](' + url + ')\n\n';
+      const imgUrl = pub.publicUrl;
+      const md = '\n\n![](' + imgUrl + ')\n\n';
       const ta = document.getElementById('md-body');
       const start = typeof ta.selectionStart === 'number' ? ta.selectionStart : ta.value.length;
       const end = typeof ta.selectionEnd === 'number' ? ta.selectionEnd : ta.value.length;
@@ -341,7 +388,7 @@
       ta.setSelectionRange(pos, pos);
       renderPreview();
       showMsg('画像を本文に挿入しました（このあと保存）', true);
-      fileInput.value = '';
+      closeImageModal();
     });
 
     document.getElementById('btn-reload').addEventListener('click', async () => {
@@ -360,14 +407,12 @@
       showMsg('再読込しました', true);
     });
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    document.getElementById('btn-save').addEventListener('click', async () => {
       const seasonVal = document.getElementById('season').value;
       const epVal = document.getElementById('episode_number').value;
       const payload = {
-        slug: document.getElementById('slug').value.trim(),
+        slug: document.getElementById('h-slug').value.trim(),
         title: document.getElementById('title').value.trim(),
-        subtitle: document.getElementById('subtitle').value.trim() || null,
         body: document.getElementById('md-body').value,
         status: document.getElementById('status').value,
         season: seasonVal === '' ? null : parseInt(seasonVal, 10),
@@ -379,7 +424,7 @@
         return;
       }
 
-      /* slug が既にあれば更新、なければ追加（新規のまま同じ slug で保存してもエラーにしない） */
+      /* slug が既にあれば更新、なければ追加（subtitle は既存値を保持するため payload から除外） */
       const { data, error } = await supabase
         .from('episodes')
         .upsert(payload, { onConflict: 'slug' })
@@ -435,10 +480,12 @@
       if (session) {
         authPanel.hidden = true;
         app.hidden = false;
+        headerInfo.hidden = false;
         loadList();
       } else {
         authPanel.hidden = false;
         app.hidden = true;
+        headerInfo.hidden = true;
         listEl.innerHTML = '';
       }
     }
