@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ヒメログ管理｜播州サバイブ</title>
+  <style>
+    :root {
+      font-family: 'Hiragino Kaku Gothic ProN', system-ui, sans-serif;
+      line-height: 1.6;
+      color: #222;
+    }
+    body { margin: 0; padding: 1rem; background: #f3fce9; }
+    h1 { font-size: 1.2rem; margin: 0 0 1rem; color: #557a2e; }
+    .err { background: #ffe8e8; border: 1px solid #e66; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
+    .ok { background: #e8f5e9; border: 1px solid #4a7c59; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1rem; font-size: 0.9rem; }
+    .toolbar a { color: #1a5fb4; }
+    button {
+      padding: 0.55rem 1rem; cursor: pointer; border-radius: 8px; border: 1px solid #333;
+      background: #ffeb3b; font-weight: 600; font-size: 0.95rem;
+    }
+    button.secondary { background: #e8e8e8; }
+    button.danger { background: #ffcccc; border-color: #a44; }
+    button.block { width: 100%; }
+    label { display: block; margin-top: 0.75rem; font-size: 0.85rem; font-weight: 600; }
+    input[type="text"], input[type="email"], input[type="password"], select, textarea {
+      width: 100%; max-width: 100%; padding: 0.6rem; margin-top: 0.25rem; box-sizing: border-box;
+      border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;
+    }
+    textarea#body {
+      display: block;
+      min-height: clamp(220px, 40vh, 600px);
+      resize: vertical;
+      line-height: 1.7;
+    }
+    .layout { display: grid; gap: 1rem; max-width: 1100px; margin: 0 auto; }
+    @media (min-width: 860px) {
+      .layout { grid-template-columns: 300px minmax(280px, 1fr); align-items: start; }
+    }
+    .panel {
+      background: #fff; border: 1px solid #dbe6cd; border-radius: 12px; padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    #entry-list { list-style: none; padding: 0; margin: 0.5rem 0 0; max-height: 60vh; overflow-y: auto; }
+    #entry-list li {
+      margin: 0 0 0.4rem; padding: 0.55rem 0.65rem; border-radius: 8px; cursor: pointer;
+      border: 1px solid #e3ead8; font-size: 0.85rem;
+    }
+    #entry-list li:hover { background: #f5fbe9; }
+    #entry-list li.active { background: #fff8c4; border-color: #c9b400; }
+    .badge { font-size: 0.68rem; padding: 0.12rem 0.4rem; border-radius: 5px; margin-left: 0.3rem; white-space: nowrap; }
+    .badge-draft { background: #eee; color: #555; }
+    .badge-private { background: #ffe0b2; color: #8a4b00; }
+    .badge-published { background: #c8e6c9; color: #2e6b34; }
+    .row-inline { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .row-inline > label { flex: 1 1 200px; margin-top: 0.75rem; }
+    .hint { font-size: 0.78rem; color: #6b7a55; margin: 0.2rem 0 0; }
+    .meta-line { font-size: 0.75rem; color: #888; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+
+  <h1>ヒメログ管理（平尾の取材ノート）</h1>
+
+  <div class="err" id="config-missing" hidden>
+    <strong>Supabase 接続設定</strong>がありません。<code>js/supabase-public-config.js</code> に Project URL と anon キーを設定してください。
+  </div>
+
+  <div class="toolbar">
+    <a href="../himelog/index.html" target="_blank" rel="noopener">公開ページを開く</a>
+    <span>·</span>
+    <a href="../index.html">サイトトップ</a>
+    <span>·</span>
+    <a href="episodes-editor.html">エピソード管理</a>
+  </div>
+
+  <div id="msg" class="ok" hidden></div>
+
+  <!-- ログイン -->
+  <div class="panel" id="auth-panel">
+    <strong>ログイン</strong>（編集者アカウント）
+    <label>メール<input type="email" id="email" autocomplete="username"></label>
+    <label>パスワード<input type="password" id="password" autocomplete="current-password"></label>
+    <div style="margin-top:0.75rem;display:flex;gap:0.5rem;">
+      <button type="button" id="btn-signin">ログイン</button>
+      <button type="button" class="secondary" id="btn-signout">ログアウト</button>
+    </div>
+  </div>
+
+  <!-- メイン -->
+  <div id="app" class="layout" hidden>
+
+    <div class="panel">
+      <strong>一覧</strong>
+      <button type="button" id="btn-new" class="block" style="margin-top:0.5rem;">＋ 新しいメモ</button>
+      <label style="margin-top:0.75rem;">表示フィルタ
+        <select id="filter-status">
+          <option value="all">すべて</option>
+          <option value="draft">下書きのみ</option>
+          <option value="private">非公開のみ</option>
+          <option value="published">公開のみ</option>
+        </select>
+      </label>
+      <ul id="entry-list"></ul>
+    </div>
+
+    <div class="panel">
+      <strong>編集</strong>
+      <form id="form" spellcheck="true">
+        <input type="hidden" id="row-id" value="">
+
+        <label>タイトル（短いメモは空でもOK）<input type="text" id="title" placeholder="例：Rの言葉を整理中"></label>
+
+        <label>本文<textarea id="body" placeholder="いま考えていること、取材で見聞きしたこと、エピソードのタネ…"></textarea></label>
+
+        <label>タグ（カンマ区切り）<input type="text" id="tags" placeholder="ツインコモンズ, 姫路, 考え中"></label>
+
+        <div class="row-inline">
+          <label>種類
+            <select id="memo_type">
+              <option value="note">取材メモ</option>
+              <option value="thought">所感</option>
+              <option value="raw">未整理</option>
+              <option value="seed">エピソード候補</option>
+            </select>
+          </label>
+          <label>公開状態
+            <select id="status">
+              <option value="draft">下書き（自分だけ）</option>
+              <option value="private">非公開（自分だけ）</option>
+              <option value="published">公開（みんなに見える）</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row-inline">
+          <label>関連エピソード slug（任意）<input type="text" id="related_episode_slug" placeholder="ep-5"></label>
+          <label>Obsidian 由来メモ（任意・非公開）<input type="text" id="obsidian_ref" placeholder="ノート名 / obsidian://open?... のURI"></label>
+        </div>
+        <p class="hint">
+          「Obsidian 由来メモ」は公開ページには出ません。自分用の出典メモです。
+          <code>obsidian://</code> や <code>http</code> で始めると下のボタンから開けます。
+          <a id="obsidian-open" href="#" target="_blank" rel="noopener" hidden style="color:#1a5fb4;">Obsidianで開く ↗</a>
+        </p>
+
+        <div class="meta-line" id="meta-line"></div>
+
+        <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.5rem;">
+          <button type="submit">保存</button>
+          <button type="button" class="secondary" id="btn-reload">再読込</button>
+          <button type="button" class="danger" id="btn-delete">削除…</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const url = window.__SB_URL;
+    const key = window.__SB_ANON_KEY;
+    const keyOk = key && String(key).trim().length > 0;
+    const urlOk = url && String(url).trim().length > 0 && !String(url).includes('あなたのプロジェクトID');
+    const configOk = urlOk && keyOk;
+
+    document.getElementById('config-missing').hidden = configOk;
+
+    if (configOk) {
+      const supabase = createClient(url, key);
+
+      const authPanel = document.getElementById('auth-panel');
+      const app = document.getElementById('app');
+      const msg = document.getElementById('msg');
+      const listEl = document.getElementById('entry-list');
+      const form = document.getElementById('form');
+      const filterEl = document.getElementById('filter-status');
+
+      let allRows = [];
+
+      function showMsg(text, ok) {
+        msg.textContent = text;
+        msg.className = ok ? 'ok' : 'err';
+        msg.hidden = false;
+        clearTimeout(showMsg._t);
+        showMsg._t = setTimeout(() => { msg.hidden = true; }, 6000);
+      }
+
+      function escapeHtml(s) {
+        return String(s ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function statusBadge(status) {
+        if (status === 'published') return '<span class="badge badge-published">公開</span>';
+        if (status === 'private') return '<span class="badge badge-private">非公開</span>';
+        return '<span class="badge badge-draft">下書き</span>';
+      }
+
+      function fmt(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('ja-JP');
+      }
+
+      /* obsidian_ref が URI（obsidian:// や http）なら「Obsidianで開く」リンクを出す */
+      function updateObsidianOpen() {
+        const v = document.getElementById('obsidian_ref').value.trim();
+        const link = document.getElementById('obsidian-open');
+        const isUri = /^(obsidian:\/\/|https?:\/\/)/i.test(v);
+        if (isUri) {
+          link.href = v;
+          link.hidden = false;
+        } else {
+          link.removeAttribute('href');
+          link.hidden = true;
+        }
+      }
+      document.getElementById('obsidian_ref').addEventListener('input', updateObsidianOpen);
+
+      /* Obsidian等から ?prefill=1&title=…&body=… で開かれたら、フォームに自動入力 */
+      const prefillParams = new URLSearchParams(window.location.search);
+      let prefillPending = prefillParams.get('prefill') === '1';
+      function applyPrefillIfAny() {
+        if (!prefillPending) return;
+        prefillPending = false;
+        clearForm();
+        const set = (id, key) => {
+          const val = prefillParams.get(key);
+          if (val != null && val !== '') document.getElementById(id).value = val;
+        };
+        set('title', 'title');
+        set('body', 'body');
+        set('tags', 'tags');
+        set('memo_type', 'memo_type');
+        set('status', 'status');
+        set('related_episode_slug', 'related_episode_slug');
+        set('obsidian_ref', 'obsidian_ref');
+        updateObsidianOpen();
+        showMsg('Obsidianから取り込みました。内容を確認して「保存」を押してください。', true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function clearForm() {
+        document.getElementById('row-id').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('body').value = '';
+        document.getElementById('tags').value = '';
+        document.getElementById('memo_type').value = 'note';
+        document.getElementById('status').value = 'draft';
+        document.getElementById('related_episode_slug').value = '';
+        document.getElementById('obsidian_ref').value = '';
+        document.getElementById('meta-line').textContent = '';
+        updateObsidianOpen();
+        listEl.querySelectorAll('li').forEach((li) => li.classList.remove('active'));
+      }
+
+      function fillForm(row) {
+        document.getElementById('row-id').value = row.id;
+        document.getElementById('title').value = row.title || '';
+        document.getElementById('body').value = row.body || '';
+        document.getElementById('tags').value = Array.isArray(row.tags) ? row.tags.join(', ') : '';
+        document.getElementById('memo_type').value = row.memo_type || 'note';
+        document.getElementById('status').value = row.status || 'draft';
+        document.getElementById('related_episode_slug').value = row.related_episode_slug || '';
+        document.getElementById('obsidian_ref').value = row.obsidian_ref || '';
+        const created = fmt(row.created_at);
+        const updated = fmt(row.updated_at);
+        document.getElementById('meta-line').textContent =
+          (created ? '作成: ' + created : '') + (updated ? ' ／ 更新: ' + updated : '');
+        updateObsidianOpen();
+      }
+
+      function renderList() {
+        const f = filterEl.value;
+        const rows = f === 'all' ? allRows : allRows.filter((r) => r.status === f);
+        listEl.innerHTML = '';
+        if (!rows.length) {
+          listEl.innerHTML = '<li style="cursor:default;border:none;color:#888;">（メモはまだありません）</li>';
+          return;
+        }
+        rows.forEach((row) => {
+          const li = document.createElement('li');
+          li.dataset.id = row.id;
+          const titleText = row.title || (row.body ? row.body.slice(0, 20) + '…' : '（無題）');
+          li.innerHTML =
+            '<strong>' + escapeHtml(titleText) + '</strong>' + statusBadge(row.status) +
+            '<br><span style="opacity:.7;font-size:0.75rem;">' + fmt(row.created_at) + '</span>';
+          li.addEventListener('click', () => {
+            listEl.querySelectorAll('li').forEach((x) => x.classList.remove('active'));
+            li.classList.add('active');
+            fillForm(row);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+          listEl.appendChild(li);
+        });
+      }
+
+      async function loadList() {
+        const { data, error } = await supabase
+          .from('himelog_entries')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          showMsg('一覧取得エラー: ' + error.message, false);
+          return;
+        }
+        allRows = data || [];
+        renderList();
+      }
+
+      filterEl.addEventListener('change', renderList);
+      document.getElementById('btn-new').addEventListener('click', () => {
+        clearForm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      document.getElementById('btn-reload').addEventListener('click', async () => {
+        await loadList();
+        showMsg('再読込しました', true);
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const tags = document.getElementById('tags').value
+          .split(',').map((t) => t.trim()).filter(Boolean);
+        const status = document.getElementById('status').value;
+        const id = document.getElementById('row-id').value.trim();
+
+        const payload = {
+          title: document.getElementById('title').value.trim() || null,
+          body: document.getElementById('body').value,
+          tags,
+          memo_type: document.getElementById('memo_type').value,
+          status,
+          related_episode_slug: document.getElementById('related_episode_slug').value.trim() || null,
+          obsidian_ref: document.getElementById('obsidian_ref').value.trim() || null,
+        };
+
+        if (!payload.body.trim() && !payload.title) {
+          showMsg('タイトルか本文のどちらかは入力してください', false);
+          return;
+        }
+
+        if (status === 'published') {
+          payload.published_at = new Date().toISOString();
+        }
+
+        let result;
+        if (id) {
+          result = await supabase.from('himelog_entries').update(payload).eq('id', id).select('id').single();
+        } else {
+          result = await supabase.from('himelog_entries').insert(payload).select('id').single();
+        }
+
+        if (result.error) {
+          showMsg('保存エラー: ' + result.error.message, false);
+          return;
+        }
+        if (result.data?.id) {
+          document.getElementById('row-id').value = result.data.id;
+        }
+        await loadList();
+        showMsg('保存しました', true);
+      });
+
+      document.getElementById('btn-delete').addEventListener('click', async () => {
+        const id = document.getElementById('row-id').value.trim();
+        if (!id) {
+          showMsg('削除できるのは保存済みのメモだけです', false);
+          return;
+        }
+        if (!confirm('このメモを削除しますか？（元に戻せません）')) return;
+        const { error } = await supabase.from('himelog_entries').delete().eq('id', id);
+        if (error) {
+          showMsg('削除エラー: ' + error.message, false);
+          return;
+        }
+        clearForm();
+        await loadList();
+        showMsg('削除しました', true);
+      });
+
+      document.getElementById('btn-signin').addEventListener('click', async () => {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          showMsg('ログイン失敗: ' + error.message, false);
+          return;
+        }
+        showMsg('ログインしました', true);
+      });
+
+      document.getElementById('btn-signout').addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        showMsg('ログアウトしました', true);
+      });
+
+      function setUiSession(session) {
+        if (session) {
+          authPanel.hidden = true;
+          app.hidden = false;
+          loadList();
+          applyPrefillIfAny();
+        } else {
+          authPanel.hidden = false;
+          app.hidden = true;
+          listEl.innerHTML = '';
+        }
+      }
+
+      supabase.auth.onAuthStateChange((_e, session) => setUiSession(session));
+      const { data: { session } } = await supabase.auth.getSession();
+      setUiSession(session);
+    }
+  </script>
+</body>
+</html>

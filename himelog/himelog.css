@@ -1,0 +1,183 @@
+:root {
+  --himelog-green: #557a2e;
+  --himelog-green-soft: #7fa34d;
+  --himelog-bg: #f3fce9;
+  --himelog-card: #ffffff;
+  --himelog-ink: #333333;
+  --himelog-sub: #6b7a55;
+  --himelog-line: #e3ead8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", system-ui, sans-serif;
+  background-color: var(--himelog-bg);
+  color: var(--himelog-ink);
+  line-height: 1.8;
+}
+
+/* ヘッダー */
+.himelog-header {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 1.5rem;
+  text-align: center;
+}
+
+.himelog-kicker {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  color: var(--himelog-green-soft);
+}
+
+.himelog-title {
+  margin: 0.4rem 0 0.8rem;
+  font-size: 2rem;
+  color: var(--himelog-green);
+  letter-spacing: 0.05em;
+}
+
+.himelog-lead {
+  margin: 0 auto;
+  max-width: 460px;
+  font-size: 0.92rem;
+  color: var(--himelog-sub);
+}
+
+.himelog-nav {
+  margin-top: 1.2rem;
+  font-size: 0.85rem;
+}
+
+.himelog-nav a {
+  color: var(--himelog-green);
+  text-decoration: none;
+}
+
+.himelog-nav a:hover { text-decoration: underline; }
+
+/* 本体 */
+.himelog-main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 1.25rem 3rem;
+}
+
+/* タグフィルタ */
+.himelog-filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.82rem;
+}
+
+.himelog-filterbar-label { color: var(--himelog-sub); }
+
+.himelog-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--himelog-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--himelog-green);
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.himelog-tag:hover { background: #f0f7e4; }
+.himelog-tag--active { background: var(--himelog-green); color: #fff; border-color: var(--himelog-green); }
+.himelog-tag--clear { color: var(--himelog-sub); }
+
+/* カード */
+.himelog-list { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.himelog-card {
+  background: var(--himelog-card);
+  border: 1px solid var(--himelog-line);
+  border-radius: 14px;
+  padding: 1.4rem 1.5rem;
+  box-shadow: 0 2px 10px rgba(85, 122, 46, 0.06);
+}
+
+.himelog-card-type {
+  display: inline-block;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--himelog-green-soft);
+  margin-bottom: 0.5rem;
+}
+
+.himelog-card-title {
+  margin: 0 0 0.6rem;
+  font-size: 1.2rem;
+  color: var(--himelog-ink);
+  line-height: 1.5;
+}
+
+.himelog-card-body {
+  margin: 0;
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.himelog-card-body p { margin: 0 0 0.8rem; }
+.himelog-card-body p:last-child { margin-bottom: 0; }
+.himelog-card-body img { max-width: 100%; height: auto; border-radius: 6px; }
+.himelog-card-body a { color: var(--himelog-green); }
+
+.himelog-card-meta {
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed var(--himelog-line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--himelog-sub);
+}
+
+.himelog-card-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+.himelog-card-date { margin-left: auto; }
+
+.himelog-card-episode {
+  display: inline-block;
+  font-size: 0.78rem;
+  color: var(--himelog-green);
+  text-decoration: none;
+}
+
+.himelog-card-episode:hover { text-decoration: underline; }
+
+/* 状態表示 */
+.himelog-loading,
+.himelog-empty,
+.himelog-error {
+  text-align: center;
+  color: var(--himelog-sub);
+  padding: 2rem 0;
+  font-size: 0.9rem;
+}
+
+.himelog-error { color: #b04a4a; }
+
+/* フッター */
+.himelog-footer {
+  text-align: center;
+  padding: 2rem 1rem 3rem;
+  font-size: 0.8rem;
+  color: var(--himelog-sub);
+}
+
+@media (max-width: 480px) {
+  .himelog-title { font-size: 1.7rem; }
+  .himelog-card { padding: 1.2rem 1.1rem; }
+}
