@@ -76,7 +76,7 @@
       background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 1rem;
       box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
-    #episode-list { list-style: none; padding: 0; margin: 0; max-height: 74vh; overflow-y: auto; }
+    #episode-list { list-style: none; padding: 0; margin: 0; max-height: clamp(420px, 64vh, 900px); overflow-y: auto; }
     #episode-list li {
       margin: 0 0 0.35rem; padding: 0.5rem 0.6rem; border-radius: 6px; cursor: pointer;
       border: 1px solid #e0e0e0; font-size: 0.85rem;
@@ -88,8 +88,8 @@
     .badge-pub { background: #c8e6c9; }
     .preview-content {
       font-size: 0.95rem; line-height: 1.75;
-      min-height: clamp(360px, 60vh, 840px);
-      max-height: min(82vh, 920px);
+      height: clamp(420px, 64vh, 900px);
+      max-height: clamp(420px, 64vh, 900px);
       overflow-y: auto;
       padding: 0.5rem; border: 1px dashed #ccc; border-radius: 6px; background: #fafafa;
     }
@@ -115,6 +115,37 @@
     .modal-box .hint { font-size: 0.82rem; color: #555; margin: 0 0 0.75rem; }
     .modal-box input[type="file"] { margin-top: 0.35rem; font-size: 0.85rem; }
     .modal-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+
+    /* 参照（リンク） */
+    #ref-list { margin: 0.25rem 0 0.75rem; max-height: 52vh; overflow-y: auto; }
+    .ref-row {
+      display: flex; flex-direction: column; gap: 0.4rem;
+      padding: 0.6rem; margin-bottom: 0.6rem;
+      border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa;
+    }
+    .ref-row-top { display: flex; gap: 0.4rem; align-items: center; }
+    .ref-row .ref-label { flex: 1; margin-top: 0; padding: 0.35rem 0.4rem; font-size: 0.85rem; }
+    .ref-row .ref-url { width: 100%; margin-top: 0; padding: 0.4rem 0.5rem; font-size: 0.85rem; }
+    .ref-row .ref-open {
+      display: block; font-size: 0.9rem; color: #1a5fb4; word-break: break-all;
+      padding: 0.4rem 0.5rem; background: #eef4ff; border: 1px solid #c5d8f5;
+      border-radius: 6px; text-decoration: none;
+    }
+    .ref-row .ref-open:hover { background: #dde9ff; text-decoration: underline; }
+    .ref-row .ref-open.empty { display: none; }
+    .ref-row .ref-del {
+      flex: none; padding: 0.3rem 0.55rem; font-size: 0.8rem; font-weight: 600;
+      background: #ffcccc; border: 1px solid #a44; border-radius: 6px; cursor: pointer;
+    }
+    .ref-empty { color: #888; font-size: 0.85rem; margin: 0.25rem 0; }
+
+    /* メモ（自由記述） */
+    textarea#note-body {
+      display: block; width: 100%; min-height: clamp(220px, 40vh, 520px);
+      resize: vertical; box-sizing: border-box;
+      font-family: ui-monospace, 'Cascadia Code', monospace;
+      font-size: 0.9rem; line-height: 1.6;
+    }
   </style>
 </head>
 <body>
@@ -193,11 +224,13 @@
     <!-- 右: 本文編集 -->
     <div class="panel">
       <label>本文（Markdown）<textarea id="md-body" placeholder="## 見出し&#10;&#10;段落…"></textarea></label>
-      <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.5rem;">
+      <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
         <button type="button" class="secondary" id="btn-open-image">画像</button>
         <button type="button" id="btn-save">保存</button>
         <button type="button" class="secondary" id="btn-reload">再読込</button>
         <button type="button" class="danger" id="btn-delete">削除…</button>
+        <button type="button" class="secondary" id="btn-open-note" style="margin-left:auto;">メモ</button>
+        <button type="button" class="secondary" id="btn-open-ref">参照</button>
       </div>
     </div>
   </div>
@@ -212,6 +245,42 @@
       <div class="modal-actions">
         <button type="button" id="btn-upload-image">アップロードして本文に挿入</button>
         <button type="button" class="secondary" id="btn-close-image">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ラベル候補（参照リンク用） -->
+  <datalist id="ref-label-options">
+    <option value="Obsidian"></option>
+    <option value="スプレッドシート"></option>
+    <option value="Googleドキュメント"></option>
+    <option value="資料"></option>
+    <option value="画像フォルダ"></option>
+  </datalist>
+
+  <!-- 参照（リンク）モーダル -->
+  <div class="modal" id="ref-modal" hidden>
+    <div class="modal-backdrop" id="ref-modal-backdrop"></div>
+    <div class="modal-box">
+      <h2>参照（リンク）</h2>
+      <p class="hint">Obsidian のノートやスプレッドシートなど、編集中に参照したいリンクを登録できます（複数可）。URL を入力すると、その URL 自体がクリックして開けるリンクになります。内容はメインの「保存」ボタンで保存されます。</p>
+      <div id="ref-list"></div>
+      <button type="button" class="secondary" id="btn-add-ref-link">＋ リンクを追加</button>
+      <div class="modal-actions">
+        <button type="button" class="secondary" id="btn-close-ref">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- メモ（自由記述）モーダル -->
+  <div class="modal" id="note-modal" hidden>
+    <div class="modal-backdrop" id="note-modal-backdrop"></div>
+    <div class="modal-box">
+      <h2>メモ</h2>
+      <p class="hint">編集中に使う自由記述メモです（マークダウン記法が使えます）。内容はメインの「保存」ボタンで保存されます。</p>
+      <textarea id="note-body" placeholder="例:&#10;- ○○の設定を確認&#10;- △△さんに確認中"></textarea>
+      <div class="modal-actions">
+        <button type="button" class="secondary" id="btn-close-note">閉じる</button>
       </div>
     </div>
   </div>
@@ -283,6 +352,10 @@
       document.getElementById('title').value = '';
       document.getElementById('md-body').value = '';
       document.getElementById('status').value = 'draft';
+      refLinks = [];
+      updateRefBadge();
+      noteBody.value = '';
+      updateNoteBadge();
       listEl.querySelectorAll('li').forEach((li) => li.classList.remove('active'));
       renderPreview();
       updatePublicUrl();
@@ -296,6 +369,12 @@
       document.getElementById('title').value = row.title || '';
       document.getElementById('md-body').value = row.body || '';
       document.getElementById('status').value = row.status === 'published' ? 'published' : 'draft';
+      refLinks = Array.isArray(row.edit_links)
+        ? row.edit_links.map((x) => ({ label: (x && x.label) || '', url: (x && x.url) || '' }))
+        : [];
+      updateRefBadge();
+      noteBody.value = row.memo || '';
+      updateNoteBadge();
       renderPreview();
       updatePublicUrl();
     }
@@ -352,6 +431,114 @@
     document.getElementById('btn-open-image').addEventListener('click', openImageModal);
     document.getElementById('btn-close-image').addEventListener('click', closeImageModal);
     document.getElementById('image-modal-backdrop').addEventListener('click', closeImageModal);
+
+    /* ===== 参照（リンク） ===== */
+    let refLinks = [];
+    const refModal = document.getElementById('ref-modal');
+
+    function updateRefBadge() {
+      const n = refLinks.filter((x) => (x.url && x.url.trim()) || (x.label && x.label.trim())).length;
+      document.getElementById('btn-open-ref').textContent = n > 0 ? `参照 (${n})` : '参照';
+    }
+
+    function syncOpenLink(a, value) {
+      const v = (value || '').trim();
+      if (v) {
+        a.href = v;
+        a.textContent = v;
+        a.classList.remove('empty');
+      } else {
+        a.removeAttribute('href');
+        a.textContent = '';
+        a.classList.add('empty');
+      }
+    }
+
+    function renderRefList() {
+      const wrap = document.getElementById('ref-list');
+      wrap.innerHTML = '';
+      if (refLinks.length === 0) {
+        wrap.innerHTML = '<p class="ref-empty">まだリンクがありません。「＋ リンクを追加」で登録できます。</p>';
+        return;
+      }
+      refLinks.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'ref-row';
+
+        const top = document.createElement('div');
+        top.className = 'ref-row-top';
+
+        const labelInput = document.createElement('input');
+        labelInput.type = 'text';
+        labelInput.className = 'ref-label';
+        labelInput.placeholder = 'ラベル（例: Obsidian, スプレッドシート…）';
+        labelInput.setAttribute('list', 'ref-label-options');
+        labelInput.value = item.label || '';
+        labelInput.addEventListener('input', () => {
+          refLinks[idx].label = labelInput.value;
+          updateRefBadge();
+        });
+
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'ref-del';
+        del.textContent = '削除';
+        del.addEventListener('click', () => {
+          refLinks.splice(idx, 1);
+          renderRefList();
+          updateRefBadge();
+        });
+
+        top.append(labelInput, del);
+
+        const urlInput = document.createElement('input');
+        urlInput.type = 'text';
+        urlInput.className = 'ref-url';
+        urlInput.placeholder = 'obsidian://... または https://...';
+        urlInput.value = item.url || '';
+
+        const openA = document.createElement('a');
+        openA.className = 'ref-open';
+        openA.target = '_blank';
+        openA.rel = 'noopener';
+        syncOpenLink(openA, item.url);
+
+        urlInput.addEventListener('input', () => {
+          refLinks[idx].url = urlInput.value;
+          syncOpenLink(openA, urlInput.value);
+          updateRefBadge();
+        });
+
+        row.append(top, urlInput, openA);
+        wrap.appendChild(row);
+      });
+    }
+
+    document.getElementById('btn-open-ref').addEventListener('click', () => {
+      renderRefList();
+      refModal.hidden = false;
+    });
+    document.getElementById('btn-close-ref').addEventListener('click', () => { refModal.hidden = true; });
+    document.getElementById('ref-modal-backdrop').addEventListener('click', () => { refModal.hidden = true; });
+    document.getElementById('btn-add-ref-link').addEventListener('click', () => {
+      refLinks.push({ label: '', url: '' });
+      renderRefList();
+      updateRefBadge();
+    });
+
+    /* ===== メモ（自由記述） ===== */
+    const noteModal = document.getElementById('note-modal');
+    const noteBody = document.getElementById('note-body');
+
+    function updateNoteBadge() {
+      const has = noteBody.value.trim().length > 0;
+      document.getElementById('btn-open-note').textContent = has ? 'メモ ●' : 'メモ';
+    }
+
+    noteBody.addEventListener('input', updateNoteBadge);
+    document.getElementById('btn-open-note').addEventListener('click', () => { noteModal.hidden = false; });
+    document.getElementById('btn-close-note').addEventListener('click', () => { noteModal.hidden = true; });
+    document.getElementById('note-modal-backdrop').addEventListener('click', () => { noteModal.hidden = true; });
 
     const STORAGE_BUCKET = 'episode-images';
 
@@ -417,6 +604,8 @@
         status: document.getElementById('status').value,
         season: seasonVal === '' ? null : parseInt(seasonVal, 10),
         episode_number: epVal === '' ? null : parseInt(epVal, 10),
+        edit_links: refLinks.filter((x) => (x.url && x.url.trim()) || (x.label && x.label.trim())),
+        memo: noteBody.value || null,
       };
 
       if (!payload.slug || !payload.title) {
