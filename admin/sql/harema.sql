@@ -5,8 +5,8 @@
 -- 1) 日ごとのデータ（1日1行・主キー＝日付）
 create table if not exists public.harema_days (
   day_date date primary key,
-  weather text,                 -- 'sunny' / 'cloudy' / 'rain' / 'heavy-rain'
-  weather_label text,           -- 表示用の言い回し（任意。空なら weather から自動表記）
+  weather text,                 -- 'sunny' / 'cloudy' / 'rain' / 'heavy-rain'（マスの色・手動選択が優先）
+  weather_label text,           -- モーダル表示用（例「雨のち晴れ」。マスの色には使わない）
   harema_level integer not null default 0 check (harema_level between 0 and 5), -- ハレマ度（★0〜5）
   journal text,                 -- ハレアメ手記（自由記述）
   temp_min numeric,             -- 最低気温（API）

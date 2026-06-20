@@ -3,7 +3,7 @@
 @import url("utility.css");     /* ← 共通の補助スタイルは早めに読み込み */
 @import url("hero.css");
 @import url("news.css");
-@import url("harima-harema.css?v=13");
+@import url("harima-harema.css?v=17");
 @import url("chat.css");
 @import url("sns.css");
 @import url("interview.css");   /* ← 特定ページ専用なので最後寄りでもOK */

@@ -5,7 +5,7 @@
 .harima-harema {
   --harema-cell: 44px;
   --harema-gap: 8px;
-  --harema-stagger: 250ms;
+  --harema-stagger: 60ms;
 
   position: relative;
   overflow: hidden;
@@ -114,7 +114,7 @@
 
 /* スクロールでセクションが見えたら、左上→今日まで一定間隔で1マスずつ浮き出し */
 .harima-harema.is-revealed .harima-harema__cell.is-anim-ready {
-  animation: harema-cell-rise 0.6s ease-out forwards;
+  animation: harema-cell-rise 0.52s ease-out forwards;
   animation-delay: calc(var(--harema-anim-i, 0) * var(--harema-stagger));
 }
 
@@ -200,19 +200,6 @@
   border-radius: 50%;
   background: #c9b888;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
-}
-
-.harima-harema__cell.is-has-photo::before {
-  content: '';
-  position: absolute;
-  bottom: 2px;
-  left: 2px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
-  opacity: 0.9;
 }
 
 .harima-harema__proto-bar {

@@ -35,6 +35,16 @@
     .swatch-sunny { background: #f6b13e; } .swatch-cloudy { background: #c8ccd2; }
     .swatch-rain { background: #5e87bb; } .swatch-heavy-rain { background: #3a5680; }
     .swatch-none { background: #eee; border: 1px solid #ccc; }
+    .weather-pick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .weather-pick button {
+      flex: 1; min-width: 72px; padding: 10px 8px; border: 2px solid #ccc; border-radius: 8px;
+      cursor: pointer; font-weight: 600; font-size: 13px; background: #f5f5f5; color: #222;
+    }
+    .weather-pick button.active { border-color: #222; box-shadow: 0 0 0 1px #222; }
+    .weather-pick button[data-w="sunny"] { background: #f6d49a; }
+    .weather-pick button[data-w="cloudy"] { background: #c8ccd2; }
+    .weather-pick button[data-w="rain"] { background: #8eb3dc; color: #fff; }
+    .weather-pick button[data-w="heavy-rain"] { background: #3a5680; color: #fff; }
   </style>
 </head>
 <body>
@@ -76,20 +86,22 @@
       <form id="form">
         <input id="day_date" type="hidden">
 
-        <label>天気</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <select id="weather" style="flex:1;">
-            <option value="">（未設定）</option>
-            <option value="sunny">晴れ</option>
-            <option value="cloudy">曇り</option>
-            <option value="rain">雨</option>
-            <option value="heavy-rain">大雨</option>
-          </select>
-          <button type="button" id="btn-fetch-weather" style="white-space:nowrap;">天気を自動取得</button>
+        <label>マスに表示する天気（メイン）</label>
+        <input type="hidden" id="weather" value="">
+        <div class="weather-pick" id="weather-pick" role="radiogroup" aria-label="マスに表示する天気">
+          <button type="button" data-w="">未設定</button>
+          <button type="button" data-w="sunny">晴れ</button>
+          <button type="button" data-w="cloudy">曇り</button>
+          <button type="button" data-w="rain">雨</button>
+          <button type="button" data-w="heavy-rain">大雨</button>
         </div>
-        <p class="hint" id="fetch-hint">Open-Meteo（姫路付近）から気温・降水量・天気区分を取得します。</p>
+        <p class="hint">「雨のち晴れ」など複合的な日も、<strong>マスの色はここで選んだ天気</strong>が使われます。表示ラベルはモーダル用の自由記述です。</p>
+        <div style="margin-top:8px;">
+          <button type="button" id="btn-fetch-weather">天気を自動取得（気温・降水量・候補）</button>
+        </div>
+        <p class="hint" id="fetch-hint">Open-Meteo（姫路付近）から数値と天気候補を取得します。取得後もメイン天気は必要なら手で変更してください。</p>
 
-        <label>表示ラベル（任意・例「曇りのち雨」）<input id="weather_label" placeholder="空なら天気から自動表記"></label>
+        <label>表示ラベル（任意・例「雨のち晴れ」）<input id="weather_label" placeholder="モーダルに表示する言い回し"></label>
 
         <label>ハレマ度（体感・★0〜5）</label>
         <div class="stars" id="stars" role="radiogroup" aria-label="ハレマ度">
@@ -143,6 +155,21 @@
 
       const WEATHER_JA = { sunny: '晴れ', cloudy: '曇り', rain: '雨', 'heavy-rain': '大雨' };
 
+      function setWeatherPick(value) {
+        const v = value || '';
+        document.getElementById('weather').value = v;
+        document.querySelectorAll('#weather-pick button').forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.w === v);
+          btn.setAttribute('aria-pressed', btn.dataset.w === v ? 'true' : 'false');
+        });
+      }
+
+      document.getElementById('weather-pick').addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-w]');
+        if (!btn) return;
+        setWeatherPick(btn.dataset.w);
+      });
+
       function showMsg(text, ok) {
         msg.textContent = text;
         msg.className = ok ? 'ok' : 'err';
@@ -175,7 +202,7 @@
 
       function clearForm(keepDate) {
         if (!keepDate) document.getElementById('day_date').value = '';
-        document.getElementById('weather').value = '';
+        setWeatherPick('');
         document.getElementById('weather_label').value = '';
         document.getElementById('journal').value = '';
         document.getElementById('temp_min').value = '';
@@ -188,7 +215,7 @@
       function fillForm(row) {
         document.getElementById('day_date').value = row.day_date;
         document.getElementById('pick-date').value = row.day_date;
-        document.getElementById('weather').value = row.weather || '';
+        setWeatherPick(row.weather || '');
         document.getElementById('weather_label').value = row.weather_label || '';
         document.getElementById('journal').value = row.journal || '';
         document.getElementById('temp_min').value = row.temp_min ?? '';
@@ -294,22 +321,12 @@
         if (d.tmin != null) document.getElementById('temp_min').value = Math.round(d.tmin * 10) / 10;
         if (d.tmax != null) document.getElementById('temp_max').value = Math.round(d.tmax * 10) / 10;
         if (d.prcp != null) document.getElementById('precip_mm').value = Math.round(d.prcp * 10) / 10;
-        if (d.code != null) document.getElementById('weather').value = codeToKind(d.code, d.prcp);
+        if (d.code != null) setWeatherPick(codeToKind(d.code, d.prcp));
         showMsg('天気を反映しました（このあと保存）', true);
       });
 
       /* 写真 */
       let currentPhotos = [];
-
-      function kindFromText(text) {
-        const t = (text || '').trim();
-        if (!t) return null;
-        if (/大雨|豪雨/.test(t)) return 'heavy-rain';
-        if (/雨/.test(t)) return 'rain';
-        if (/曇/.test(t)) return 'cloudy';
-        if (/晴|快晴|日差し|日焼け|暑い|猛暑/.test(t)) return 'sunny';
-        return null;
-      }
 
       async function loadPhotos(iso) {
         const box = document.getElementById('photo-list');
@@ -432,15 +449,9 @@
           const v = document.getElementById(id).value;
           return v === '' ? null : Number(v);
         };
-        let weather = document.getElementById('weather').value || null;
+        const weather = document.getElementById('weather').value || null;
         const weatherLabel = document.getElementById('weather_label').value.trim() || null;
         const journal = document.getElementById('journal').value.trim() || null;
-        /* 表示ラベル → 手記 → API天気 の順で区分を揃える */
-        if (weatherLabel) {
-          weather = kindFromText(weatherLabel) || weather;
-        } else if (journal) {
-          weather = kindFromText(journal) || weather;
-        }
         const payload = {
           day_date: iso,
           weather: weather,

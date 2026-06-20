@@ -2,6 +2,7 @@
  * はりまノはれま — Supabase 連携版
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { kindFromText } from './harema-weather-kind.js';
 
 (function () {
   'use strict';
@@ -113,28 +114,19 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     return SEASON_DAYS.indexOf(normalizeIso(iso));
   }
 
-  /** テキストから晴/曇/雨を推定（表示ラベル・手記の両方に使う） */
-  function kindFromText(text) {
-    var t = (text || '').trim();
-    if (!t) return null;
-    if (/大雨|豪雨/.test(t)) return 'heavy-rain';
-    if (/雨/.test(t)) return 'rain';
-    if (/曇/.test(t)) return 'cloudy';
-    if (/晴|快晴|日差し|日焼け|暑い|猛暑/.test(t)) return 'sunny';
-    return null;
-  }
+  /** テキストから晴/曇/雨を推定（harema-weather-kind.js） */
 
   function inferKindFromRec(rec) {
     if (!rec) return null;
 
+    /* 管理画面で選んだ天気（メイン）を最優先 */
+    if (rec.weather) return rec.weather;
+
     var fromLabel = kindFromText(rec.weather_label);
     if (fromLabel) return fromLabel;
 
-    /* API天気より手記を優先（「晴天」と書いたのに曇り色になる問題の対策） */
     var fromJournal = kindFromText(rec.journal);
     if (fromJournal) return fromJournal;
-
-    if (rec.weather) return rec.weather;
 
     var pr = rec.precip_mm != null ? Number(rec.precip_mm) : null;
     if (pr != null && !isNaN(pr)) {
@@ -187,7 +179,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
         btn.setAttribute('aria-label', iso.replace(/-/g, '/') + ' ' + label);
         if (isToday(iso) && kind !== 'future') btn.classList.add('is-today');
         if (iso === PLANTING_ISO) btn.classList.add('is-planting');
-        if (getPhotos(iso).length) btn.classList.add('is-has-photo');
         btn.addEventListener('click', function () {
           openModal(iso, 0);
         });
