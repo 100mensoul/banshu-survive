@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ヒメログ｜平尾の取材ノート｜播州サバイブ</title>
   <meta name="description" content="路上雑誌社の記者・平尾の取材ノート。エピソードになる前の、いまの思考とそのタネ。" />
-  <link rel="stylesheet" href="himelog.css" />
+  <link rel="stylesheet" href="himelog.css?v=himelog10" />
 </head>
 <body>
 
@@ -22,6 +22,21 @@
   </header>
 
   <main class="himelog-main">
+    <div class="himelog-search" id="tag-search-wrap">
+      <label class="himelog-search-label" for="tag-search-input">タグで検索</label>
+      <div class="himelog-search-row">
+        <input
+          type="search"
+          id="tag-search-input"
+          class="himelog-search-input"
+          placeholder="例：姫路、農業、ツインコモンズ"
+          autocomplete="off"
+        >
+        <button type="button" id="tag-search-clear" class="himelog-search-clear" hidden>クリア</button>
+      </div>
+      <p class="himelog-search-hint" id="tag-search-hint" hidden></p>
+    </div>
+
     <div class="himelog-filterbar" id="tag-filterbar" hidden>
       <span class="himelog-filterbar-label">タグで絞り込み：</span>
       <span id="tag-filters"></span>
@@ -38,6 +53,6 @@
   </footer>
 
   <script src="../js/supabase-public-config.js"></script>
-  <script type="module" src="himelog.js"></script>
+  <script type="module" src="himelog.js?v=himelog10"></script>
 </body>
 </html>

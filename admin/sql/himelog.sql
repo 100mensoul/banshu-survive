@@ -9,7 +9,7 @@ create table if not exists public.himelog_entries (
   title text,                          -- 見出し（短いメモは空でも可）
   body text not null default '',       -- 本文（Markdown・断片OK）
   tags text[] not null default '{}',   -- タグ（#ツインコモンズ 等）
-  memo_type text not null default 'note', -- note=取材メモ / thought=所感 / raw=未整理 / seed=エピソード候補
+  memo_type text not null default 'note', -- note=取材メモ / thought=所感 / raw=未整理 / seed=エピソード候補 / editorial_meeting=編集会議 / site_update=サイト改修 / worldbuilding=世界観構築
   status text not null default 'draft'    -- draft=下書き / private=非公開 / published=公開
     check (status in ('draft', 'private', 'published')),
   related_episode_slug text,           -- 任意。関連するエピソードの slug

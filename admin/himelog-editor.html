@@ -57,6 +57,14 @@
     .row-inline > label { flex: 1 1 200px; margin-top: 0.75rem; }
     .hint { font-size: 0.78rem; color: #6b7a55; margin: 0.2rem 0 0; }
     .meta-line { font-size: 0.75rem; color: #888; margin-top: 0.5rem; }
+    .upload-row {
+      margin-top: 0.75rem; padding: 0.75rem; background: #f8faf5;
+      border: 1px dashed #9abf9a; border-radius: 10px; font-size: 0.82rem;
+    }
+    .upload-row input[type="file"] {
+      width: 100%; max-width: 100%; margin-top: 0.4rem; font-size: 0.9rem;
+    }
+    .upload-row button { margin-top: 0.5rem; }
   </style>
 </head>
 <body>
@@ -114,6 +122,20 @@
 
         <label>本文<textarea id="body" placeholder="いま考えていること、取材で見聞きしたこと、エピソードのタネ…"></textarea></label>
 
+        <div class="upload-row">
+          <strong>手書きメモ・写真</strong>
+          <p class="hint" style="margin:0.35rem 0 0;">
+            スマホでは「写真を選ぶ」かカメラで撮影できます。アップロード後、本文に画像が挿入されます（保存ボタンで確定）。
+            初回は <code>admin/sql/himelog-photos.sql</code> を Supabase で実行してください。
+          </p>
+          <input
+            type="file"
+            id="image-file"
+            accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
+          >
+          <button type="button" class="secondary" id="btn-upload-image">アップロードして本文に挿入</button>
+        </div>
+
         <label>タグ（カンマ区切り）<input type="text" id="tags" placeholder="ツインコモンズ, 姫路, 考え中"></label>
 
         <div class="row-inline">
@@ -123,6 +145,9 @@
               <option value="thought">所感</option>
               <option value="raw">未整理</option>
               <option value="seed">エピソード候補</option>
+              <option value="editorial_meeting">編集会議</option>
+              <option value="site_update">サイト改修</option>
+              <option value="worldbuilding">世界観構築</option>
             </select>
           </label>
           <label>公開状態
@@ -325,6 +350,43 @@
         showMsg('再読込しました', true);
       });
 
+      const STORAGE_BUCKET = 'himelog-photos';
+
+      document.getElementById('btn-upload-image').addEventListener('click', async () => {
+        const fileInput = document.getElementById('image-file');
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) {
+          showMsg('画像ファイルを選んでください', false);
+          return;
+        }
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          showMsg('画像アップロードにはログインが必要です', false);
+          return;
+        }
+        const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = 'memos/' + session.user.id + '/' + Date.now() + '-' + safe;
+        const { error: upErr } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false });
+        if (upErr) {
+          showMsg('アップロード失敗: ' + upErr.message, false);
+          return;
+        }
+        const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+        const imgUrl = pub.publicUrl;
+        const md = '\n\n![](' + imgUrl + ')\n\n';
+        const ta = document.getElementById('body');
+        const start = typeof ta.selectionStart === 'number' ? ta.selectionStart : ta.value.length;
+        const end = typeof ta.selectionEnd === 'number' ? ta.selectionEnd : ta.value.length;
+        ta.value = ta.value.slice(0, start) + md + ta.value.slice(end);
+        ta.focus();
+        const pos = start + md.length;
+        ta.setSelectionRange(pos, pos);
+        showMsg('画像を本文に挿入しました（このあと保存）', true);
+        fileInput.value = '';
+      });
+
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const tags = document.getElementById('tags').value
@@ -342,8 +404,9 @@
           obsidian_ref: document.getElementById('obsidian_ref').value.trim() || null,
         };
 
-        if (!payload.body.trim() && !payload.title) {
-          showMsg('タイトルか本文のどちらかは入力してください', false);
+        const hasImage = /!\[[^\]]*\]\([^)]+\)/.test(payload.body);
+        if (!payload.body.trim() && !payload.title && !hasImage) {
+          showMsg('タイトル、本文、または画像のどれかは入れてください', false);
           return;
         }
 

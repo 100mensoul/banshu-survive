@@ -66,6 +66,58 @@ body {
   padding: 0 1.25rem 3rem;
 }
 
+/* タグ検索 */
+.himelog-search {
+  margin-bottom: 1.25rem;
+}
+
+.himelog-search-label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--himelog-sub);
+  margin-bottom: 0.35rem;
+}
+
+.himelog-search-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.himelog-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--himelog-line);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.himelog-search-input:focus {
+  outline: 2px solid rgba(85, 122, 46, 0.35);
+  border-color: var(--himelog-green-soft);
+}
+
+.himelog-search-clear {
+  flex-shrink: 0;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--himelog-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--himelog-sub);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.himelog-search-clear:hover { background: #f0f7e4; }
+
+.himelog-search-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
+  color: var(--himelog-sub);
+}
+
 /* タグフィルタ */
 .himelog-filterbar {
   display: flex;
@@ -101,20 +153,162 @@ body {
   background: var(--himelog-card);
   border: 1px solid var(--himelog-line);
   border-radius: 14px;
-  padding: 1.4rem 1.5rem;
+  padding: 1.2rem 1.4rem;
   box-shadow: 0 2px 10px rgba(85, 122, 46, 0.06);
+}
+
+.himelog-card-header {
+  display: block;
+}
+
+.himelog-card-head-main {
+  min-width: 0;
+}
+
+.himelog-card-topline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+  width: 100%;
 }
 
 .himelog-card-type {
   display: inline-block;
+  flex: 0 1 auto;
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   color: var(--himelog-green-soft);
-  margin-bottom: 0.5rem;
+}
+
+.himelog-card-date {
+  flex: 0 0 auto;
+  margin-left: auto;
+  text-align: right;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--himelog-sub);
+}
+
+.himelog-card-footer {
+  margin-top: 0.85rem;
+  padding-top: 0.65rem;
+  border-top: 1px dashed var(--himelog-line);
+  font-size: 0.78rem;
+  color: var(--himelog-sub);
+}
+
+.himelog-card-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.2rem;
+  line-height: 1;
+}
+
+.himelog-card-fold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: auto;
+  margin: 0;
+  padding: 0.15rem 0.4rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: center;
+  opacity: 0.72;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.himelog-card-fold:hover {
+  opacity: 1;
+}
+
+.himelog-card-fold--open {
+  width: 100%;
+  padding: 0.25rem 0 0.05rem;
+}
+
+.himelog-card-fold--collapse {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--himelog-sub);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0.2rem 0.35rem;
+}
+
+.himelog-card-fold--collapse:hover {
+  color: var(--himelog-green);
+  background: transparent;
+}
+
+.himelog-card.is-expanded .himelog-card-fold--open {
+  display: none;
+}
+
+.himelog-card.is-collapsed .himelog-card-fold--collapse {
+  display: none;
+}
+
+.himelog-card-fold:hover .himelog-card-fold-line {
+  background: var(--himelog-green);
+}
+
+.himelog-card-fold-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.18rem;
+}
+
+.himelog-card-fold-line {
+  display: block;
+  height: 1px;
+  background: var(--himelog-green-soft);
+  border-radius: 1px;
+  transition: background 0.2s ease;
+}
+
+.himelog-card-fold-line--long { width: 1.55rem; }
+.himelog-card-fold-line--mid { width: 1.4rem; }
+.himelog-card-fold-line--short { width: 1.25rem; }
+
+.himelog-card.is-collapsed .himelog-card-body-wrap {
+  display: none;
+}
+
+.himelog-card-preview {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  color: var(--himelog-sub);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.himelog-card.is-expanded .himelog-card-preview {
+  display: none;
+}
+
+.himelog-card.is-collapsed .himelog-card-preview {
+  margin-bottom: 0.1rem;
+}
+
+.himelog-card:has(.himelog-card-actions) {
+  padding-bottom: 0.95rem;
+}
+
+.himelog-card-body-wrap {
+  margin-top: 0.65rem;
 }
 
 .himelog-card-title {
-  margin: 0 0 0.6rem;
+  margin: 0;
   font-size: 1.2rem;
   color: var(--himelog-ink);
   line-height: 1.5;
@@ -129,24 +323,27 @@ body {
 
 .himelog-card-body p { margin: 0 0 0.8rem; }
 .himelog-card-body p:last-child { margin-bottom: 0; }
-.himelog-card-body img { max-width: 100%; height: auto; border-radius: 6px; }
+.himelog-card-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--himelog-line);
+  margin: 0.75rem 0;
+  box-shadow: 0 2px 8px rgba(85, 122, 46, 0.08);
+}
 .himelog-card-body a { color: var(--himelog-green); }
 
 .himelog-card-meta {
-  margin-top: 1rem;
-  padding-top: 0.8rem;
-  border-top: 1px dashed var(--himelog-line);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.78rem;
-  color: var(--himelog-sub);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .himelog-card-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-
-.himelog-card-date { margin-left: auto; }
 
 .himelog-card-episode {
   display: inline-block;
