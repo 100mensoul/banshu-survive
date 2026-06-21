@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>世界地図｜播州サバイブ</title>
+  <link rel="stylesheet" href="../css/world-map.css?v=9">
+</head>
+<body class="world-map-page">
+  <div class="world-map-page">
+    <div id="world-map-app">
+      <div class="world-map-title">
+        播州サバイブ
+        <small>世界地図 · 閲覧</small>
+      </div>
+      <a class="world-map-home-link" href="../index.html">トップへ</a>
+      <div class="world-map-preset-wrap">
+        <label class="world-map-preset-label" for="world-map-preset">マップの広さ</label>
+        <select id="world-map-preset" class="world-map-preset-select">
+          <option value="konui-michi">コヌイの路（〜1km圏）</option>
+          <option value="hime-memory" selected>ヒメモリの地（姫路エリア）</option>
+          <option value="new-harima">ニューハリマ（播州全体）</option>
+        </select>
+      </div>
+      <div class="world-map-view-toggle">
+        <button type="button" data-view="plan" class="on">平面</button>
+        <button type="button" data-view="3d">立体</button>
+      </div>
+
+      <div class="world-map-hint">
+        ドラッグで地図を移動 · +/− ズーム · 立体では右ドラッグで回転
+      </div>
+
+      <div class="world-map-panel" id="world-map-panel">大地をひらいています…</div>
+      <div class="world-map-scale-legend" id="world-map-scale-legend">
+        <div class="world-map-scale-legend__title">縮尺の目安（感覚・厳密な数値ではない）</div>
+        <div class="world-map-scale-legend__preset" id="world-map-preset-hint">姫路エリア</div>
+        <div class="world-map-scale-legend__row">
+          <span class="world-map-scale-grid" aria-hidden="true"></span>
+          <span id="world-map-grid-hint">格子1マス ≈ 数百m・町の塊の感覚</span>
+        </div>
+        <div class="world-map-scale-legend__refs">
+          <div class="world-map-scale-ref">
+            <span class="world-map-ref-person" id="world-map-ref-person" aria-hidden="true"></span>
+            <span>人</span>
+          </div>
+          <div class="world-map-scale-ref">
+            <span class="world-map-ref-car" id="world-map-ref-car" aria-hidden="true"></span>
+            <span>車</span>
+          </div>
+        </div>
+        <div class="world-map-scale-legend__mapnote">地図上の小さな人・車も同じ比率です</div>
+        <div class="world-map-scale-legend__bands">
+          <span class="band" style="background:#8a9e6e">平地</span>
+          <span class="band" style="background:#9a8a5c">低い丘</span>
+          <span class="band" style="background:#a67a45">播磨の山</span>
+          <span class="band" style="background:#c9a86a">高め</span>
+        </div>
+        <div class="world-map-scale-legend__peak" id="world-map-peak-hint">地形データを読み込むと表示されます</div>
+      </div>
+
+      <div class="world-map-controls">
+        <div class="world-map-dpad">
+          <button type="button" class="up" data-dir="up" title="前へ (↑)">▲</button>
+          <button type="button" class="left" data-dir="left" title="左へ (←)">◀</button>
+          <div class="center">鷺</div>
+          <button type="button" class="right" data-dir="right" title="右へ (→)">▶</button>
+          <button type="button" class="down" data-dir="down" title="後へ (↓)">▼</button>
+        </div>
+        <div class="world-map-cam-row">
+          <button type="button" data-cam="rotate-left" title="左回転 (Q)">↶ <small>Q</small></button>
+          <button type="button" data-cam="rotate-right" title="右回転 (E)">↷ <small>E</small></button>
+          <span class="world-map-cam-sep" aria-hidden="true"></span>
+          <button type="button" data-cam="altitude-up" title="高度を上げる (W)">▲ <small>W</small></button>
+          <button type="button" data-cam="altitude-down" title="高度を下げる (S)">▼ <small>S</small></button>
+          <span class="world-map-cam-sep" aria-hidden="true"></span>
+          <button type="button" data-cam="zoom-in" title="寄る (+)">＋</button>
+          <button type="button" data-cam="zoom-out" title="引く (-)">−</button>
+        </div>
+      </div>
+
+      <div class="world-map-loading" id="world-map-loading">大地をひらいています…</div>
+    </div>
+  </div>
+
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js"
+    }
+  }
+  </script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=9';
+
+    const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
+
+    initWorldMapEditor({
+      supabase,
+      readOnly: true,
+      defaultPreset: 'hime-memory',
+    });
+  </script>
+</body>
+</html>

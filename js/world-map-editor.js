@@ -29,15 +29,16 @@ const WORLD_PRESETS = {
     worldId: 'hime-memory',
     label: 'ヒメモリの地',
     shortLabel: '姫路エリア',
-    hint: 'お城〜市川・花田・天川あたり（のち西・東も拡張）',
-    size: 1100,
+    hint: 'お城〜市川・花田・天川、西・東の広いエリア',
+    size: 3600,
     seg: 200,
     gridCell: 50,
     metersPerUnit: 16,
     gridLabel: '格子1マス ≈ 数百m・町の塊の感覚',
-    riverBrushDefault: 26,
-    brushRadius: 40,
-    orbitDefault: 480,
+    riverBrushDefault: 34,
+    brushRadius: 70,
+    orbitDefault: 1400,
+    planZoomDefault: 2.8,
   },
   'konui-michi': {
     worldId: 'konui-michi',
@@ -67,7 +68,7 @@ const ALTITUDE_MAX = 220;
 const ALTITUDE_KEY_STEP = 4;
 const POLAR_KEY_STEP = 0.022;
 const PLAN_ZOOM_MIN = 0.35;
-const PLAN_ZOOM_MAX = 2.8;
+const PLAN_ZOOM_MAX = 5.5;
 const PLAN_ZOOM_KEY_STEP = 0.045;
 
 const HEIGHT_BANDS = [
@@ -79,9 +80,13 @@ const HEIGHT_BANDS = [
 
 const AREA_PALETTE = ['#c9a574', '#8fad7a', '#7a9eb8', '#b88a9a', '#a890c4', '#d4a05c', '#8a8a9e'];
 
-export function initWorldMapEditor({ supabase, onStatus }) {
+export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defaultPreset = null }) {
   const app = document.getElementById('world-map-app');
   if (!app) return;
+
+  if (readOnly) {
+    document.body.classList.add('world-map-readonly');
+  }
 
   const panel = document.getElementById('world-map-panel');
   const spotbox = document.getElementById('world-map-spotbox');
@@ -97,7 +102,7 @@ export function initWorldMapEditor({ supabase, onStatus }) {
   const fog = new THREE.Fog(0xe9e1d2, 280, 780);
   scene.fog = fog;
 
-  const perspCamera = new THREE.PerspectiveCamera(48, W() / H(), 0.1, 4000);
+  const perspCamera = new THREE.PerspectiveCamera(48, W() / H(), 0.1, 12000);
   const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 4000);
   let activeCamera = perspCamera;
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -110,7 +115,7 @@ export function initWorldMapEditor({ supabase, onStatus }) {
   sun.position.set(120, 180, 80);
   scene.add(sun);
 
-  let currentPresetId = 'konui-michi';
+  let currentPresetId = defaultPreset || (readOnly ? 'hime-memory' : 'konui-michi');
   let SIZE;
   let SEG;
   let GRID_CELL;
@@ -396,20 +401,20 @@ export function initWorldMapEditor({ supabase, onStatus }) {
 
   async function switchWorldPreset(id) {
     if (!WORLD_PRESETS[id] || id === currentPresetId) return;
-    saveLocal();
+    if (!readOnly) saveLocal();
     destroyTerrain();
     currentPresetId = id;
     target.set(0, 0, 0);
     orbit = preset().orbitDefault;
-    planZoom = 1;
+    planZoom = preset().planZoomDefault ?? 1;
     buildTerrain();
     applyHeights();
     const sel = document.getElementById('world-map-preset');
     if (sel) sel.value = id;
     let loaded = await loadFromSupabase();
-    if (!loaded) tryLoadLocal();
+    if (!loaded && !readOnly) tryLoadLocal();
     setViewMode(viewMode);
-    initHistory();
+    if (!readOnly) initHistory();
     setStatus(preset().label + ' に切り替えました');
   }
 
@@ -947,6 +952,27 @@ export function initWorldMapEditor({ supabase, onStatus }) {
   renderer.domElement.addEventListener('mousedown', (e) => {
     const orbitDrag = e.button === 1 || e.button === 2 || (e.button === 0 && e.shiftKey);
 
+    if (readOnly) {
+      if (orbitDrag && viewMode === 'plan') {
+        dragMode = 'planpan';
+        ox = e.clientX;
+        oy = e.clientY;
+        e.preventDefault();
+        return;
+      }
+      if (orbitDrag && viewMode === '3d') {
+        dragMode = 'orbit';
+        ox = e.clientX;
+        oy = e.clientY;
+        e.preventDefault();
+        return;
+      }
+      dragMode = viewMode === 'plan' ? 'planpan' : 'orbit';
+      ox = e.clientX;
+      oy = e.clientY;
+      return;
+    }
+
     if (orbitDrag && viewMode === 'plan') {
       dragMode = 'planpan';
       ox = e.clientX;
@@ -1140,7 +1166,7 @@ export function initWorldMapEditor({ supabase, onStatus }) {
       orthoCamera.right = half * aspect;
       orthoCamera.top = half;
       orthoCamera.bottom = -half;
-      orthoCamera.position.set(target.x, ty + 520 + altitudeOffset * 0.3, target.z);
+      orthoCamera.position.set(target.x, ty + SIZE * 0.52 + altitudeOffset * 0.3, target.z);
       orthoCamera.lookAt(target.x, ty, target.z);
       orthoCamera.updateProjectionMatrix();
       activeCamera = orthoCamera;
@@ -1268,6 +1294,7 @@ export function initWorldMapEditor({ supabase, onStatus }) {
   }
 
   function saveLocal() {
+    if (readOnly) return;
     const data = {
       seg: SEG,
       h: Array.from(heights),
@@ -1451,11 +1478,15 @@ export function initWorldMapEditor({ supabase, onStatus }) {
 
   async function boot() {
     applyHeights();
+    planZoom = preset().planZoomDefault ?? 1;
     const fromRemote = await loadFromSupabase();
-    if (!fromRemote) tryLoadLocal();
+    if (!fromRemote && !readOnly) tryLoadLocal();
     setViewMode('plan');
-    initHistory();
+    if (!readOnly) initHistory();
     if (loadingEl) loadingEl.style.display = 'none';
+    if (readOnly) {
+      setStatus('世界地図を表示しています（ドラッグで移動 · +/− でズーム）');
+    }
     requestAnimationFrame(tick);
   }
 

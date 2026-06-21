@@ -661,3 +661,34 @@
   color: #fff;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
+
+.world-map-home-link {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 12;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--world-ink);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(58, 44, 26, 0.3);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.world-map-home-link:hover {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.world-map-readonly .world-map-tools,
+.world-map-readonly .world-map-actions,
+.world-map-readonly .world-map-spotbox,
+.world-map-readonly .world-map-area-panel,
+.world-map-readonly .world-map-river-brush {
+  display: none !important;
+}
+
+.world-map-readonly .world-map-title small {
+  letter-spacing: 0.2em;
+}
