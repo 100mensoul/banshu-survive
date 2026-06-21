@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>世界地図エディタ｜播州サバイブ</title>
+  <link rel="stylesheet" href="../css/world-map.css?v=8">
+</head>
+<body class="world-map-auth" id="world-map-body">
+  <div id="world-map-auth-wrap">
+    <h1>世界地図エディタ</h1>
+    <div class="toolbar">
+      <a href="news-editor.html">高札場管理</a>
+      <span>·</span>
+      <a href="himejin-editor.html">ひめじん管理</a>
+      <span>·</span>
+      <a href="cast-editor.html">相関図管理</a>
+    </div>
+    <div id="world-map-msg" hidden></div>
+    <div class="panel" id="world-map-auth-panel">
+      <strong>ログイン</strong>
+      <p style="font-size:13px;margin:8px 0 0;">Phase 1：編集はログインユーザー（平尾）のみ。閲覧導線は Phase 2 で整備します。</p>
+      <label>メール<input id="world-map-email" type="email" autocomplete="username"></label>
+      <label>パスワード<input id="world-map-password" type="password" autocomplete="current-password"></label>
+      <div style="margin-top:8px;display:flex;gap:8px;">
+        <button type="button" id="world-map-signin">ログイン</button>
+        <button type="button" id="world-map-signout">ログアウト</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="world-map-editor-wrap" hidden>
+    <div class="world-map-page">
+      <div id="world-map-app">
+        <div class="world-map-title">
+          播州サバイブ
+          <small>世界地図 · 編集中</small>
+        </div>
+        <div class="world-map-preset-wrap">
+          <label class="world-map-preset-label" for="world-map-preset">マップの広さ</label>
+          <select id="world-map-preset" class="world-map-preset-select">
+            <option value="konui-michi">コヌイの路（〜1km圏）</option>
+            <option value="hime-memory">ヒメモリの地（姫路エリア）</option>
+            <option value="new-harima">ニューハリマ（播州全体）</option>
+          </select>
+        </div>
+        <div class="world-map-view-toggle">
+          <button type="button" data-view="plan" class="on">平面</button>
+          <button type="button" data-view="3d">立体</button>
+        </div>
+
+        <div class="world-map-hint">
+          平面で距離・配置 → 立体で姿を確認<br>
+          右ドラッグ：立体=回転 / 平面=地図をずらす<br>
+          Q/E 回転 · W/S 高度(立体) / ズーム(平面) · +/− ズーム
+        </div>
+
+        <div class="world-map-tools">
+          <button type="button" data-tool="raise" class="on">⛰ 山を盛る</button>
+          <button type="button" data-tool="lower">🕳 へこます</button>
+          <button type="button" data-tool="erase">⌫ 消す</button>
+          <button type="button" data-tool="river">🌊 川を引く</button>
+          <button type="button" data-tool="spot">✦ スポット登録</button>
+          <button type="button" data-tool="area">🖌 エリア塗る</button>
+          <span class="sep"></span>
+          <button type="button" data-tool="look">👁 眺める</button>
+        </div>
+        <div class="world-map-river-brush" id="world-map-river-brush" hidden>
+          <label for="world-map-river-width">川の幅</label>
+          <input type="range" id="world-map-river-width" min="8" max="72" step="1" value="14">
+          <span id="world-map-river-width-label">ふつう</span>
+        </div>
+        <div class="world-map-area-panel" id="world-map-area-panel" hidden>
+          <label for="world-map-area-select">エリア</label>
+          <select id="world-map-area-select" class="world-map-area-select"></select>
+          <button type="button" id="world-map-area-new">＋ 新規</button>
+          <button type="button" id="world-map-area-erase" title="エリアだけ消す">消しゴム</button>
+          <label for="world-map-area-width">筆</label>
+          <input type="range" id="world-map-area-width" min="12" max="120" step="2" value="48">
+          <div class="world-map-area-newform" id="world-map-area-newform" hidden>
+            <input id="world-map-area-name" type="text" placeholder="例: レザータウン" autocomplete="off">
+            <input id="world-map-area-slug" type="text" placeholder="slug: leather-town" autocomplete="off">
+            <div class="world-map-area-colors" id="world-map-area-colors"></div>
+            <button type="button" id="world-map-area-add">追加</button>
+          </div>
+        </div>
+        <div class="world-map-panel" id="world-map-panel">平面モード：距離感を見ながら山を置いてください</div>
+        <div class="world-map-scale-legend" id="world-map-scale-legend">
+          <div class="world-map-scale-legend__title">縮尺の目安（感覚・厳密な数値ではない）</div>
+          <div class="world-map-scale-legend__preset" id="world-map-preset-hint">花田IC〜ツインコモンズ（〜1km圏）</div>
+          <div class="world-map-scale-legend__row">
+            <span class="world-map-scale-grid" aria-hidden="true"></span>
+            <span id="world-map-grid-hint">格子1マス ≈ 100m前後の感覚</span>
+          </div>
+          <div class="world-map-scale-legend__refs">
+            <div class="world-map-scale-ref">
+              <span class="world-map-ref-person" id="world-map-ref-person" aria-hidden="true"></span>
+              <span>人</span>
+            </div>
+            <div class="world-map-scale-ref">
+              <span class="world-map-ref-car" id="world-map-ref-car" aria-hidden="true"></span>
+              <span>車</span>
+            </div>
+          </div>
+          <div class="world-map-scale-legend__mapnote">地図上の小さな人・車も同じ比率です</div>
+          <div class="world-map-scale-legend__bands">
+            <span class="band" style="background:#8a9e6e">平地</span>
+            <span class="band" style="background:#9a8a5c">低い丘</span>
+            <span class="band" style="background:#a67a45">播磨の山</span>
+            <span class="band" style="background:#c9a86a">高め</span>
+          </div>
+          <div class="world-map-scale-legend__peak" id="world-map-peak-hint">いまの地形を編集すると表示されます</div>
+        </div>
+
+        <div class="world-map-controls">
+          <div class="world-map-dpad">
+            <button type="button" class="up" data-dir="up" title="前へ (↑)">▲</button>
+            <button type="button" class="left" data-dir="left" title="左へ (←)">◀</button>
+            <div class="center">鷺</div>
+            <button type="button" class="right" data-dir="right" title="右へ (→)">▶</button>
+            <button type="button" class="down" data-dir="down" title="後へ (↓)">▼</button>
+          </div>
+          <div class="world-map-cam-row">
+            <button type="button" data-cam="rotate-left" title="左回転 (Q)">↶ <small>Q</small></button>
+            <button type="button" data-cam="rotate-right" title="右回転 (E)">↷ <small>E</small></button>
+            <span class="world-map-cam-sep" aria-hidden="true"></span>
+            <button type="button" data-cam="altitude-up" title="高度を上げる (W)">▲ <small>W</small></button>
+            <button type="button" data-cam="altitude-down" title="高度を下げる (S)">▼ <small>S</small></button>
+            <span class="world-map-cam-sep" aria-hidden="true"></span>
+            <button type="button" data-cam="zoom-in" title="寄る (+)">＋</button>
+            <button type="button" data-cam="zoom-out" title="引く (-)">−</button>
+          </div>
+        </div>
+
+        <div class="world-map-actions">
+          <button type="button" id="world-map-undo" title="戻る (⌘Z)" disabled>↩ 戻る</button>
+          <button type="button" id="world-map-redo" title="進む (⌘⇧Z)" disabled>↪ 進む</button>
+          <button type="button" id="world-map-save">保存</button>
+          <button type="button" id="world-map-reset">まっさら</button>
+        </div>
+
+        <div class="world-map-spotbox" id="world-map-spotbox">
+          <label for="world-map-spot-name">表示名</label>
+          <input id="world-map-spot-name" type="text" placeholder="例: ツインコモンズ" autocomplete="off">
+          <label for="world-map-spot-slug">slug（英数字・ハイフン）</label>
+          <input id="world-map-spot-slug" type="text" placeholder="例: twin-commons" autocomplete="off">
+          <button type="button" id="world-map-spot-ok">登録</button>
+        </div>
+
+        <div class="world-map-loading" id="world-map-loading">大地をひらいています…</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js"
+    }
+  }
+  </script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=8';
+
+    const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
+    const msg = document.getElementById('world-map-msg');
+    const authWrap = document.getElementById('world-map-auth-wrap');
+    const editorWrap = document.getElementById('world-map-editor-wrap');
+    let editorStarted = false;
+
+    function showMsg(text, ok) {
+      msg.hidden = false;
+      msg.className = ok ? 'ok' : 'err';
+      msg.textContent = text;
+    }
+
+    function startEditor() {
+      if (editorStarted) return;
+      editorStarted = true;
+      document.body.className = 'world-map-page';
+      initWorldMapEditor({
+        supabase,
+        onStatus: (text) => {
+          if (msg) {
+            msg.hidden = false;
+            msg.className = 'ok';
+            msg.textContent = text;
+          }
+        },
+      });
+    }
+
+    function setUi(session) {
+      if (session) {
+        authWrap.hidden = true;
+        editorWrap.hidden = false;
+        startEditor();
+      } else {
+        authWrap.hidden = false;
+        editorWrap.hidden = true;
+        document.body.className = 'world-map-auth';
+      }
+    }
+
+    document.getElementById('world-map-signin').addEventListener('click', async () => {
+      const email = document.getElementById('world-map-email').value.trim();
+      const password = document.getElementById('world-map-password').value;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) showMsg('ログイン失敗: ' + error.message, false);
+      else showMsg('ログインしました', true);
+    });
+
+    document.getElementById('world-map-signout').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      showMsg('ログアウトしました', true);
+    });
+
+    supabase.auth.onAuthStateChange((_e, session) => setUi(session));
+    const { data: { session } } = await supabase.auth.getSession();
+    setUi(session);
+  </script>
+</body>
+</html>
