@@ -94,6 +94,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   const spotbox = document.getElementById('world-map-spotbox');
   const nameInput = document.getElementById('world-map-spot-name');
   const slugInput = document.getElementById('world-map-spot-slug');
+  const spotDeleteBtn = document.getElementById('world-map-spot-delete');
+  const spotCancelBtn = document.getElementById('world-map-spot-cancel');
   const loadingEl = document.getElementById('world-map-loading');
 
   const W = () => app.clientWidth;
@@ -416,6 +418,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   async function switchWorldPreset(id) {
     if (!WORLD_PRESETS[id] || id === currentPresetId) return;
     if (!readOnly) saveLocal();
+    deletedSpotSlugs.length = 0;
     destroyTerrain();
     currentPresetId = id;
     target.set(0, 0, 0);
@@ -466,6 +469,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   const spots = [];
+  const deletedSpotSlugs = [];
   const seedMat = new THREE.MeshBasicMaterial({ color: 0xffe9b0 });
 
   function spotScale() {
@@ -500,6 +504,21 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       _el: el,
       _y: y,
     });
+    const di = deletedSpotSlugs.indexOf(slug);
+    if (di >= 0) deletedSpotSlugs.splice(di, 1);
+    drawConstellation();
+  }
+
+  function removeSpot(sp) {
+    const idx = spots.indexOf(sp);
+    if (idx < 0) return;
+    scene.remove(sp._m);
+    scene.remove(sp._halo);
+    sp._m.geometry.dispose();
+    sp._halo.geometry.dispose();
+    sp._el.remove();
+    if (!deletedSpotSlugs.includes(sp.slug)) deletedSpotSlugs.push(sp.slug);
+    spots.splice(idx, 1);
     drawConstellation();
   }
 
@@ -850,7 +869,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     lower: '地面をドラッグしてへこませます（微調整）',
     erase: 'ドラッグした範囲を平地に戻します（山・川を消す）',
     river: 'なぞった跡が川になります',
-    spot: '地面をクリックして登録 · 登録済みはドラッグで移動',
+    spot: '空き地クリックで登録 · スポットをクリックで削除 · ドラッグで移動',
     area: 'ドラッグで町や区域を塗ってください（消しゴムで消せます）',
     look: 'ドラッグで世界を眺めます（編集オフ）',
   };
@@ -859,7 +878,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     lower: '平面モード：へこませます（微調整）',
     erase: '平面モード：なぞった範囲を平地に戻します',
     river: '平面モード：川のルートをなぞります',
-    spot: '平面モード：クリックで置く · ドラッグで移動',
+    spot: '平面：クリックで置く/削除 · ドラッグで移動',
     area: '平面モード：なぞってエリアを塗ります',
     look: '平面モード：右ドラッグで地図をずらします',
   };
@@ -1012,6 +1031,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let lastPaintPos = null;
   let draggingSpot = null;
   let spotDragMoved = false;
+  let spotClickAt = null;
 
   renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
 
@@ -1066,6 +1086,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       if (sp) {
         draggingSpot = sp;
         spotDragMoved = false;
+        spotClickAt = { x: e.clientX, y: e.clientY };
         return;
       }
       const p = pickGround(e);
@@ -1161,8 +1182,12 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     lastSculptTool = null;
     lastPaintPos = null;
     if (draggingSpot) {
+      if (!spotDragMoved && tool === 'spot' && spotClickAt) {
+        openSpotEditForm(draggingSpot, spotClickAt);
+      }
       draggingSpot = null;
       spotDragMoved = false;
+      spotClickAt = null;
     }
     if (didSculpt || didSpotDrag) pushHistory();
   });
@@ -1184,15 +1209,71 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   );
 
   let pendingP = null;
+  let editingSpot = null;
+
+  function positionSpotbox(e) {
+    if (!spotbox) return;
+    spotbox.style.left = Math.min(W() - 240, Math.max(12, e.clientX)) + 'px';
+    spotbox.style.top = Math.min(H() - 180, Math.max(12, e.clientY)) + 'px';
+  }
+
+  function closeSpotbox() {
+    if (!spotbox) return;
+    spotbox.style.display = 'none';
+    pendingP = null;
+    editingSpot = null;
+    if (nameInput) nameInput.readOnly = false;
+    if (slugInput) {
+      slugInput.readOnly = false;
+      slugInput.disabled = false;
+    }
+    if (spotDeleteBtn) spotDeleteBtn.hidden = true;
+    const spotOkBtn = document.getElementById('world-map-spot-ok');
+    if (spotOkBtn) spotOkBtn.hidden = false;
+  }
 
   function openSpotForm(p, e) {
+    editingSpot = null;
     pendingP = p;
+    if (!spotbox) return;
     spotbox.style.display = 'flex';
-    spotbox.style.left = Math.min(W() - 220, e.clientX) + 'px';
-    spotbox.style.top = e.clientY + 'px';
-    nameInput.value = '';
-    slugInput.value = '';
-    nameInput.focus();
+    positionSpotbox(e);
+    if (nameInput) {
+      nameInput.value = '';
+      nameInput.readOnly = false;
+    }
+    if (slugInput) {
+      slugInput.value = '';
+      slugInput.readOnly = false;
+      slugInput.disabled = false;
+    }
+    if (spotDeleteBtn) spotDeleteBtn.hidden = true;
+    const spotOkBtn = document.getElementById('world-map-spot-ok');
+    if (spotOkBtn) {
+      spotOkBtn.hidden = false;
+      spotOkBtn.textContent = '登録';
+    }
+    nameInput?.focus();
+  }
+
+  function openSpotEditForm(sp, e) {
+    editingSpot = sp;
+    pendingP = null;
+    if (!spotbox) return;
+    spotbox.style.display = 'flex';
+    positionSpotbox(e);
+    if (nameInput) {
+      nameInput.value = sp.name;
+      nameInput.readOnly = true;
+    }
+    if (slugInput) {
+      slugInput.value = sp.slug;
+      slugInput.readOnly = true;
+      slugInput.disabled = true;
+    }
+    if (spotDeleteBtn) spotDeleteBtn.hidden = false;
+    const spotOkBtn = document.getElementById('world-map-spot-ok');
+    if (spotOkBtn) spotOkBtn.hidden = true;
   }
 
   function slugify(text) {
@@ -1212,11 +1293,26 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       const name = nameInput.value.trim() || '無名のスポット';
       const slug = slugInput.value.trim() || slugify(name) || 'spot-' + Date.now();
       addSpot(pendingP.x, pendingP.z, name, slug);
-      spotbox.style.display = 'none';
-      pendingP = null;
+      closeSpotbox();
       pushHistory();
       if (panel) panel.textContent = 'スポットを登録しました: ' + name;
     };
+  }
+
+  if (spotDeleteBtn) {
+    spotDeleteBtn.onclick = () => {
+      if (!editingSpot) return;
+      const label = editingSpot.name || editingSpot.slug;
+      if (!confirm('スポット「' + label + '」を削除しますか？\n保存すると Supabase からも消えます。')) return;
+      removeSpot(editingSpot);
+      closeSpotbox();
+      pushHistory();
+      setStatus('スポットを削除しました: ' + label);
+    };
+  }
+
+  if (spotCancelBtn) {
+    spotCancelBtn.onclick = () => closeSpotbox();
   }
 
   if (nameInput) {
@@ -1433,6 +1529,20 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       }
     }
 
+    for (const slug of deletedSpotSlugs) {
+      const { error } = await supabase
+        .from('map_spots')
+        .delete()
+        .eq('world_id', WORLD_ID)
+        .eq('layer', LAYER_ID)
+        .eq('slug', slug);
+      if (error) {
+        setStatus('スポット削除エラー (' + slug + '): ' + error.message);
+        return;
+      }
+    }
+    deletedSpotSlugs.length = 0;
+
     setStatus('保存しました（Supabase + ローカル）');
   }
 
@@ -1457,6 +1567,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       refreshAreaUI();
       applyHeights();
       clearSpots();
+      deletedSpotSlugs.length = 0;
       pushHistory();
       setStatus('まっさらに戻しました（ローカルのみ）');
       updateScaleLegend();

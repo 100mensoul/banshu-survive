@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>世界地図エディタ｜播州サバイブ</title>
-  <link rel="stylesheet" href="../css/world-map.css?v=10">
+  <link rel="stylesheet" href="../css/world-map.css?v=14">
 </head>
 <body class="world-map-auth" id="world-map-body">
   <div id="world-map-auth-wrap">
@@ -135,8 +135,8 @@
         <div class="world-map-actions">
           <button type="button" id="world-map-undo" title="戻る (⌘Z)" disabled>↩ 戻る</button>
           <button type="button" id="world-map-redo" title="進む (⌘⇧Z)" disabled>↪ 進む</button>
-          <button type="button" id="world-map-save">保存</button>
-          <button type="button" id="world-map-reset">まっさら</button>
+          <button type="button" id="world-map-save" class="world-map-actions__primary">保存</button>
+          <button type="button" id="world-map-reset" class="world-map-actions__danger">まっさら</button>
         </div>
 
         <div class="world-map-spotbox" id="world-map-spotbox">
@@ -144,7 +144,11 @@
           <input id="world-map-spot-name" type="text" placeholder="例: ツインコモンズ" autocomplete="off">
           <label for="world-map-spot-slug">slug（英数字・ハイフン）</label>
           <input id="world-map-spot-slug" type="text" placeholder="例: twin-commons" autocomplete="off">
-          <button type="button" id="world-map-spot-ok">登録</button>
+          <div class="world-map-spotbox__actions">
+            <button type="button" id="world-map-spot-ok">登録</button>
+            <button type="button" id="world-map-spot-delete" hidden>削除</button>
+            <button type="button" id="world-map-spot-cancel" class="world-map-spotbox__cancel">閉じる</button>
+          </div>
         </div>
 
         <div class="world-map-loading" id="world-map-loading">大地をひらいています…</div>
@@ -162,7 +166,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=13';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=14';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
     const msg = document.getElementById('world-map-msg');
