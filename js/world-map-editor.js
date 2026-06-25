@@ -807,6 +807,13 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   function refreshPanelText() {
     if (!panel) return;
+    if (readOnly) {
+      panel.textContent =
+        viewMode === 'plan'
+          ? '地図を眺めています · ドラッグで移動 · +/− でズーム'
+          : '立体で地形を眺めています · 右ドラッグで回転';
+      return;
+    }
     const base = viewMode === 'plan' ? panelTextPlan : panelText;
     panel.textContent = base[tool] || base.raise;
   }
@@ -1512,9 +1519,6 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       if (!fromRemote && !readOnly) tryLoadLocal();
       setViewMode('plan');
       if (!readOnly) initHistory();
-      if (readOnly) {
-        setStatus('世界地図を表示しています（ドラッグで移動 · +/− でズーム）');
-      }
     } catch (err) {
       console.error('world-map boot error', err);
       setStatus('読み込みエラー: ' + (err.message || err));
