@@ -696,7 +696,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     }
   }
 
-  function sculpt(p, dir) {
+  function sculptAt(p, dir) {
     const radius = dir === 'river' ? riverBrushRadius : brushRadius;
     for (let i = 0; i < N; i++) {
       const dx = pos.getX(i) - p.x;
@@ -724,6 +724,29 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         }
       }
     }
+  }
+
+  function sculpt(p, dir) {
+    sculptAt(p, dir);
+    applyHeights();
+    updateScaleLegend();
+  }
+
+  function sculptStroke(from, to, dir) {
+    const radius = dir === 'river' ? riverBrushRadius : brushRadius;
+    const step = Math.max(2, radius * 0.4);
+    const dx = to.x - from.x;
+    const dz = to.z - from.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist < 0.01) {
+      sculptAt(to, dir);
+    } else {
+      const n = Math.ceil(dist / step);
+      for (let i = 0; i <= n; i++) {
+        const t = i / n;
+        sculptAt({ x: from.x + dx * t, z: from.z + dz * t }, dir);
+      }
+    }
     applyHeights();
     updateScaleLegend();
   }
@@ -732,7 +755,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let areaEraseMode = false;
   let areaNewColor = AREA_PALETTE[0];
 
-  function paintArea(p, erase) {
+  function paintAreaAt(p, erase) {
     const radius = areaBrushRadius;
     const id = erase ? 0 : currentAreaId;
     if (!erase && !id) return;
@@ -743,6 +766,27 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       if (d < radius) {
         const f = brushFalloff(d, radius);
         if (f > 0.1) areaGrid[i] = id;
+      }
+    }
+  }
+
+  function paintArea(p, erase) {
+    paintAreaAt(p, erase);
+    recolor();
+  }
+
+  function paintAreaStroke(from, to, erase) {
+    const step = Math.max(2, areaBrushRadius * 0.4);
+    const dx = to.x - from.x;
+    const dz = to.z - from.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist < 0.01) {
+      paintAreaAt(to, erase);
+    } else {
+      const n = Math.ceil(dist / step);
+      for (let i = 0; i <= n; i++) {
+        const t = i / n;
+        paintAreaAt({ x: from.x + dx * t, z: from.z + dz * t }, erase);
       }
     }
     recolor();
@@ -965,6 +1009,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let dragMode = null;
   let sculptCenter = null;
   let lastSculptTool = null;
+  let lastPaintPos = null;
   let draggingSpot = null;
   let spotDragMoved = false;
 
@@ -1035,7 +1080,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       const p = pickGround(e);
       if (p) {
         painting = true;
-        sculptCenter = { x: p.x, z: p.z };
+        lastPaintPos = { x: p.x, z: p.z };
+        sculptCenter = lastPaintPos;
         lastSculptTool = 'area';
         paintArea(p, areaEraseMode);
       }
@@ -1044,7 +1090,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     const p = pickGround(e);
     if (p) {
       painting = true;
-      sculptCenter = { x: p.x, z: p.z };
+      lastPaintPos = { x: p.x, z: p.z };
+      sculptCenter = lastPaintPos;
       lastSculptTool = tool;
       sculpt(p, tool);
     } else {
@@ -1066,12 +1113,22 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (painting) {
       const p = pickGround(e);
       if (p) {
-        sculptCenter = { x: p.x, z: p.z };
         if (tool === 'area') {
-          paintArea(p, areaEraseMode);
+          if (lastPaintPos) {
+            paintAreaStroke(lastPaintPos, p, areaEraseMode);
+          } else {
+            paintArea(p, areaEraseMode);
+          }
         } else {
-          sculpt(p, tool === 'river' ? 'river' : tool);
+          const dir = tool === 'river' ? 'river' : tool;
+          if (lastPaintPos) {
+            sculptStroke(lastPaintPos, p, dir);
+          } else {
+            sculpt(p, dir);
+          }
         }
+        lastPaintPos = { x: p.x, z: p.z };
+        sculptCenter = lastPaintPos;
       }
       return;
     }
@@ -1102,6 +1159,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     dragMode = null;
     sculptCenter = null;
     lastSculptTool = null;
+    lastPaintPos = null;
     if (draggingSpot) {
       draggingSpot = null;
       spotDragMoved = false;
