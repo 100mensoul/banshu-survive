@@ -24,6 +24,7 @@ const WORLD_PRESETS = {
     riverBrushDefault: 42,
     brushRadius: 48,
     orbitDefault: 580,
+    planZoomMin: 0.5,
   },
   'hime-memory': {
     worldId: 'hime-memory',
@@ -39,6 +40,7 @@ const WORLD_PRESETS = {
     brushRadius: 70,
     orbitDefault: 1400,
     planZoomDefault: 2.8,
+    planZoomMin: 1.0,
   },
   'konui-michi': {
     worldId: 'konui-michi',
@@ -99,8 +101,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xe9e1d2);
-  const fog = new THREE.Fog(0xe9e1d2, 280, 780);
-  scene.fog = fog;
+  scene.fog = null;
 
   const perspCamera = new THREE.PerspectiveCamera(48, W() / H(), 0.1, 12000);
   const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 20000);
@@ -151,6 +152,20 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   function orbitMax() {
     return SIZE * 0.82;
+  }
+
+  function planZoomMin() {
+    const p = preset();
+    if (p.planZoomMin != null) return p.planZoomMin;
+    return Math.max(0.35, SIZE / 4800);
+  }
+
+  function syncCameraFar() {
+    const far = SIZE * 2.8;
+    perspCamera.far = far;
+    perspCamera.updateProjectionMatrix();
+    orthoCamera.far = far;
+    orthoCamera.updateProjectionMatrix();
   }
 
   function destroyTerrain() {
@@ -209,8 +224,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     brushRadius = p.brushRadius;
     riverBrushRadius = p.riverBrushDefault;
     margin = SIZE * 0.07;
-    fog.near = SIZE * 0.35;
-    fog.far = SIZE * 1.15;
+    syncCameraFar();
 
     geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
     geo.rotateX(-Math.PI / 2);
@@ -406,8 +420,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     currentPresetId = id;
     target.set(0, 0, 0);
     orbit = preset().orbitDefault;
-    planZoom = preset().planZoomDefault ?? 1;
     buildTerrain();
+    planZoom = preset().planZoomDefault ?? 1;
+    planZoom = Math.max(planZoomMin(), planZoom);
     applyHeights();
     const sel = document.getElementById('world-map-preset');
     if (sel) sel.value = id;
@@ -823,13 +838,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     document.querySelectorAll('.world-map-view-toggle button').forEach((b) => {
       b.classList.toggle('on', b.dataset.view === mode);
     });
-    if (mode === 'plan') {
-      scene.fog = null;
-    } else {
-      scene.fog = fog;
-      fog.near = SIZE * 0.08;
-      fog.far = SIZE * 0.55;
-    }
+    scene.fog = null;
     wireMesh.material.opacity = mode === 'plan' ? 0.35 : 0.05;
     gridHelper.material.opacity = mode === 'plan' ? 0.45 : 0.15;
     land.material.flatShading = mode === 'plan';
@@ -1106,7 +1115,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       e.preventDefault();
       if (viewMode === 'plan') {
         planZoom = Math.max(
-          PLAN_ZOOM_MIN,
+          planZoomMin(),
           Math.min(PLAN_ZOOM_MAX, planZoom - e.deltaY * 0.002),
         );
       } else {
@@ -1515,6 +1524,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     try {
       applyHeights();
       planZoom = preset().planZoomDefault ?? 1;
+      planZoom = Math.max(planZoomMin(), planZoom);
       const fromRemote = await loadFromSupabase();
       if (!fromRemote && !readOnly) tryLoadLocal();
       setViewMode('plan');
@@ -1546,7 +1556,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         planZoom = Math.min(PLAN_ZOOM_MAX, planZoom + PLAN_ZOOM_KEY_STEP);
       }
       if (held.zoomOut || held.altitudeDown) {
-        planZoom = Math.max(PLAN_ZOOM_MIN, planZoom - PLAN_ZOOM_KEY_STEP);
+        planZoom = Math.max(planZoomMin(), planZoom - PLAN_ZOOM_KEY_STEP);
       }
     } else {
       if (held.up) {
