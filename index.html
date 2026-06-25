@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css?v=navmichi81">
+  <link rel="stylesheet" href="css/main.css?v=navmichi83">
 </head>
 <body>
 
@@ -353,48 +353,48 @@
     </div>
 
     <div class="home-external-feeds__row home-external-feeds__row--x-dual" aria-label="X（2アカウント）">
-      <div class="home-external-feeds__cell home-external-feeds__cell--x">
-        <h3 class="home-external-feeds__subhead">X <span class="home-external-feeds__subhead-meta">ヒメソク @himesoku_hirao</span></h3>
-        <div class="home-external-feeds__frame home-external-feeds__frame--x">
-          <iframe
-            class="home-external-feeds__iframe home-external-feeds__iframe--x"
-            title="X @himesoku_hirao"
-            loading="lazy"
-            data-x-screen="himesoku_hirao"
-            width="320"
-            height="380"
-          ></iframe>
-        </div>
-        <div class="home-external-feeds__insta-open-wrap">
-          <a
-            href="https://x.com/himesoku_hirao"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="home-external-feeds__open-btn home-external-feeds__open-btn--x"
-          >Xを開く</a>
-        </div>
-      </div>
-      <div class="home-external-feeds__cell home-external-feeds__cell--x">
-        <h3 class="home-external-feeds__subhead">X <span class="home-external-feeds__subhead-meta">平尾は見た @hirao_hamita</span></h3>
-        <div class="home-external-feeds__frame home-external-feeds__frame--x">
-          <iframe
-            class="home-external-feeds__iframe home-external-feeds__iframe--x"
-            title="X @hirao_hamita"
-            loading="lazy"
-            data-x-screen="hirao_hamita"
-            width="320"
-            height="380"
-          ></iframe>
-        </div>
-        <div class="home-external-feeds__insta-open-wrap">
-          <a
-            href="https://x.com/hirao_hamita"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="home-external-feeds__open-btn home-external-feeds__open-btn--x"
-          >Xを開く</a>
-        </div>
-      </div>
+      <a
+        class="x-card"
+        href="https://x.com/himesoku_hirao"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="X ヒメソク @himesoku_hirao を開く"
+      >
+        <span class="x-card__head">
+          <span class="x-card__logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" focusable="false">
+              <path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/>
+            </svg>
+          </span>
+          <span class="x-card__id">
+            <span class="x-card__name">ヒメソク</span>
+            <span class="x-card__handle">@himesoku_hirao</span>
+          </span>
+        </span>
+        <span class="x-card__bio">Rの動向を追う、播記者の速報アカウント。</span>
+        <span class="x-card__btn">Xを見る</span>
+      </a>
+      <a
+        class="x-card"
+        href="https://x.com/hirao_hamita"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="X 平尾は見た @hirao_hamita を開く"
+      >
+        <span class="x-card__head">
+          <span class="x-card__logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" focusable="false">
+              <path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/>
+            </svg>
+          </span>
+          <span class="x-card__id">
+            <span class="x-card__name">平尾は見た</span>
+            <span class="x-card__handle">@hirao_hamita</span>
+          </span>
+        </span>
+        <span class="x-card__bio">播記者・平尾の、私的なつぶやき。</span>
+        <span class="x-card__btn">Xを見る</span>
+      </a>
     </div>
 
     <div class="home-external-feeds__cell home-external-feeds__cell--youtube-below">
@@ -478,6 +478,5 @@
   <script type="module" src="js/home-news-public.js?v=8"></script>
   <script type="module" src="js/harima-harema.js?v=19"></script>
   <script defer src="js/truth-story-reveal.js?v=5"></script>
-  <script defer src="js/home-x-timeline.js?v=1"></script>
 </body>
 </html>
