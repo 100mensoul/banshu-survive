@@ -139,6 +139,56 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let gridHelper;
   let scaleMarkerGroup;
   let margin;
+  let riverPreview = null;
+
+  function ensureRiverPreview() {
+    if (riverPreview) return;
+    riverPreview = new THREE.Mesh(
+      new THREE.RingGeometry(0.88, 1, 56),
+      new THREE.MeshBasicMaterial({
+        color: 0x4a8ab8,
+        transparent: true,
+        opacity: 0.42,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      }),
+    );
+    riverPreview.rotation.x = -Math.PI / 2;
+    riverPreview.visible = false;
+    scene.add(riverPreview);
+  }
+
+  function updateRiverPreviewScale() {
+    if (!riverPreview) return;
+    const r = riverBrushRadius;
+    riverPreview.scale.set(r, r, 1);
+  }
+
+  function updateRiverPreview(p) {
+    if (!riverPreview || readOnly || tool !== 'river' || painting || draggingSpot) {
+      if (riverPreview) riverPreview.visible = false;
+      return;
+    }
+    if (!p) {
+      riverPreview.visible = false;
+      return;
+    }
+    riverPreview.visible = true;
+    const y = groundY(p.x, p.z) + 0.9;
+    riverPreview.position.set(p.x, y, p.z);
+    updateRiverPreviewScale();
+  }
+
+  function hideRiverPreview() {
+    if (riverPreview) riverPreview.visible = false;
+  }
+
+  function panDragScale() {
+    if (viewMode === 'plan') {
+      return (SIZE / planZoom) / Math.min(W(), H());
+    }
+    return (orbit * 0.55) / Math.min(W(), H());
+  }
 
   function preset() {
     return WORLD_PRESETS[currentPresetId];
@@ -269,6 +319,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     scene.add(gridHelper);
 
     buildScaleMarkers();
+    ensureRiverPreview();
     syncRiverBrushUI();
     updateScaleLegend();
   }
@@ -401,18 +452,49 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     return Math.round(m) + 'm';
   }
 
+  function riverWidthMeters(radius = riverBrushRadius) {
+    return 2 * radius * preset().metersPerUnit;
+  }
+
   function riverWidthLabel(r) {
-    if (r < 14) return '細い川';
-    if (r < 24) return 'ふつう';
-    if (r < 36) return 'やや広い';
-    return '広い川・用水';
+    const m = riverWidthMeters(r);
+    const cells = (2 * r) / GRID_CELL;
+    let feel;
+    if (m < 12) feel = '細い水路';
+    else if (m < 30) feel = '細い川';
+    else if (m < 80) feel = 'ふつうの川';
+    else if (m < 200) feel = 'やや広い川';
+    else feel = '広い川・用水';
+    const cellTxt =
+      cells < 0.12 ? '格子より細い' : '格子の約' + (Math.round(cells * 10) / 10) + 'マス分';
+    return feel + ' · 幅 約' + formatMeters(m) + '（' + cellTxt + '）';
   }
 
   function syncRiverBrushUI() {
     const slider = document.getElementById('world-map-river-width');
     const label = document.getElementById('world-map-river-width-label');
+    const metersEl = document.getElementById('world-map-river-width-meters');
+    const legendRiver = document.getElementById('world-map-river-scale-hint');
+    const riverPanel = document.getElementById('world-map-river-brush');
+    const riverActive = riverPanel && !riverPanel.hidden;
+    const text = riverWidthLabel(riverBrushRadius);
     if (slider) slider.value = String(Math.round(riverBrushRadius));
-    if (label) label.textContent = riverWidthLabel(riverBrushRadius);
+    if (label) label.textContent = text;
+    if (metersEl) metersEl.textContent = '地図上の青い輪＝この幅';
+    if (legendRiver) {
+      if (riverActive && !readOnly) {
+        legendRiver.hidden = false;
+        legendRiver.textContent =
+          '川ブラシ：幅 約' +
+          formatMeters(riverWidthMeters()) +
+          ' · 車なら約' +
+          Math.max(1, Math.round(riverWidthMeters() / CAR_LEN_M)) +
+          '台分';
+      } else {
+        legendRiver.hidden = true;
+      }
+    }
+    updateRiverPreviewScale();
   }
 
   async function switchWorldPreset(id) {
@@ -871,7 +953,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     river: 'なぞった跡が川になります',
     spot: '空き地クリックで登録 · スポットをクリックで削除 · ドラッグで移動',
     area: 'ドラッグで町や区域を塗ってください（消しゴムで消せます）',
-    look: 'ドラッグで世界を眺めます（編集オフ）',
+    look: 'ドラッグで地図を移動（立体は右ドラッグで回転）',
   };
   const panelTextPlan = {
     raise: '平面モード：距離感を見ながら山を置いてください',
@@ -880,7 +962,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     river: '平面モード：川のルートをなぞります',
     spot: '平面：クリックで置く/削除 · ドラッグで移動',
     area: '平面モード：なぞってエリアを塗ります',
-    look: '平面モード：右ドラッグで地図をずらします',
+    look: '平面：ドラッグで移動 · 立体：右ドラッグで回転',
   };
 
   function refreshPanelText() {
@@ -925,6 +1007,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       if (riverPanel) riverPanel.hidden = tool !== 'river';
       const areaPanel = document.getElementById('world-map-area-panel');
       if (areaPanel) areaPanel.hidden = tool !== 'area';
+      syncRiverBrushUI();
+      if (tool !== 'river') hideRiverPreview();
     };
   });
 
@@ -1039,13 +1123,6 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     const orbitDrag = e.button === 1 || e.button === 2 || (e.button === 0 && e.shiftKey);
 
     if (readOnly) {
-      if (orbitDrag && viewMode === 'plan') {
-        dragMode = 'planpan';
-        ox = e.clientX;
-        oy = e.clientY;
-        e.preventDefault();
-        return;
-      }
       if (orbitDrag && viewMode === '3d') {
         dragMode = 'orbit';
         ox = e.clientX;
@@ -1053,17 +1130,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         e.preventDefault();
         return;
       }
-      dragMode = viewMode === 'plan' ? 'planpan' : 'orbit';
-      ox = e.clientX;
-      oy = e.clientY;
-      return;
-    }
-
-    if (orbitDrag && viewMode === 'plan') {
       dragMode = 'planpan';
       ox = e.clientX;
       oy = e.clientY;
-      e.preventDefault();
       return;
     }
 
@@ -1075,8 +1144,16 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       return;
     }
 
+    if (orbitDrag && viewMode === 'plan') {
+      dragMode = 'planpan';
+      ox = e.clientX;
+      oy = e.clientY;
+      e.preventDefault();
+      return;
+    }
+
     if (tool === 'look') {
-      dragMode = viewMode === 'plan' ? 'planpan' : 'orbit';
+      dragMode = 'planpan';
       ox = e.clientX;
       oy = e.clientY;
       return;
@@ -1116,7 +1193,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       lastSculptTool = tool;
       sculpt(p, tool);
     } else {
-      dragMode = 'orbit';
+      dragMode = 'planpan';
       ox = e.clientX;
       oy = e.clientY;
     }
@@ -1154,7 +1231,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       return;
     }
     if (dragMode === 'planpan') {
-      const scale = (SIZE / planZoom) / Math.min(W(), H());
+      const scale = panDragScale();
       target.x -= (e.clientX - ox) * scale * 0.55;
       target.z -= (e.clientY - oy) * scale * 0.55;
       ox = e.clientX;
@@ -1166,6 +1243,10 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       polar = Math.max(POLAR_MIN, Math.min(POLAR_MAX, polar - (e.clientY - oy) * 0.004));
       ox = e.clientX;
       oy = e.clientY;
+      return;
+    }
+    if (tool === 'river' && !painting && !draggingSpot) {
+      updateRiverPreview(pickGround(e));
     }
   });
 
@@ -1181,6 +1262,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     sculptCenter = null;
     lastSculptTool = null;
     lastPaintPos = null;
+    hideRiverPreview();
     if (draggingSpot) {
       if (!spotDragMoved && tool === 'spot' && spotClickAt) {
         openSpotEditForm(draggingSpot, spotClickAt);

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>世界地図エディタ｜播州サバイブ</title>
-  <link rel="stylesheet" href="../css/world-map.css?v=14">
+  <link rel="stylesheet" href="../css/world-map.css?v=15">
 </head>
 <body class="world-map-auth" id="world-map-body">
   <div id="world-map-auth-wrap">
@@ -51,7 +51,7 @@
 
         <div class="world-map-hint">
           平面で距離・配置 → 立体で姿を確認<br>
-          右ドラッグ：立体=回転 / 平面=地図をずらす<br>
+          ドラッグ：地図を移動 · 立体の回転は右ドラッグ<br>
           Q/E 回転 · W/S 高度(立体) / ズーム(平面) · +/− ズーム
         </div>
 
@@ -69,6 +69,7 @@
           <label for="world-map-river-width">川の幅</label>
           <input type="range" id="world-map-river-width" min="8" max="72" step="1" value="14">
           <span id="world-map-river-width-label">ふつう</span>
+          <span class="world-map-river-width-meters" id="world-map-river-width-meters"></span>
         </div>
         <div class="world-map-area-panel" id="world-map-area-panel" hidden>
           <label for="world-map-area-select">エリア</label>
@@ -110,6 +111,7 @@
             <span class="band" style="background:#c9a86a">高め</span>
           </div>
           <div class="world-map-scale-legend__peak" id="world-map-peak-hint">いまの地形を編集すると表示されます</div>
+          <div class="world-map-scale-legend__river" id="world-map-river-scale-hint" hidden></div>
         </div>
 
         <div class="world-map-controls">
@@ -166,7 +168,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=14';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=15';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
     const msg = document.getElementById('world-map-msg');

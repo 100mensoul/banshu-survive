@@ -495,6 +495,26 @@
   font-size: 11px;
 }
 
+.world-map-river-width-meters {
+  font-size: 11px;
+  font-weight: 600;
+  color: #3a5f78;
+  white-space: nowrap;
+}
+
+.world-map-scale-legend__river {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(58, 44, 26, 0.15);
+  font-size: 10px;
+  line-height: 1.45;
+  color: #3a5f78;
+}
+
+.world-map-scale-legend__river[hidden] {
+  display: none;
+}
+
 .world-map-area-panel {
   position: absolute;
   top: 108px;
