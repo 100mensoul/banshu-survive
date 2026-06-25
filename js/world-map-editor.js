@@ -103,7 +103,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   scene.fog = fog;
 
   const perspCamera = new THREE.PerspectiveCamera(48, W() / H(), 0.1, 12000);
-  const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 4000);
+  const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 20000);
   let activeCamera = perspCamera;
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(W(), H());
@@ -816,8 +816,13 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     document.querySelectorAll('.world-map-view-toggle button').forEach((b) => {
       b.classList.toggle('on', b.dataset.view === mode);
     });
-    fog.near = mode === 'plan' ? 600 : 280;
-    fog.far = mode === 'plan' ? 1400 : 780;
+    if (mode === 'plan') {
+      scene.fog = null;
+    } else {
+      scene.fog = fog;
+      fog.near = SIZE * 0.08;
+      fog.far = SIZE * 0.55;
+    }
     wireMesh.material.opacity = mode === 'plan' ? 0.35 : 0.05;
     gridHelper.material.opacity = mode === 'plan' ? 0.45 : 0.15;
     land.material.flatShading = mode === 'plan';
@@ -1126,23 +1131,30 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       .replace(/^-|-$/g, '');
   }
 
-  document.getElementById('world-map-spot-ok').onclick = () => {
-    if (!pendingP) return;
-    const name = nameInput.value.trim() || '無名のスポット';
-    const slug = slugInput.value.trim() || slugify(name) || 'spot-' + Date.now();
-    addSpot(pendingP.x, pendingP.z, name, slug);
-    spotbox.style.display = 'none';
-    pendingP = null;
-    pushHistory();
-    if (panel) panel.textContent = 'スポットを登録しました: ' + name;
-  };
+  const spotOkBtn = document.getElementById('world-map-spot-ok');
+  if (spotOkBtn) {
+    spotOkBtn.onclick = () => {
+      if (!pendingP) return;
+      const name = nameInput.value.trim() || '無名のスポット';
+      const slug = slugInput.value.trim() || slugify(name) || 'spot-' + Date.now();
+      addSpot(pendingP.x, pendingP.z, name, slug);
+      spotbox.style.display = 'none';
+      pendingP = null;
+      pushHistory();
+      if (panel) panel.textContent = 'スポットを登録しました: ' + name;
+    };
+  }
 
-  nameInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') document.getElementById('world-map-spot-ok').click();
-  });
-  slugInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') document.getElementById('world-map-spot-ok').click();
-  });
+  if (nameInput) {
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') spotOkBtn?.click();
+    });
+  }
+  if (slugInput) {
+    slugInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') spotOkBtn?.click();
+    });
+  }
 
   const target = new THREE.Vector3(0, 0, 0);
   let orbit = preset().orbitDefault;
@@ -1350,27 +1362,32 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     setStatus('保存しました（Supabase + ローカル）');
   }
 
-  document.getElementById('world-map-save').onclick = () => {
-    saveAll();
-  };
+  const saveBtn = document.getElementById('world-map-save');
+  if (saveBtn) saveBtn.onclick = () => saveAll();
 
-  document.getElementById('world-map-undo').onclick = () => undo();
-  document.getElementById('world-map-redo').onclick = () => redo();
+  const undoBtn = document.getElementById('world-map-undo');
+  if (undoBtn) undoBtn.onclick = () => undo();
 
-  document.getElementById('world-map-reset').onclick = () => {
-    if (!confirm('地形・スポット・エリアをまっさらに戻します。\n（Supabase 上のデータは削除しません）')) return;
-    heights.fill(0);
-    water.fill(0);
-    areaGrid.fill(0);
-    areas.length = 0;
-    currentAreaId = 0;
-    refreshAreaUI();
-    applyHeights();
-    clearSpots();
-    pushHistory();
-    setStatus('まっさらに戻しました（ローカルのみ）');
-    updateScaleLegend();
-  };
+  const redoBtn = document.getElementById('world-map-redo');
+  if (redoBtn) redoBtn.onclick = () => redo();
+
+  const resetBtn = document.getElementById('world-map-reset');
+  if (resetBtn) {
+    resetBtn.onclick = () => {
+      if (!confirm('地形・スポット・エリアをまっさらに戻します。\n（Supabase 上のデータは削除しません）')) return;
+      heights.fill(0);
+      water.fill(0);
+      areaGrid.fill(0);
+      areas.length = 0;
+      currentAreaId = 0;
+      refreshAreaUI();
+      applyHeights();
+      clearSpots();
+      pushHistory();
+      setStatus('まっさらに戻しました（ローカルのみ）');
+      updateScaleLegend();
+    };
+  }
 
   function loadAreasFromData(defs, grid) {
     areas = (defs || []).map((x) => ({
@@ -1438,12 +1455,23 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
     let loaded = false;
 
-    const { data: layer, error: layerErr } = await supabase
+    let layer = null;
+    let layerErr = null;
+    ({ data: layer, error: layerErr } = await supabase
       .from('map_world_layers')
       .select('seg, heights, water, area_defs, area_grid')
       .eq('world_id', WORLD_ID)
       .eq('layer_id', LAYER_ID)
-      .maybeSingle();
+      .maybeSingle());
+
+    if (layerErr && /area_/.test(layerErr.message || '')) {
+      ({ data: layer, error: layerErr } = await supabase
+        .from('map_world_layers')
+        .select('seg, heights, water')
+        .eq('world_id', WORLD_ID)
+        .eq('layer_id', LAYER_ID)
+        .maybeSingle());
+    }
 
     if (layerErr) {
       if (layerErr.code !== 'PGRST116' && !layerErr.message.includes('does not exist')) {
@@ -1477,17 +1505,23 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   async function boot() {
-    applyHeights();
-    planZoom = preset().planZoomDefault ?? 1;
-    const fromRemote = await loadFromSupabase();
-    if (!fromRemote && !readOnly) tryLoadLocal();
-    setViewMode('plan');
-    if (!readOnly) initHistory();
-    if (loadingEl) loadingEl.style.display = 'none';
-    if (readOnly) {
-      setStatus('世界地図を表示しています（ドラッグで移動 · +/− でズーム）');
+    try {
+      applyHeights();
+      planZoom = preset().planZoomDefault ?? 1;
+      const fromRemote = await loadFromSupabase();
+      if (!fromRemote && !readOnly) tryLoadLocal();
+      setViewMode('plan');
+      if (!readOnly) initHistory();
+      if (readOnly) {
+        setStatus('世界地図を表示しています（ドラッグで移動 · +/− でズーム）');
+      }
+    } catch (err) {
+      console.error('world-map boot error', err);
+      setStatus('読み込みエラー: ' + (err.message || err));
+    } finally {
+      if (loadingEl) loadingEl.style.display = 'none';
+      requestAnimationFrame(tick);
     }
-    requestAnimationFrame(tick);
   }
 
   const marginClamp = (v) => Math.max(-SIZE / 2 + margin, Math.min(SIZE / 2 - margin, v));
