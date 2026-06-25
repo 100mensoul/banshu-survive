@@ -21,7 +21,8 @@ const WORLD_PRESETS = {
     gridCell: 100,
     metersPerUnit: 240,
     gridLabel: '格子1マス ≈ 数kmほどの感覚',
-    riverBrushDefault: 42,
+    riverWidthDefaultMeters: 50,
+    riverWidthMaxMeters: 2000,
     brushRadius: 48,
     orbitDefault: 580,
     planZoomMin: 0.5,
@@ -36,7 +37,8 @@ const WORLD_PRESETS = {
     gridCell: 50,
     metersPerUnit: 16,
     gridLabel: '格子1マス ≈ 数百m・町の塊の感覚',
-    riverBrushDefault: 34,
+    riverWidthDefaultMeters: 10,
+    riverWidthMaxMeters: 400,
     brushRadius: 70,
     orbitDefault: 1400,
     planZoomDefault: 2.8,
@@ -52,7 +54,8 @@ const WORLD_PRESETS = {
     gridCell: 25,
     metersPerUnit: 4,
     gridLabel: '格子1マス ≈ 100m前後の感覚',
-    riverBrushDefault: 14,
+    riverWidthDefaultMeters: 4,
+    riverWidthMaxMeters: 80,
     brushRadius: 28,
     orbitDefault: 280,
   },
@@ -126,6 +129,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let N;
   let brushRadius;
   let riverBrushRadius;
+  let riverWidthMeters;
   let geo;
   let pos;
   let heights;
@@ -183,11 +187,29 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (riverPreview) riverPreview.visible = false;
   }
 
+  function riverRadiusFromMeters(m) {
+    return Math.max(0.03, m / 2 / preset().metersPerUnit);
+  }
+
+  function syncRiverRadiusFromMeters() {
+    riverBrushRadius = riverRadiusFromMeters(riverWidthMeters);
+  }
+
+  function applyPanPixels(dx, dy) {
+    const scale = panDragScale() * 0.55;
+    const mx = -dx * scale;
+    const mz = -dy * scale;
+    const c = Math.cos(azimuth);
+    const s = Math.sin(azimuth);
+    target.x += mx * c - mz * s;
+    target.z += mx * s + mz * c;
+  }
+
   function panDragScale() {
     if (viewMode === 'plan') {
       return (SIZE / planZoom) / Math.min(W(), H());
     }
-    return (orbit * 0.55) / Math.min(W(), H());
+    return (orbit * 0.85) / Math.min(W(), H());
   }
 
   function preset() {
@@ -274,7 +296,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     GRID_CELL = p.gridCell;
     WORLD_ID = p.worldId;
     brushRadius = p.brushRadius;
-    riverBrushRadius = p.riverBrushDefault;
+    riverWidthMeters = p.riverWidthDefaultMeters ?? 10;
+    syncRiverRadiusFromMeters();
     margin = SIZE * 0.07;
     syncCameraFar();
 
@@ -452,15 +475,13 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     return Math.round(m) + 'm';
   }
 
-  function riverWidthMeters(radius = riverBrushRadius) {
-    return 2 * radius * preset().metersPerUnit;
-  }
-
-  function riverWidthLabel(r) {
-    const m = riverWidthMeters(r);
+  function riverWidthLabel() {
+    const m = riverWidthMeters;
+    const r = riverBrushRadius;
     const cells = (2 * r) / GRID_CELL;
     let feel;
-    if (m < 12) feel = '細い水路';
+    if (m < 3) feel = '水路・排水';
+    else if (m < 12) feel = '細い水路';
     else if (m < 30) feel = '細い川';
     else if (m < 80) feel = 'ふつうの川';
     else if (m < 200) feel = 'やや広い川';
@@ -477,8 +498,14 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     const legendRiver = document.getElementById('world-map-river-scale-hint');
     const riverPanel = document.getElementById('world-map-river-brush');
     const riverActive = riverPanel && !riverPanel.hidden;
-    const text = riverWidthLabel(riverBrushRadius);
-    if (slider) slider.value = String(Math.round(riverBrushRadius));
+    const p = preset();
+    const maxM = p.riverWidthMaxMeters ?? 400;
+    const text = riverWidthLabel();
+    if (slider) {
+      slider.min = '1';
+      slider.max = String(maxM);
+      slider.value = String(Math.round(riverWidthMeters));
+    }
     if (label) label.textContent = text;
     if (metersEl) metersEl.textContent = '地図上の青い輪＝この幅';
     if (legendRiver) {
@@ -486,9 +513,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         legendRiver.hidden = false;
         legendRiver.textContent =
           '川ブラシ：幅 約' +
-          formatMeters(riverWidthMeters()) +
+          formatMeters(riverWidthMeters) +
           ' · 車なら約' +
-          Math.max(1, Math.round(riverWidthMeters() / CAR_LEN_M)) +
+          Math.max(1, Math.round(riverWidthMeters / CAR_LEN_M)) +
           '台分';
       } else {
         legendRiver.hidden = true;
@@ -506,6 +533,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     target.set(0, 0, 0);
     orbit = preset().orbitDefault;
     buildTerrain();
+    riverWidthMeters = preset().riverWidthDefaultMeters ?? 10;
+    syncRiverRadiusFromMeters();
     planZoom = preset().planZoomDefault ?? 1;
     planZoom = Math.max(planZoomMin(), planZoom);
     applyHeights();
@@ -835,7 +864,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   function sculptStroke(from, to, dir) {
     const radius = dir === 'river' ? riverBrushRadius : brushRadius;
-    const step = Math.max(2, radius * 0.4);
+    const step = Math.max(0.5, radius * 0.4);
     const dx = to.x - from.x;
     const dz = to.z - from.z;
     const dist = Math.hypot(dx, dz);
@@ -944,7 +973,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     return spots.find((s) => s._m === mesh || s._halo === mesh);
   }
 
-  let tool = 'raise';
+  let tool = 'look';
   let viewMode = 'plan';
   const panelText = {
     raise: '地面をドラッグして山を盛り上げてください',
@@ -996,6 +1025,11 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   document.querySelectorAll('.world-map-view-toggle button').forEach((b) => {
     b.onclick = () => setViewMode(b.dataset.view);
   });
+
+  document.querySelectorAll('.world-map-tools button').forEach((b) => {
+    b.classList.toggle('on', b.dataset.tool === 'look');
+  });
+  refreshPanelText();
 
   document.querySelectorAll('.world-map-tools button').forEach((b) => {
     b.onclick = () => {
@@ -1083,7 +1117,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   const riverSlider = document.getElementById('world-map-river-width');
   if (riverSlider) {
     riverSlider.addEventListener('input', () => {
-      riverBrushRadius = parseInt(riverSlider.value, 10);
+      riverWidthMeters = parseInt(riverSlider.value, 10) || 1;
+      syncRiverRadiusFromMeters();
       syncRiverBrushUI();
     });
   }
@@ -1231,9 +1266,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       return;
     }
     if (dragMode === 'planpan') {
-      const scale = panDragScale();
-      target.x -= (e.clientX - ox) * scale * 0.55;
-      target.z -= (e.clientY - oy) * scale * 0.55;
+      applyPanPixels(e.clientX - ox, e.clientY - oy);
       ox = e.clientX;
       oy = e.clientY;
       return;
@@ -1431,6 +1464,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       orthoCamera.top = half;
       orthoCamera.bottom = -half;
       orthoCamera.position.set(target.x, ty + SIZE * 0.52 + altitudeOffset * 0.3, target.z);
+      orthoCamera.up.set(-Math.sin(azimuth), 0, -Math.cos(azimuth));
       orthoCamera.lookAt(target.x, ty, target.z);
       orthoCamera.updateProjectionMatrix();
       activeCamera = orthoCamera;
@@ -1794,15 +1828,11 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let scaleLegendTick = 0;
 
   function tick(t) {
-    const PAN = viewMode === 'plan' ? 9 : 7;
-    const s = Math.sin(azimuth);
-    const c = Math.cos(azimuth);
-
     if (viewMode === 'plan') {
-      if (held.up) target.z -= PAN;
-      if (held.down) target.z += PAN;
-      if (held.left) target.x -= PAN;
-      if (held.right) target.x += PAN;
+      if (held.up) azimuth += AZIMUTH_KEY_STEP;
+      if (held.down) azimuth -= AZIMUTH_KEY_STEP;
+      if (held.left) azimuth -= AZIMUTH_KEY_STEP;
+      if (held.right) azimuth += AZIMUTH_KEY_STEP;
       if (held.zoomIn || held.altitudeUp) {
         planZoom = Math.min(PLAN_ZOOM_MAX, planZoom + PLAN_ZOOM_KEY_STEP);
       }
@@ -1810,24 +1840,10 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         planZoom = Math.max(planZoomMin(), planZoom - PLAN_ZOOM_KEY_STEP);
       }
     } else {
-      if (held.up) {
-        target.x -= s * PAN;
-        target.z -= c * PAN;
-      }
-      if (held.down) {
-        target.x += s * PAN;
-        target.z += c * PAN;
-      }
-      if (held.left) {
-        target.x -= c * PAN;
-        target.z += s * PAN;
-      }
-      if (held.right) {
-        target.x += c * PAN;
-        target.z -= s * PAN;
-      }
-      if (held.rotateLeft) azimuth -= AZIMUTH_KEY_STEP;
-      if (held.rotateRight) azimuth += AZIMUTH_KEY_STEP;
+      if (held.up) polar = Math.max(POLAR_MIN, polar - POLAR_KEY_STEP);
+      if (held.down) polar = Math.min(POLAR_MAX, polar + POLAR_KEY_STEP);
+      if (held.left) azimuth -= AZIMUTH_KEY_STEP;
+      if (held.right) azimuth += AZIMUTH_KEY_STEP;
       if (held.altitudeUp) {
         altitudeOffset = Math.min(ALTITUDE_MAX, altitudeOffset + ALTITUDE_KEY_STEP);
         polar = Math.max(POLAR_MIN, polar - POLAR_KEY_STEP * 0.6);

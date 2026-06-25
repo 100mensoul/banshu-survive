@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>世界地図エディタ｜播州サバイブ</title>
-  <link rel="stylesheet" href="../css/world-map.css?v=15">
+  <link rel="stylesheet" href="../css/world-map.css?v=16">
 </head>
 <body class="world-map-auth" id="world-map-body">
   <div id="world-map-auth-wrap">
@@ -51,23 +51,23 @@
 
         <div class="world-map-hint">
           平面で距離・配置 → 立体で姿を確認<br>
-          ドラッグ：地図を移動 · 立体の回転は右ドラッグ<br>
+          ドラッグ：地図を移動 · 立体の回転は右ドラッグ · 十字キー：視点回転<br>
           Q/E 回転 · W/S 高度(立体) / ズーム(平面) · +/− ズーム
         </div>
 
         <div class="world-map-tools">
-          <button type="button" data-tool="raise" class="on">⛰ 山を盛る</button>
+          <button type="button" data-tool="raise">⛰ 山を盛る</button>
           <button type="button" data-tool="lower">🕳 へこます</button>
           <button type="button" data-tool="erase">⌫ 消す</button>
           <button type="button" data-tool="river">🌊 川を引く</button>
           <button type="button" data-tool="spot">✦ スポット登録</button>
           <button type="button" data-tool="area">🖌 エリア塗る</button>
           <span class="sep"></span>
-          <button type="button" data-tool="look">👁 眺める</button>
+          <button type="button" data-tool="look" class="on">👁 眺める</button>
         </div>
         <div class="world-map-river-brush" id="world-map-river-brush" hidden>
-          <label for="world-map-river-width">川の幅</label>
-          <input type="range" id="world-map-river-width" min="8" max="72" step="1" value="14">
+          <label for="world-map-river-width">川の幅（m）</label>
+          <input type="range" id="world-map-river-width" min="1" max="400" step="1" value="10">
           <span id="world-map-river-width-label">ふつう</span>
           <span class="world-map-river-width-meters" id="world-map-river-width-meters"></span>
         </div>
@@ -168,7 +168,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=15';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=16';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
     const msg = document.getElementById('world-map-msg');

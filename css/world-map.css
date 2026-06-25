@@ -277,8 +277,8 @@
 
 .world-map-actions {
   position: absolute;
-  top: 50%;
-  right: 16px;
+  top: 46%;
+  right: 11%;
   transform: translateY(-50%);
   z-index: 12;
   display: flex;
