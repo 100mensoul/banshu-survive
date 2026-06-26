@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>世界地図｜播州サバイブ</title>
-  <link rel="stylesheet" href="../css/world-map.css?v=10">
+  <link rel="stylesheet" href="../css/world-map.css?v=18">
 </head>
 <body class="world-map-page">
   <div class="world-map-page">
@@ -22,6 +22,9 @@
           <option value="new-harima">ニューハリマ（播州全体）</option>
         </select>
       </div>
+      <button type="button" class="world-map-preset-nav world-map-preset-nav--prev" id="world-map-preset-prev" aria-label="前のマップ">‹</button>
+      <button type="button" class="world-map-preset-nav world-map-preset-nav--next" id="world-map-preset-next" aria-label="次のマップ">›</button>
+      <div class="world-map-preset-nav-label" id="world-map-preset-nav-label" aria-hidden="true"></div>
       <div class="world-map-view-toggle">
         <button type="button" data-view="plan" class="on">平面</button>
         <button type="button" data-view="3d">立体</button>
@@ -93,7 +96,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=17';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=18';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
 

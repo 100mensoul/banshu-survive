@@ -61,6 +61,8 @@ const WORLD_PRESETS = {
   },
 };
 
+const PRESET_ORDER = ['konui-michi', 'hime-memory', 'new-harima'];
+
 const BRUSH_STRENGTH = 0.85;
 const RIVER_STRENGTH = 1.8;
 
@@ -544,7 +546,28 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (!loaded && !readOnly) tryLoadLocal();
     setViewMode(viewMode);
     if (!readOnly) initHistory();
+    syncPresetNav();
     setStatus(preset().label + ' に切り替えました');
+  }
+
+  function syncPresetNav() {
+    const idx = PRESET_ORDER.indexOf(currentPresetId);
+    if (idx < 0) return;
+    const prevId = PRESET_ORDER[(idx - 1 + PRESET_ORDER.length) % PRESET_ORDER.length];
+    const nextId = PRESET_ORDER[(idx + 1) % PRESET_ORDER.length];
+    const prevBtn = document.getElementById('world-map-preset-prev');
+    const nextBtn = document.getElementById('world-map-preset-next');
+    const label = document.getElementById('world-map-preset-nav-label');
+    if (prevBtn) prevBtn.title = '← ' + WORLD_PRESETS[prevId].shortLabel;
+    if (nextBtn) nextBtn.title = WORLD_PRESETS[nextId].shortLabel + ' →';
+    if (label) label.textContent = preset().shortLabel || preset().label;
+  }
+
+  function switchPresetStep(delta) {
+    const idx = PRESET_ORDER.indexOf(currentPresetId);
+    if (idx < 0) return;
+    const nextIdx = (idx + delta + PRESET_ORDER.length) % PRESET_ORDER.length;
+    switchWorldPreset(PRESET_ORDER[nextIdx]);
   }
 
   function applyHeights() {
@@ -1130,6 +1153,12 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     });
     presetSelect.value = currentPresetId;
   }
+
+  const presetPrevBtn = document.getElementById('world-map-preset-prev');
+  const presetNextBtn = document.getElementById('world-map-preset-next');
+  if (presetPrevBtn) presetPrevBtn.addEventListener('click', () => switchPresetStep(-1));
+  if (presetNextBtn) presetNextBtn.addEventListener('click', () => switchPresetStep(1));
+  syncPresetNav();
 
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
