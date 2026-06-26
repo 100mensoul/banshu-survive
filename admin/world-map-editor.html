@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>世界地図エディタ｜播州サバイブ</title>
-  <link rel="stylesheet" href="../css/world-map.css?v=18">
+  <link rel="stylesheet" href="../css/world-map.css?v=22">
 </head>
 <body class="world-map-auth" id="world-map-body">
   <div id="world-map-auth-wrap">
@@ -44,33 +44,39 @@
             <option value="new-harima">ニューハリマ（播州全体）</option>
           </select>
         </div>
-        <button type="button" class="world-map-preset-nav world-map-preset-nav--prev" id="world-map-preset-prev" aria-label="前のマップ">‹</button>
-        <button type="button" class="world-map-preset-nav world-map-preset-nav--next" id="world-map-preset-next" aria-label="次のマップ">›</button>
-        <div class="world-map-preset-nav-label" id="world-map-preset-nav-label" aria-hidden="true"></div>
-        <div class="world-map-view-toggle">
-          <button type="button" data-view="plan" class="on">平面</button>
-          <button type="button" data-view="3d">立体</button>
-        </div>
-
         <div class="world-map-hint">
           平面で距離・配置 → 立体で姿を確認<br>
-          ドラッグ：地図を移動 · 立体の回転は右ドラッグ · 十字キー：移動<br>
+          ドラッグ：視点を回す · 十字キー：移動 · Shift+ドラッグ：移動<br>
           Q/E 回転 · W/S 高度(立体) / ズーム(平面) · +/− ズーム
         </div>
 
-        <div class="world-map-tools">
-          <button type="button" data-tool="raise">⛰ 山を盛る</button>
-          <button type="button" data-tool="lower">🕳 へこます</button>
-          <button type="button" data-tool="erase">⌫ 消す</button>
-          <button type="button" data-tool="river">🌊 川を引く</button>
-          <button type="button" data-tool="spot">✦ スポット登録</button>
-          <button type="button" data-tool="area">🖌 エリア塗る</button>
-          <span class="sep"></span>
-          <button type="button" data-tool="look" class="on">👁 眺める</button>
+        <div class="world-map-toolbar-wrap">
+          <div class="world-map-tools">
+            <button type="button" data-tool="raise">⛰ 山を盛る</button>
+            <button type="button" data-tool="lower">🕳 へこます</button>
+            <button type="button" data-tool="erase">⌫ 消す</button>
+            <button type="button" data-tool="river">🌊 川を引く</button>
+            <button type="button" data-tool="spot">✦ スポット登録</button>
+            <button type="button" data-tool="area">🖌 エリア塗る</button>
+            <span class="sep"></span>
+            <button type="button" data-tool="look" class="on">👁 眺める</button>
+          </div>
+          <div class="world-map-tool-column">
+            <div class="world-map-view-toggle">
+              <button type="button" data-view="plan">平面</button>
+              <button type="button" data-view="3d" class="on">立体</button>
+            </div>
+            <div class="world-map-actions">
+              <button type="button" id="world-map-undo" title="戻る (⌘Z)" disabled>↩ 戻る</button>
+              <button type="button" id="world-map-redo" title="進む (⌘⇧Z)" disabled>↪ 進む</button>
+              <button type="button" id="world-map-save" class="world-map-actions__primary">保存</button>
+              <button type="button" id="world-map-reset" class="world-map-actions__danger">まっさら</button>
+            </div>
+          </div>
         </div>
         <div class="world-map-river-brush" id="world-map-river-brush" hidden>
           <label for="world-map-river-width">川の幅（m）</label>
-          <input type="range" id="world-map-river-width" min="1" max="400" step="1" value="10">
+          <input type="range" id="world-map-river-width" min="1" max="200" step="1" value="10">
           <span id="world-map-river-width-label">ふつう</span>
           <span class="world-map-river-width-meters" id="world-map-river-width-meters"></span>
         </div>
@@ -87,6 +93,11 @@
             <div class="world-map-area-colors" id="world-map-area-colors"></div>
             <button type="button" id="world-map-area-add">追加</button>
           </div>
+        </div>
+        <div class="world-map-preset-bar">
+          <button type="button" class="world-map-preset-nav" id="world-map-preset-prev" aria-label="前のマップ">‹</button>
+          <span class="world-map-preset-nav-label" id="world-map-preset-nav-label"></span>
+          <button type="button" class="world-map-preset-nav" id="world-map-preset-next" aria-label="次のマップ">›</button>
         </div>
         <div class="world-map-panel" id="world-map-panel">平面モード：距離感を見ながら山を置いてください</div>
         <div class="world-map-scale-legend" id="world-map-scale-legend">
@@ -121,7 +132,18 @@
           <div class="world-map-dpad">
             <button type="button" class="up" data-dir="up" title="前へ (↑)">▲</button>
             <button type="button" class="left" data-dir="left" title="左へ (←)">◀</button>
-            <div class="center">鷺</div>
+            <div class="center world-map-shirasagi-cell">
+              <div class="world-map-shirasagi-wrap" id="world-map-shirasagi-wrap">
+                <img
+                  class="world-map-shirasagi"
+                  id="world-map-shirasagi"
+                  src="../images/world-map-shirasagi.png"
+                  alt="白鷺"
+                  width="52"
+                  height="52"
+                >
+              </div>
+            </div>
             <button type="button" class="right" data-dir="right" title="右へ (→)">▶</button>
             <button type="button" class="down" data-dir="down" title="後へ (↓)">▼</button>
           </div>
@@ -137,11 +159,27 @@
           </div>
         </div>
 
-        <div class="world-map-actions">
-          <button type="button" id="world-map-undo" title="戻る (⌘Z)" disabled>↩ 戻る</button>
-          <button type="button" id="world-map-redo" title="進む (⌘⇧Z)" disabled>↪ 進む</button>
-          <button type="button" id="world-map-save" class="world-map-actions__primary">保存</button>
-          <button type="button" id="world-map-reset" class="world-map-actions__danger">まっさら</button>
+        <div class="world-map-minimap" id="world-map-minimap" hidden>
+          <button type="button" class="world-map-minimap__frame" id="world-map-minimap-open" aria-label="俯瞰マップを拡大">
+            <canvas id="world-map-minimap-canvas" width="148" height="148"></canvas>
+            <span class="world-map-minimap-dot" id="world-map-minimap-dot" aria-hidden="true"></span>
+          </button>
+          <span class="world-map-minimap__label">俯瞰</span>
+        </div>
+
+        <div class="world-map-minimap-modal" id="world-map-minimap-modal" hidden>
+          <div class="world-map-minimap-modal__backdrop" id="world-map-minimap-backdrop"></div>
+          <div class="world-map-minimap-modal__panel" role="dialog" aria-label="俯瞰マップ">
+            <div class="world-map-minimap-modal__head">
+              <strong>俯瞰マップ</strong>
+              <span class="world-map-minimap-modal__hint">赤い点＝いまの視点</span>
+              <button type="button" class="world-map-minimap-modal__close" id="world-map-minimap-close">閉じる</button>
+            </div>
+            <div class="world-map-minimap-modal__frame">
+              <canvas id="world-map-minimap-modal-canvas" width="480" height="480"></canvas>
+              <span class="world-map-minimap-dot world-map-minimap-dot--lg" id="world-map-minimap-modal-dot" aria-hidden="true"></span>
+            </div>
+          </div>
         </div>
 
         <div class="world-map-spotbox" id="world-map-spotbox">
@@ -171,7 +209,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=18';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=22';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
     const msg = document.getElementById('world-map-msg');

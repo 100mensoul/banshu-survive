@@ -22,7 +22,7 @@ const WORLD_PRESETS = {
     metersPerUnit: 240,
     gridLabel: '格子1マス ≈ 数kmほどの感覚',
     riverWidthDefaultMeters: 50,
-    riverWidthMaxMeters: 2000,
+    riverWidthMaxMeters: 200,
     brushRadius: 48,
     orbitDefault: 580,
     planZoomMin: 0.5,
@@ -38,7 +38,7 @@ const WORLD_PRESETS = {
     metersPerUnit: 16,
     gridLabel: '格子1マス ≈ 数百m・町の塊の感覚',
     riverWidthDefaultMeters: 10,
-    riverWidthMaxMeters: 400,
+    riverWidthMaxMeters: 200,
     brushRadius: 70,
     orbitDefault: 1400,
     planZoomDefault: 2.8,
@@ -55,7 +55,7 @@ const WORLD_PRESETS = {
     metersPerUnit: 4,
     gridLabel: '格子1マス ≈ 100m前後の感覚',
     riverWidthDefaultMeters: 4,
-    riverWidthMaxMeters: 80,
+    riverWidthMaxMeters: 200,
     brushRadius: 28,
     orbitDefault: 280,
   },
@@ -63,8 +63,9 @@ const WORLD_PRESETS = {
 
 const PRESET_ORDER = ['konui-michi', 'hime-memory', 'new-harima'];
 
-const BRUSH_STRENGTH = 0.85;
-const RIVER_STRENGTH = 1.8;
+const BRUSH_STRENGTH = 1.2;
+const RIVER_STRENGTH = 2.8;
+const RIVER_WIDTH_MAX = 200;
 
 const ORBIT_KEY_STEP = 5;
 const AZIMUTH_KEY_STEP = 0.035;
@@ -102,6 +103,17 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   const spotDeleteBtn = document.getElementById('world-map-spot-delete');
   const spotCancelBtn = document.getElementById('world-map-spot-cancel');
   const loadingEl = document.getElementById('world-map-loading');
+  const minimapEl = document.getElementById('world-map-minimap');
+  const minimapCanvas = document.getElementById('world-map-minimap-canvas');
+  const minimapDot = document.getElementById('world-map-minimap-dot');
+  const minimapOpenBtn = document.getElementById('world-map-minimap-open');
+  const minimapModal = document.getElementById('world-map-minimap-modal');
+  const minimapModalCanvas = document.getElementById('world-map-minimap-modal-canvas');
+  const minimapModalDot = document.getElementById('world-map-minimap-modal-dot');
+  const minimapModalClose = document.getElementById('world-map-minimap-close');
+  const minimapModalBackdrop = document.getElementById('world-map-minimap-backdrop');
+  const shirasagiWrap = document.getElementById('world-map-shirasagi-wrap');
+  const shirasagiImg = document.getElementById('world-map-shirasagi');
 
   const W = () => app.clientWidth;
   const H = () => app.clientHeight;
@@ -117,6 +129,23 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   renderer.setSize(W(), H());
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   app.appendChild(renderer.domElement);
+
+  const minimapCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 20000);
+  let minimapRenderer = null;
+  let minimapModalRenderer = null;
+  let minimapModalOpen = false;
+  const MINIMAP_PX = 148;
+  const MINIMAP_MODAL_PX = 480;
+
+  if (minimapCanvas) {
+    minimapRenderer = new THREE.WebGLRenderer({
+      canvas: minimapCanvas,
+      antialias: true,
+      alpha: false,
+      powerPreference: 'low-power',
+    });
+    minimapRenderer.setClearColor(0xe9e1d2, 1);
+  }
 
   scene.add(new THREE.HemisphereLight(0xfff4e0, 0x6b5b40, 1.0));
   const sun = new THREE.DirectionalLight(0xfff0d8, 0.8);
@@ -191,6 +220,36 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   function riverRadiusFromMeters(m) {
     return Math.max(0.03, m / 2 / preset().metersPerUnit);
+  }
+
+  function terrainCellSize() {
+    return SIZE / SEG;
+  }
+
+  /** コヌイの路 (500) を基準に、大きいマップでも凹凸が見えるようスケール */
+  function reliefScale() {
+    return Math.sqrt(SIZE / 500);
+  }
+
+  function brushStrength() {
+    return BRUSH_STRENGTH * reliefScale();
+  }
+
+  function riverDepthTarget(f) {
+    const relief = reliefScale();
+    const wFactor = Math.max(0.55, Math.min(2.4, Math.sqrt(riverWidthMeters / 8)));
+    const base = 6 * relief * wFactor;
+    return -(base + RIVER_STRENGTH * relief * wFactor * f);
+  }
+
+  function waterSurfaceY(height) {
+    return Math.min(height, -1.8 * reliefScale());
+  }
+
+  /** 地形頂点の間隔より細い川幅でも、必ず頂点に当たるよう補正した半径 */
+  function riverSculptRadius() {
+    const cell = terrainCellSize();
+    return Math.max(riverBrushRadius, cell * 0.55);
   }
 
   function syncRiverRadiusFromMeters() {
@@ -347,6 +406,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     ensureRiverPreview();
     syncRiverBrushUI();
     updateScaleLegend();
+    setupMinimapCamera();
   }
 
   buildTerrain();
@@ -501,11 +561,12 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     const riverPanel = document.getElementById('world-map-river-brush');
     const riverActive = riverPanel && !riverPanel.hidden;
     const p = preset();
-    const maxM = p.riverWidthMaxMeters ?? 400;
+    const maxM = Math.min(RIVER_WIDTH_MAX, p.riverWidthMaxMeters ?? RIVER_WIDTH_MAX);
     const text = riverWidthLabel();
     if (slider) {
       slider.min = '1';
       slider.max = String(maxM);
+      riverWidthMeters = Math.min(riverWidthMeters, maxM);
       slider.value = String(Math.round(riverWidthMeters));
     }
     if (label) label.textContent = text;
@@ -572,7 +633,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   function applyHeights() {
     for (let i = 0; i < N; i++) {
-      pos.setY(i, water[i] > 0.5 ? Math.min(heights[i], -2) : heights[i]);
+      pos.setY(i, water[i] > 0.5 ? waterSurfaceY(heights[i]) : heights[i]);
     }
     pos.needsUpdate = true;
     geo.computeVertexNormals();
@@ -850,29 +911,51 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   function sculptAt(p, dir) {
-    const radius = dir === 'river' ? riverBrushRadius : brushRadius;
+    if (dir === 'river') {
+      sculptRiverAt(p);
+      return;
+    }
+    const radius = brushRadius;
     for (let i = 0; i < N; i++) {
       const dx = pos.getX(i) - p.x;
       const dz = pos.getZ(i) - p.z;
       const d = Math.hypot(dx, dz);
       if (d < radius) {
-        let f;
-        if (dir === 'river') {
-          f = 1 - (d / radius) * 0.22;
-        } else {
-          f = brushFalloff(d, radius);
-        }
+        const f = brushFalloff(d, radius);
         if (dir === 'raise') {
-          heights[i] += BRUSH_STRENGTH * f;
+          heights[i] += brushStrength() * f;
           water[i] = 0;
         } else if (dir === 'lower') {
-          heights[i] = Math.max(-30, heights[i] - BRUSH_STRENGTH * f);
+          heights[i] = Math.max(-30 * reliefScale(), heights[i] - brushStrength() * f);
         } else if (dir === 'erase') {
           heights[i] = heights[i] * (1 - f);
           water[i] = water[i] * (1 - f);
           if (f > 0.25) areaGrid[i] = 0;
-        } else if (dir === 'river') {
-          heights[i] = Math.min(heights[i], -3 - RIVER_STRENGTH * f);
+        }
+      }
+    }
+  }
+
+  function sculptRiverAt(p) {
+    const radius = riverSculptRadius();
+    const cell = terrainCellSize();
+    const cols = SEG + 1;
+    const gxCenter = (p.x + SIZE / 2) / cell;
+    const gzCenter = (p.z + SIZE / 2) / cell;
+    const cr = Math.ceil(radius / cell) + 1;
+    const gxi0 = Math.max(0, Math.floor(gxCenter - cr));
+    const gxi1 = Math.min(SEG, Math.ceil(gxCenter + cr));
+    const gzi0 = Math.max(0, Math.floor(gzCenter - cr));
+    const gzi1 = Math.min(SEG, Math.ceil(gzCenter + cr));
+    for (let gz = gzi0; gz <= gzi1; gz++) {
+      for (let gx = gxi0; gx <= gxi1; gx++) {
+        const i = gz * cols + gx;
+        const dx = pos.getX(i) - p.x;
+        const dz = pos.getZ(i) - p.z;
+        const d = Math.hypot(dx, dz);
+        if (d < radius) {
+          const f = 1 - (d / radius) * 0.22;
+          heights[i] = Math.min(heights[i], riverDepthTarget(f));
           water[i] = 1;
         }
       }
@@ -886,8 +969,11 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   function sculptStroke(from, to, dir) {
-    const radius = dir === 'river' ? riverBrushRadius : brushRadius;
-    const step = Math.max(0.5, radius * 0.4);
+    const radius = dir === 'river' ? riverSculptRadius() : brushRadius;
+    const step =
+      dir === 'river'
+        ? Math.max(terrainCellSize() * 0.35, radius * 0.4)
+        : Math.max(0.5, radius * 0.4);
     const dx = to.x - from.x;
     const dz = to.z - from.z;
     const dist = Math.hypot(dx, dz);
@@ -997,7 +1083,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   let tool = 'look';
-  let viewMode = 'plan';
+  let viewMode = '3d';
   const panelText = {
     raise: '地面をドラッグして山を盛り上げてください',
     lower: '地面をドラッグしてへこませます（微調整）',
@@ -1005,7 +1091,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     river: 'なぞった跡が川になります',
     spot: '空き地クリックで登録 · スポットをクリックで削除 · ドラッグで移動',
     area: 'ドラッグで町や区域を塗ってください（消しゴムで消せます）',
-    look: 'ドラッグで地図を移動（立体は右ドラッグで回転）',
+    look: 'ドラッグで視点を回す · 十字キーで移動 · Shift+ドラッグでも移動',
   };
   const panelTextPlan = {
     raise: '平面モード：距離感を見ながら山を置いてください',
@@ -1014,7 +1100,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     river: '平面モード：川のルートをなぞります',
     spot: '平面：クリックで置く/削除 · ドラッグで移動',
     area: '平面モード：なぞってエリアを塗ります',
-    look: '平面：ドラッグで移動 · 立体：右ドラッグで回転',
+    look: 'ドラッグで視点を回す · 十字キーで移動 · Shift+ドラッグでも移動',
   };
 
   function refreshPanelText() {
@@ -1022,8 +1108,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (readOnly) {
       panel.textContent =
         viewMode === 'plan'
-          ? '地図を眺めています · ドラッグで移動 · +/− でズーム'
-          : '立体で地形を眺めています · 右ドラッグで回転';
+          ? '地図を眺めています · ドラッグで回転 · 十字キーで移動'
+          : '立体で地形を眺めています · ドラッグで回転 · 十字キーで移動';
       return;
     }
     const base = viewMode === 'plan' ? panelTextPlan : panelText;
@@ -1039,11 +1125,92 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     wireMesh.material.opacity = mode === 'plan' ? 0.35 : 0.05;
     gridHelper.material.opacity = mode === 'plan' ? 0.45 : 0.15;
     land.material.flatShading = mode === 'plan';
+    if (minimapEl) minimapEl.hidden = mode !== '3d';
+    if (mode !== '3d') closeMinimapModal();
     recolor();
     refreshPanelText();
     updateScaleLegend();
     updateCam();
   }
+
+  function setupMinimapCamera() {
+    if (!SIZE) return;
+    const half = SIZE * 0.52;
+    minimapCamera.left = -half;
+    minimapCamera.right = half;
+    minimapCamera.top = half;
+    minimapCamera.bottom = -half;
+    minimapCamera.position.set(0, SIZE * 0.65, 0);
+    minimapCamera.up.set(0, 0, -1);
+    minimapCamera.lookAt(0, 0, 0);
+    minimapCamera.updateProjectionMatrix();
+  }
+
+  function updateMinimapDot(dotEl) {
+    if (!dotEl || !SIZE) return;
+    dotEl.style.left = ((target.x + SIZE / 2) / SIZE) * 100 + '%';
+    dotEl.style.top = ((target.z + SIZE / 2) / SIZE) * 100 + '%';
+  }
+
+  function renderMinimapTo(miniRenderer, px) {
+    if (!land || !miniRenderer || !SIZE) return;
+    setupMinimapCamera();
+    const pr = Math.min(window.devicePixelRatio, 2);
+    miniRenderer.setPixelRatio(pr);
+    miniRenderer.setSize(px, px, false);
+    const restore = [];
+    if (riverPreview?.visible) {
+      riverPreview.visible = false;
+      restore.push(() => {
+        riverPreview.visible = true;
+      });
+    }
+    if (scaleMarkerGroup?.visible) {
+      scaleMarkerGroup.visible = false;
+      restore.push(() => {
+        scaleMarkerGroup.visible = true;
+      });
+    }
+    miniRenderer.render(scene, minimapCamera);
+    restore.forEach((fn) => fn());
+  }
+
+  function renderMinimaps() {
+    if (viewMode !== '3d' || !land) return;
+    updateMinimapDot(minimapDot);
+    if (minimapRenderer) renderMinimapTo(minimapRenderer, MINIMAP_PX);
+    if (minimapModalOpen && minimapModalRenderer) {
+      updateMinimapDot(minimapModalDot);
+      renderMinimapTo(minimapModalRenderer, MINIMAP_MODAL_PX);
+    }
+  }
+
+  function openMinimapModal() {
+    if (viewMode !== '3d') return;
+    if (!minimapModalRenderer && minimapModalCanvas) {
+      minimapModalRenderer = new THREE.WebGLRenderer({
+        canvas: minimapModalCanvas,
+        antialias: true,
+        alpha: false,
+      });
+      minimapModalRenderer.setClearColor(0xe9e1d2, 1);
+    }
+    minimapModalOpen = true;
+    if (minimapModal) minimapModal.hidden = false;
+    renderMinimaps();
+  }
+
+  function closeMinimapModal() {
+    minimapModalOpen = false;
+    if (minimapModal) minimapModal.hidden = true;
+  }
+
+  if (minimapOpenBtn) minimapOpenBtn.addEventListener('click', openMinimapModal);
+  if (minimapModalClose) minimapModalClose.addEventListener('click', closeMinimapModal);
+  if (minimapModalBackdrop) minimapModalBackdrop.addEventListener('click', closeMinimapModal);
+  addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && minimapModalOpen) closeMinimapModal();
+  });
 
   document.querySelectorAll('.world-map-view-toggle button').forEach((b) => {
     b.onclick = () => setViewMode(b.dataset.view);
@@ -1184,31 +1351,17 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
 
   renderer.domElement.addEventListener('mousedown', (e) => {
-    const orbitDrag = e.button === 1 || e.button === 2 || (e.button === 0 && e.shiftKey);
+    const panDrag = e.button === 1 || e.button === 2 || (e.button === 0 && e.shiftKey);
 
     if (readOnly) {
-      if (orbitDrag && viewMode === '3d') {
-        dragMode = 'orbit';
-        ox = e.clientX;
-        oy = e.clientY;
-        e.preventDefault();
-        return;
-      }
-      dragMode = 'planpan';
+      dragMode = panDrag ? 'planpan' : 'orbit';
       ox = e.clientX;
       oy = e.clientY;
+      if (panDrag) e.preventDefault();
       return;
     }
 
-    if (orbitDrag && viewMode === '3d') {
-      dragMode = 'orbit';
-      ox = e.clientX;
-      oy = e.clientY;
-      e.preventDefault();
-      return;
-    }
-
-    if (orbitDrag && viewMode === 'plan') {
+    if (panDrag) {
       dragMode = 'planpan';
       ox = e.clientX;
       oy = e.clientY;
@@ -1217,7 +1370,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     }
 
     if (tool === 'look') {
-      dragMode = 'planpan';
+      dragMode = 'orbit';
       ox = e.clientX;
       oy = e.clientY;
       return;
@@ -1257,7 +1410,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       lastSculptTool = tool;
       sculpt(p, tool);
     } else {
-      dragMode = 'planpan';
+      dragMode = 'orbit';
       ox = e.clientX;
       oy = e.clientY;
     }
@@ -1300,9 +1453,11 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       oy = e.clientY;
       return;
     }
-    if (dragMode === 'orbit' && viewMode === '3d') {
+    if (dragMode === 'orbit') {
       azimuth -= (e.clientX - ox) * 0.005;
-      polar = Math.max(POLAR_MIN, Math.min(POLAR_MAX, polar - (e.clientY - oy) * 0.004));
+      if (viewMode === '3d') {
+        polar = Math.max(POLAR_MIN, Math.min(POLAR_MAX, polar - (e.clientY - oy) * 0.004));
+      }
       ox = e.clientX;
       oy = e.clientY;
       return;
@@ -1841,7 +1996,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       planZoom = Math.max(planZoomMin(), planZoom);
       const fromRemote = await loadFromSupabase();
       if (!fromRemote && !readOnly) tryLoadLocal();
-      setViewMode('plan');
+      setViewMode('3d');
       if (!readOnly) initHistory();
     } catch (err) {
       console.error('world-map boot error', err);
@@ -1908,6 +2063,15 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     updateCam();
     updateScaleMarkerPosition();
 
+    const isMoving = held.up || held.down || held.left || held.right;
+    if (shirasagiWrap) {
+      shirasagiWrap.style.transform = viewMode === '3d' ? `rotate(${azimuth}rad)` : '';
+    }
+    if (shirasagiImg) {
+      shirasagiImg.classList.toggle('is-moving', isMoving);
+      shirasagiImg.classList.toggle('is-glide', !isMoving && viewMode === '3d');
+    }
+
     scaleLegendTick++;
     if (scaleLegendTick % 45 === 0) updateScaleLegend();
 
@@ -1925,6 +2089,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     });
 
     renderer.render(scene, activeCamera);
+    renderMinimaps();
     requestAnimationFrame(tick);
   }
 
