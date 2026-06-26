@@ -1828,11 +1828,15 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let scaleLegendTick = 0;
 
   function tick(t) {
+    const PAN = viewMode === 'plan' ? 9 : 7;
+    const s = Math.sin(azimuth);
+    const c = Math.cos(azimuth);
+
     if (viewMode === 'plan') {
-      if (held.up) azimuth += AZIMUTH_KEY_STEP;
-      if (held.down) azimuth -= AZIMUTH_KEY_STEP;
-      if (held.left) azimuth -= AZIMUTH_KEY_STEP;
-      if (held.right) azimuth += AZIMUTH_KEY_STEP;
+      if (held.up) target.z -= PAN;
+      if (held.down) target.z += PAN;
+      if (held.left) target.x -= PAN;
+      if (held.right) target.x += PAN;
       if (held.zoomIn || held.altitudeUp) {
         planZoom = Math.min(PLAN_ZOOM_MAX, planZoom + PLAN_ZOOM_KEY_STEP);
       }
@@ -1840,10 +1844,24 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         planZoom = Math.max(planZoomMin(), planZoom - PLAN_ZOOM_KEY_STEP);
       }
     } else {
-      if (held.up) polar = Math.max(POLAR_MIN, polar - POLAR_KEY_STEP);
-      if (held.down) polar = Math.min(POLAR_MAX, polar + POLAR_KEY_STEP);
-      if (held.left) azimuth -= AZIMUTH_KEY_STEP;
-      if (held.right) azimuth += AZIMUTH_KEY_STEP;
+      if (held.up) {
+        target.x -= s * PAN;
+        target.z -= c * PAN;
+      }
+      if (held.down) {
+        target.x += s * PAN;
+        target.z += c * PAN;
+      }
+      if (held.left) {
+        target.x -= c * PAN;
+        target.z += s * PAN;
+      }
+      if (held.right) {
+        target.x += c * PAN;
+        target.z -= s * PAN;
+      }
+      if (held.rotateLeft) azimuth -= AZIMUTH_KEY_STEP;
+      if (held.rotateRight) azimuth += AZIMUTH_KEY_STEP;
       if (held.altitudeUp) {
         altitudeOffset = Math.min(ALTITUDE_MAX, altitudeOffset + ALTITUDE_KEY_STEP);
         polar = Math.max(POLAR_MIN, polar - POLAR_KEY_STEP * 0.6);

@@ -28,7 +28,7 @@
       </div>
 
       <div class="world-map-hint">
-        ドラッグで地図を移動 · 十字キーで視点回転 · 立体は右ドラッグで回転 · +/− ズーム
+        ドラッグで地図を移動 · 十字キーで移動 · 立体は右ドラッグで回転 · +/− ズーム
       </div>
 
       <div class="world-map-panel" id="world-map-panel">大地をひらいています…</div>
@@ -93,7 +93,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=16';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=17';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
 

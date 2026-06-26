@@ -51,7 +51,7 @@
 
         <div class="world-map-hint">
           平面で距離・配置 → 立体で姿を確認<br>
-          ドラッグ：地図を移動 · 立体の回転は右ドラッグ · 十字キー：視点回転<br>
+          ドラッグ：地図を移動 · 立体の回転は右ドラッグ · 十字キー：移動<br>
           Q/E 回転 · W/S 高度(立体) / ズーム(平面) · +/− ズーム
         </div>
 
@@ -168,7 +168,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=16';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=17';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
     const msg = document.getElementById('world-map-msg');
