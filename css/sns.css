@@ -496,3 +496,39 @@
   border-bottom: 2px solid #d4b82a;
   border-left: 2px solid #d4b82a;
 }
+
+/* ===== ようこそ（来訪カウンター）：静かな帯 ===== */
+.himejin-welcome {
+  text-align: center;
+  padding: 1.6rem 1rem;
+  background: #fbf7ea;
+  border-top: 1px solid #e7dcae;
+  border-bottom: 1px solid #e7dcae;
+  color: #3a2f12;
+}
+
+.himejin-welcome__main {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.himejin-welcome__main strong {
+  font-size: 1.35em;
+  color: #a88620;
+  margin: 0 0.1em;
+}
+
+.himejin-welcome__sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  color: #5a4a1a;
+}
+
+/* 総数（控えめ・小さく）。うるさければ display:none で消せる */
+.himejin-welcome__total {
+  margin: 0.5rem 0 0;
+  font-size: 0.72rem;
+  color: #9a8a5a;
+}
