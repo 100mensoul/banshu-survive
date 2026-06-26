@@ -430,3 +430,69 @@
 .x-card:hover .x-card__btn {
   filter: brightness(1.15);
 }
+
+/* ===== Xカードの枠（金あしらい） =====
+ * ヒメソク: 二重金枠 / 平尾は見た: 四隅の金具
+ */
+.x-card--double {
+  background: #fffdf3;
+  border: 3px double #d4b82a;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(168, 134, 32, 0.18);
+}
+
+.x-card--double:hover {
+  border-color: #c4a028;
+  box-shadow: 0 10px 26px rgba(168, 134, 32, 0.26);
+}
+
+.x-card--corner {
+  position: relative;
+  background: #fffdf3;
+  border: 1px solid #e3d8ab;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(168, 134, 32, 0.18);
+}
+
+.x-card--corner:hover {
+  border-color: #d4b82a;
+  box-shadow: 0 10px 26px rgba(168, 134, 32, 0.26);
+}
+
+.x-card--corner::before,
+.x-card--corner::after,
+.x-card--corner .x-card__corner {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.x-card--corner::before {
+  top: 6px;
+  left: 6px;
+  border-top: 2px solid #d4b82a;
+  border-left: 2px solid #d4b82a;
+}
+
+.x-card--corner::after {
+  bottom: 6px;
+  right: 6px;
+  border-bottom: 2px solid #d4b82a;
+  border-right: 2px solid #d4b82a;
+}
+
+.x-card--corner .x-card__corner--tr {
+  top: 6px;
+  right: 6px;
+  border-top: 2px solid #d4b82a;
+  border-right: 2px solid #d4b82a;
+}
+
+.x-card--corner .x-card__corner--bl {
+  bottom: 6px;
+  left: 6px;
+  border-bottom: 2px solid #d4b82a;
+  border-left: 2px solid #d4b82a;
+}
