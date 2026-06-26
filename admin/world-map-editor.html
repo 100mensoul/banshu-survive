@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>世界地図エディタ｜播州サバイブ</title>
-  <link rel="stylesheet" href="../css/world-map.css?v=22">
+  <link rel="stylesheet" href="../css/world-map.css?v=24">
 </head>
 <body class="world-map-auth" id="world-map-body">
   <div id="world-map-auth-wrap">
@@ -33,21 +33,15 @@
     <div class="world-map-page">
       <div id="world-map-app">
         <div class="world-map-title">
-          播州サバイブ
+          <span class="world-map-title__main">播州サバイブ</span>
           <small>世界地図 · 編集中</small>
         </div>
-        <div class="world-map-preset-wrap">
-          <label class="world-map-preset-label" for="world-map-preset">マップの広さ</label>
-          <select id="world-map-preset" class="world-map-preset-select">
-            <option value="konui-michi">コヌイの路（〜1km圏）</option>
-            <option value="hime-memory">ヒメモリの地（姫路エリア）</option>
-            <option value="new-harima">ニューハリマ（播州全体）</option>
-          </select>
-        </div>
-        <div class="world-map-hint">
-          平面で距離・配置 → 立体で姿を確認<br>
-          ドラッグ：視点を回す · 十字キー：移動 · Shift+ドラッグ：移動<br>
-          Q/E 回転 · W/S 高度(立体) / ズーム(平面) · +/− ズーム
+
+        <div class="world-map-actions world-map-actions--top">
+          <button type="button" id="world-map-undo" title="戻る (⌘Z)" disabled>↩ 戻る</button>
+          <button type="button" id="world-map-redo" title="進む (⌘⇧Z)" disabled>↪ 進む</button>
+          <button type="button" id="world-map-save" class="world-map-actions__primary">保存</button>
+          <button type="button" id="world-map-reset" class="world-map-actions__danger">リセット</button>
         </div>
 
         <div class="world-map-toolbar-wrap">
@@ -65,12 +59,6 @@
             <div class="world-map-view-toggle">
               <button type="button" data-view="plan">平面</button>
               <button type="button" data-view="3d" class="on">立体</button>
-            </div>
-            <div class="world-map-actions">
-              <button type="button" id="world-map-undo" title="戻る (⌘Z)" disabled>↩ 戻る</button>
-              <button type="button" id="world-map-redo" title="進む (⌘⇧Z)" disabled>↪ 進む</button>
-              <button type="button" id="world-map-save" class="world-map-actions__primary">保存</button>
-              <button type="button" id="world-map-reset" class="world-map-actions__danger">まっさら</button>
             </div>
           </div>
         </div>
@@ -99,7 +87,7 @@
           <span class="world-map-preset-nav-label" id="world-map-preset-nav-label"></span>
           <button type="button" class="world-map-preset-nav" id="world-map-preset-next" aria-label="次のマップ">›</button>
         </div>
-        <div class="world-map-panel" id="world-map-panel">平面モード：距離感を見ながら山を置いてください</div>
+        <div class="world-map-panel" id="world-map-panel"></div>
         <div class="world-map-scale-legend" id="world-map-scale-legend">
           <div class="world-map-scale-legend__title">縮尺の目安（感覚・厳密な数値ではない）</div>
           <div class="world-map-scale-legend__preset" id="world-map-preset-hint">花田IC〜ツインコモンズ（〜1km圏）</div>
@@ -139,8 +127,8 @@
                   id="world-map-shirasagi"
                   src="../images/world-map-shirasagi.png"
                   alt="白鷺"
-                  width="52"
-                  height="52"
+                  width="104"
+                  height="104"
                 >
               </div>
             </div>
@@ -209,7 +197,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=22';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=24';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
     const msg = document.getElementById('world-map-msg');

@@ -4,24 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>世界地図｜播州サバイブ</title>
-  <link rel="stylesheet" href="../css/world-map.css?v=22">
+  <link rel="stylesheet" href="../css/world-map.css?v=24">
 </head>
 <body class="world-map-page">
   <div class="world-map-page">
     <div id="world-map-app">
       <div class="world-map-title">
-        播州サバイブ
+        <span class="world-map-title__main">播州サバイブ</span>
         <small>世界地図 · 閲覧</small>
       </div>
       <a class="world-map-home-link" href="../index.html">トップへ</a>
-      <div class="world-map-preset-wrap">
-        <label class="world-map-preset-label" for="world-map-preset">マップの広さ</label>
-        <select id="world-map-preset" class="world-map-preset-select">
-          <option value="konui-michi">コヌイの路（〜1km圏）</option>
-          <option value="hime-memory" selected>ヒメモリの地（姫路エリア）</option>
-          <option value="new-harima">ニューハリマ（播州全体）</option>
-        </select>
-      </div>
       <div class="world-map-preset-bar">
         <button type="button" class="world-map-preset-nav" id="world-map-preset-prev" aria-label="前のマップ">‹</button>
         <span class="world-map-preset-nav-label" id="world-map-preset-nav-label"></span>
@@ -32,11 +24,7 @@
         <button type="button" data-view="3d" class="on">立体</button>
       </div>
 
-      <div class="world-map-hint">
-        ドラッグ：視点を回す · 十字キー：移動 · Shift+ドラッグ：移動 · +/− ズーム
-      </div>
-
-      <div class="world-map-panel" id="world-map-panel">大地をひらいています…</div>
+      <div class="world-map-panel" id="world-map-panel"></div>
       <div class="world-map-scale-legend" id="world-map-scale-legend">
         <div class="world-map-scale-legend__title">縮尺の目安（感覚・厳密な数値ではない）</div>
         <div class="world-map-scale-legend__preset" id="world-map-preset-hint">姫路エリア</div>
@@ -75,8 +63,8 @@
                 id="world-map-shirasagi"
                 src="../images/world-map-shirasagi.png"
                 alt="白鷺"
-                width="52"
-                height="52"
+                width="104"
+                height="104"
               >
             </div>
           </div>
@@ -132,7 +120,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=22';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=24';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
 

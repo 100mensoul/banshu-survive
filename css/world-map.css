@@ -95,18 +95,24 @@
   top: 16px;
   left: 20px;
   z-index: 10;
-  font-size: 18px;
-  letter-spacing: 0.16em;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
   pointer-events: none;
+}
+
+.world-map-title__main {
+  display: block;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #3a2c1a;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6), 0 2px 10px rgba(58, 44, 26, 0.18);
 }
 
 .world-map-title small {
   display: block;
-  font-size: 10px;
-  letter-spacing: 0.28em;
-  opacity: 0.6;
-  margin-top: 2px;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  opacity: 0.55;
+  margin-top: 4px;
 }
 
 .world-map-tools {
@@ -194,30 +200,27 @@
 
 .world-map-panel {
   position: absolute;
-  top: 118px;
+  top: 120px;
   left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  font-size: 10px;
-  opacity: 0.65;
-  background: rgba(233, 225, 210, 0.55);
-  padding: 3px 10px;
-  border-radius: 8px;
+  transform: translateX(-50%) translateY(-6px);
+  z-index: 14;
+  font-size: 12px;
+  opacity: 0;
+  background: rgba(58, 44, 26, 0.82);
+  color: #f3ece0;
+  padding: 7px 16px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(58, 44, 26, 0.22);
   pointer-events: none;
-  max-width: 72vw;
+  max-width: 80vw;
   text-align: center;
+  white-space: nowrap;
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-.world-map-hint {
-  position: absolute;
-  top: 16px;
-  right: 20px;
-  z-index: 10;
-  font-size: 11px;
-  line-height: 1.7;
-  text-align: right;
-  opacity: 0.6;
-  pointer-events: none;
+.world-map-panel.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .world-map-controls {
@@ -247,9 +250,10 @@
 
 .world-map-dpad {
   display: grid;
-  grid-template-columns: repeat(3, 42px);
-  grid-template-rows: repeat(3, 42px);
-  gap: 5px;
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(3, 44px);
+  gap: 30px;
+  place-items: center;
 }
 
 .world-map-controls button,
@@ -273,6 +277,27 @@
   background: var(--world-accent);
   color: #fff;
   transform: scale(0.93);
+}
+
+.world-map-dpad button {
+  border: none;
+  background: none;
+  backdrop-filter: none;
+  box-shadow: none;
+  color: rgba(58, 44, 26, 0.42);
+  font-size: 20px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.world-map-dpad button:hover {
+  color: rgba(58, 44, 26, 0.7);
+}
+
+.world-map-dpad button:active,
+.world-map-dpad button.on {
+  background: none;
+  color: var(--world-accent);
+  transform: scale(0.85);
 }
 
 .world-map-dpad .up {
@@ -312,11 +337,12 @@
   transform: rotate(0rad);
   transition: transform 0.12s linear;
   pointer-events: none;
+  z-index: 5;
 }
 
 .world-map-shirasagi {
-  width: 52px;
-  height: 52px;
+  width: 138px;
+  height: 138px;
   object-fit: contain;
   filter: drop-shadow(0 2px 6px rgba(42, 32, 24, 0.28));
   transform-origin: center center;
@@ -353,8 +379,8 @@
 
 .world-map-minimap {
   position: absolute;
-  right: 18px;
-  bottom: 18px;
+  right: 9%;
+  bottom: 26px;
   z-index: 13;
   display: flex;
   flex-direction: column;
@@ -369,8 +395,8 @@
 
 .world-map-minimap__frame {
   position: relative;
-  width: 148px;
-  height: 148px;
+  width: 188px;
+  height: 188px;
   padding: 0;
   border: 2px solid rgba(58, 44, 26, 0.35);
   border-radius: 10px;
@@ -532,6 +558,18 @@
   box-shadow: 0 4px 18px rgba(58, 44, 26, 0.08);
 }
 
+.world-map-actions--top {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  z-index: 13;
+  flex-direction: row;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(233, 225, 210, 0.85);
+  backdrop-filter: blur(3px);
+}
+
 .world-map-actions button {
   border: 1.5px solid rgba(58, 44, 26, 0.35);
   background: rgba(255, 255, 255, 0.82);
@@ -543,6 +581,12 @@
   cursor: pointer;
   font-family: inherit;
   text-align: center;
+}
+
+.world-map-actions--top button {
+  min-width: 0;
+  padding: 7px 12px;
+  font-size: 12px;
 }
 
 .world-map-actions button:hover {
@@ -708,7 +752,7 @@
 
 .world-map-river-brush {
   position: absolute;
-  top: 70px;
+  top: 122px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 11;
@@ -758,7 +802,7 @@
 
 .world-map-area-panel {
   position: absolute;
-  top: 108px;
+  top: 122px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 11;

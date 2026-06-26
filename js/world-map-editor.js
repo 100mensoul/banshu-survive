@@ -14,7 +14,7 @@ const WORLD_PRESETS = {
   'new-harima': {
     worldId: 'new-harima',
     label: 'ニューハリマ',
-    shortLabel: '播州全体',
+    shortLabel: 'ニューハリマ',
     hint: '淡路島〜雪彦山・神戸〜赤穂・瀬戸内海を含む広大なワールド',
     size: 1200,
     seg: 160,
@@ -30,7 +30,7 @@ const WORLD_PRESETS = {
   'hime-memory': {
     worldId: 'hime-memory',
     label: 'ヒメモリの地',
-    shortLabel: '姫路エリア',
+    shortLabel: 'ヒメモリの地',
     hint: 'お城〜市川・花田・天川、西・東の広いエリア',
     size: 3600,
     seg: 200,
@@ -134,7 +134,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let minimapRenderer = null;
   let minimapModalRenderer = null;
   let minimapModalOpen = false;
-  const MINIMAP_PX = 148;
+  const MINIMAP_PX = 188;
   const MINIMAP_MODAL_PX = 480;
 
   if (minimapCanvas) {
@@ -1104,16 +1104,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   };
 
   function refreshPanelText() {
-    if (!panel) return;
-    if (readOnly) {
-      panel.textContent =
-        viewMode === 'plan'
-          ? '地図を眺めています · ドラッグで回転 · 十字キーで移動'
-          : '立体で地形を眺めています · ドラッグで回転 · 十字キーで移動';
-      return;
-    }
-    const base = viewMode === 'plan' ? panelTextPlan : panelText;
-    panel.textContent = base[tool] || base.raise;
+    // 常時表示の中央注釈は廃止。案内は setStatus のトースト（3秒）でのみ表示する。
   }
 
   function setViewMode(mode) {
@@ -1758,9 +1749,17 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (camKeyUp[e.key]) held[camKeyUp[e.key]] = false;
   });
 
+  let statusTimer = null;
   function setStatus(text) {
-    if (panel) panel.textContent = text;
     if (onStatus) onStatus(text);
+    if (panel) {
+      panel.textContent = text;
+      panel.classList.add('is-visible');
+      if (statusTimer) clearTimeout(statusTimer);
+      statusTimer = setTimeout(() => {
+        panel.classList.remove('is-visible');
+      }, 3000);
+    }
   }
 
   function terrainPayload() {
@@ -2065,7 +2064,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
     const isMoving = held.up || held.down || held.left || held.right;
     if (shirasagiWrap) {
-      shirasagiWrap.style.transform = viewMode === '3d' ? `rotate(${azimuth}rad)` : '';
+      shirasagiWrap.style.transform = viewMode === '3d' ? `rotate(${-azimuth}rad)` : '';
     }
     if (shirasagiImg) {
       shirasagiImg.classList.toggle('is-moving', isMoving);
