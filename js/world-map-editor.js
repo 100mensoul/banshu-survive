@@ -25,6 +25,9 @@ const WORLD_PRESETS = {
     riverWidthMaxMeters: 200,
     waterWidthDefaultMeters: 80,
     waterWidthMaxMeters: 200,
+    leveeHeightDefaultMeters: 3,
+    leveeTopWidthDefaultMeters: 5,
+    leveeSlopeWidthDefaultMeters: 30,
     brushRadius: 48,
     orbitDefault: 580,
     planZoomMin: 0.5,
@@ -43,6 +46,9 @@ const WORLD_PRESETS = {
     riverWidthMaxMeters: 200,
     waterWidthDefaultMeters: 30,
     waterWidthMaxMeters: 200,
+    leveeHeightDefaultMeters: 2,
+    leveeTopWidthDefaultMeters: 4,
+    leveeSlopeWidthDefaultMeters: 20,
     brushRadius: 70,
     orbitDefault: 1400,
     planZoomDefault: 2.8,
@@ -66,6 +72,9 @@ const WORLD_PRESETS = {
     waterWidthMaxMeters: 60,
     riverDepthDefaultMeters: 1,
     riverWaterLevelDefaultMeters: 2,
+    leveeHeightDefaultMeters: 2,
+    leveeTopWidthDefaultMeters: 4,
+    leveeSlopeWidthDefaultMeters: 15,
     brushRadius: 12,
     orbitDefault: 280,
     guideImage: '../images/konui-guide.png',
@@ -80,6 +89,14 @@ const RIVER_WIDTH_MAX = 200;
 const WATER_LEVEL_MIN = 0.1; // 水面の高さ(m)＝地表(Y=0)からどれだけ下か（水平な水面）
 const WATER_LEVEL_MAX = 8;
 const WATER_LEVEL_STEP = 0.1;
+const INNER_WALL_METERS = 1.5; // 河床と堤防上面の間の急壁
+const LEVEE_HEIGHT_MIN = 0;
+const LEVEE_HEIGHT_MAX = 6;
+const LEVEE_HEIGHT_STEP = 0.5;
+const LEVEE_TOP_MIN = 2;
+const LEVEE_TOP_MAX = 12;
+const LEVEE_SLOPE_MIN = 3;
+const LEVEE_SLOPE_MAX = 60;
 
 const ORBIT_KEY_STEP = 5;
 const AZIMUTH_KEY_STEP = 0.035;
@@ -189,6 +206,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let waterWidthMeters;
   let riverDepthMeters;
   let riverWaterLevelMeters;
+  let leveeHeightMeters;
+  let leveeTopWidthMeters;
+  let leveeSlopeWidthMeters;
   let digMaterial = 1; // 1=土(茶) 2=草(緑) 3=コンクリ(グレー)
   let geo;
   let pos;
@@ -396,14 +416,84 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   function riverDepthTarget(f) {
-    // f: 中心=1, 岸=0 のなだらかな椀形
+    // f: 中心=1, 岸=0 のなだらかな椀形（堤防オフ時の旧断面）
     return -(riverDepthUnits() * f);
+  }
+
+  function metersToUnits(m) {
+    return m / preset().metersPerUnit;
+  }
+
+  /** 川を掘るブラシの半径（m）：河床＋急壁＋堤防上面＋坂 */
+  function digBrushHalfWidthMeters() {
+    if (leveeHeightMeters <= 0) return riverWidthMeters / 2;
+    return (
+      riverWidthMeters / 2 + INNER_WALL_METERS + leveeTopWidthMeters + leveeSlopeWidthMeters
+    );
+  }
+
+  function digZoneRadii() {
+    const rBed = metersToUnits(riverWidthMeters / 2);
+    const rWall = rBed + metersToUnits(INNER_WALL_METERS);
+    const rLevee = rWall + metersToUnits(leveeTopWidthMeters);
+    const rSlope = rLevee + metersToUnits(leveeSlopeWidthMeters);
+    return { rBed, rWall, rLevee, rSlope };
+  }
+
+  /**
+   * 掘る断面の目標高さ（ワールドY）。
+   * 河床(−) → 急壁 → 堤防上面(+) → 緩坂 → 地面(0)
+   */
+  function digTargetHeight(d) {
+    const depth = riverDepthUnits();
+    const leveeH = metersToUnits(leveeHeightMeters);
+
+    if (leveeHeightMeters <= 0) {
+      const radius = digSculptRadius();
+      const t = Math.min(1, d / radius);
+      const wallStart = 0.72;
+      const f = t <= wallStart ? 1 : 1 - (t - wallStart) / (1 - wallStart);
+      return riverDepthTarget(f);
+    }
+
+    const { rBed, rWall, rLevee, rSlope } = digZoneRadii();
+    if (d > rSlope) return null;
+
+    if (d <= rBed) return -depth;
+
+    if (d <= rWall) {
+      const t = (d - rBed) / Math.max(0.001, rWall - rBed);
+      return -depth + (depth + leveeH) * t;
+    }
+
+    if (d <= rLevee) return leveeH;
+
+    const t = (d - rLevee) / Math.max(0.001, rSlope - rLevee);
+    const ease = 0.5 * (1 + Math.cos(Math.PI * t));
+    return leveeH * ease;
+  }
+
+  /** ゾーン別の地表素材（0=変更なし） */
+  function digZoneMat(d) {
+    if (leveeHeightMeters <= 0) return digMaterial;
+    const { rBed, rWall, rLevee, rSlope } = digZoneRadii();
+    if (d > rSlope) return 0;
+    if (d <= rWall) return digMaterial;
+    if (d <= rLevee) return 3; // 堤防上面＝コンクリ（一本道）
+    return 2; // 登り坂＝草
+  }
+
+  function digSculptRadius() {
+    const cell = terrainCellSize();
+    if (leveeHeightMeters <= 0) {
+      return Math.max(riverBrushRadius, cell * 0.55);
+    }
+    return Math.max(metersToUnits(digBrushHalfWidthMeters()), cell * 0.55);
   }
 
   /** 地形頂点の間隔より細い川幅でも、必ず頂点に当たるよう補正した半径 */
   function riverSculptRadius() {
-    const cell = terrainCellSize();
-    return Math.max(riverBrushRadius, cell * 0.55);
+    return digSculptRadius();
   }
 
   function syncRiverRadiusFromMeters() {
@@ -615,6 +705,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     waterWidthMeters = p.waterWidthDefaultMeters ?? riverWidthMeters * 2;
     riverDepthMeters = p.riverDepthDefaultMeters ?? 1;
     riverWaterLevelMeters = p.riverWaterLevelDefaultMeters ?? 1;
+    leveeHeightMeters = p.leveeHeightDefaultMeters ?? 2;
+    leveeTopWidthMeters = p.leveeTopWidthDefaultMeters ?? 4;
+    leveeSlopeWidthMeters = p.leveeSlopeWidthDefaultMeters ?? 15;
     syncRiverRadiusFromMeters();
     syncWaterRadiusFromMeters();
     margin = SIZE * 0.07;
@@ -892,6 +985,36 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     return '約' + (Math.round(riverDepthMeters * 10) / 10) + 'm';
   }
 
+  function leveeHeightText() {
+    return '地面より +' + (Math.round(leveeHeightMeters * 10) / 10) + 'm';
+  }
+
+  function leveeTopWidthText() {
+    return '約' + Math.round(leveeTopWidthMeters) + 'm';
+  }
+
+  function leveeSlopeWidthText() {
+    return '約' + Math.round(leveeSlopeWidthMeters) + 'm';
+  }
+
+  function digLegendText() {
+    if (leveeHeightMeters <= 0) {
+      return '川を掘る：幅 約' + formatMeters(riverWidthMeters) + ' · 深さ ' + depthMetersText();
+    }
+    return (
+      '川＋堤防：床 約' +
+      formatMeters(riverWidthMeters) +
+      ' · 深さ ' +
+      depthMetersText() +
+      ' · 堤防 ' +
+      leveeHeightText() +
+      ' · 道幅 ' +
+      leveeTopWidthText() +
+      ' · 坂 ' +
+      leveeSlopeWidthText()
+    );
+  }
+
   function waterLevelText() {
     const m = riverWaterLevelMeters ?? 1;
     return '地表から ' + m.toFixed(1) + 'm 下';
@@ -905,6 +1028,12 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     const waterWidthMetersEl = document.getElementById('world-map-water-width-meters');
     const depthSlider = document.getElementById('world-map-river-depth');
     const depthMetersEl = document.getElementById('world-map-river-depth-meters');
+    const leveeHeightSlider = document.getElementById('world-map-levee-height');
+    const leveeHeightMetersEl = document.getElementById('world-map-levee-height-meters');
+    const leveeTopSlider = document.getElementById('world-map-levee-top');
+    const leveeTopMetersEl = document.getElementById('world-map-levee-top-meters');
+    const leveeSlopeSlider = document.getElementById('world-map-levee-slope');
+    const leveeSlopeMetersEl = document.getElementById('world-map-levee-slope-meters');
     const wlSlider = document.getElementById('world-map-river-waterlevel');
     const wlMetersEl = document.getElementById('world-map-river-waterlevel-meters');
     const legendRiver = document.getElementById('world-map-river-scale-hint');
@@ -941,6 +1070,34 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (waterWidthMetersEl) waterWidthMetersEl.textContent = '幅 約' + formatMeters(waterWidthMeters);
     if (depthSlider) depthSlider.value = String(riverDepthMeters);
     if (depthMetersEl) depthMetersEl.textContent = '深さ ' + depthMetersText();
+    if (leveeHeightSlider) {
+      leveeHeightSlider.min = String(LEVEE_HEIGHT_MIN);
+      leveeHeightSlider.max = String(LEVEE_HEIGHT_MAX);
+      leveeHeightSlider.step = String(LEVEE_HEIGHT_STEP);
+      leveeHeightMeters = Math.max(
+        LEVEE_HEIGHT_MIN,
+        Math.min(LEVEE_HEIGHT_MAX, Math.round(leveeHeightMeters / LEVEE_HEIGHT_STEP) * LEVEE_HEIGHT_STEP),
+      );
+      leveeHeightSlider.value = String(leveeHeightMeters);
+    }
+    if (leveeHeightMetersEl) leveeHeightMetersEl.textContent = leveeHeightText();
+    if (leveeTopSlider) {
+      leveeTopSlider.min = String(LEVEE_TOP_MIN);
+      leveeTopSlider.max = String(LEVEE_TOP_MAX);
+      leveeTopWidthMeters = Math.max(LEVEE_TOP_MIN, Math.min(LEVEE_TOP_MAX, Math.round(leveeTopWidthMeters)));
+      leveeTopSlider.value = String(leveeTopWidthMeters);
+    }
+    if (leveeTopMetersEl) leveeTopMetersEl.textContent = '道幅 ' + leveeTopWidthText();
+    if (leveeSlopeSlider) {
+      leveeSlopeSlider.min = String(LEVEE_SLOPE_MIN);
+      leveeSlopeSlider.max = String(LEVEE_SLOPE_MAX);
+      leveeSlopeWidthMeters = Math.max(
+        LEVEE_SLOPE_MIN,
+        Math.min(LEVEE_SLOPE_MAX, Math.round(leveeSlopeWidthMeters)),
+      );
+      leveeSlopeSlider.value = String(leveeSlopeWidthMeters);
+    }
+    if (leveeSlopeMetersEl) leveeSlopeMetersEl.textContent = '坂 ' + leveeSlopeWidthText();
     if (wlSlider) wlSlider.value = String(riverWaterLevelMeters);
     if (wlMetersEl) wlMetersEl.textContent = '水位 ' + waterLevelText();
 
@@ -955,7 +1112,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         legendRiver.textContent =
           tool === 'water'
             ? '水を流す：幅 約' + formatMeters(waterWidthMeters) + ' · ' + waterLevelText() + '（水平）'
-            : '川を掘る：幅 約' + formatMeters(riverWidthMeters) + ' · 深さ ' + depthMetersText();
+            : digLegendText();
       } else {
         legendRiver.hidden = true;
       }
@@ -991,6 +1148,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     waterWidthMeters = preset().waterWidthDefaultMeters ?? riverWidthMeters * 2;
     riverDepthMeters = preset().riverDepthDefaultMeters ?? 1;
     riverWaterLevelMeters = preset().riverWaterLevelDefaultMeters ?? 1;
+    leveeHeightMeters = preset().leveeHeightDefaultMeters ?? 2;
+    leveeTopWidthMeters = preset().leveeTopWidthDefaultMeters ?? 4;
+    leveeSlopeWidthMeters = preset().leveeSlopeWidthDefaultMeters ?? 15;
     syncRiverRadiusFromMeters();
     syncWaterRadiusFromMeters();
     planZoom = preset().planZoomDefault ?? 1;
@@ -1372,9 +1532,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     }
   }
 
-  /** 「川を掘る」：地形を溝状に掘り下げ、掘った所に素材色を付ける（水は付けない） */
+  /** 「川を掘る」：河床を掘り下げ、堤防上面を盛り、坂で地面につなぐ */
   function sculptDigAt(p) {
-    const radius = riverSculptRadius();
+    const radius = digSculptRadius();
     const cell = terrainCellSize();
     const cols = SEG + 1;
     const gxCenter = (p.x + SIZE / 2) / cell;
@@ -1390,14 +1550,24 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         const dx = pos.getX(i) - p.x;
         const dz = pos.getZ(i) - p.z;
         const d = Math.hypot(dx, dz);
-        if (d < radius) {
-          // 平らな底＋急な内壁（堤防のような断面）
-          const t = Math.min(1, d / radius);
-          const wallStart = 0.72;
-          const f = t <= wallStart ? 1 : 1 - (t - wallStart) / (1 - wallStart);
-          heights[i] = Math.min(heights[i], riverDepthTarget(f));
-          if (f > 0.05) groundMat[i] = digMaterial;
+        if (d >= radius) continue;
+
+        const targetH = digTargetHeight(d);
+        if (targetH == null) continue;
+
+        if (targetH < -0.01) {
+          heights[i] = Math.min(heights[i], targetH);
+        } else if (targetH > 0.01) {
+          heights[i] = Math.max(heights[i], targetH);
+          if (water[i] > 0.5) waterDirty = true;
+          water[i] = 0;
+          waterY[i] = 0;
+        } else {
+          heights[i] = 0;
         }
+
+        const mat = digZoneMat(d);
+        if (mat > 0) groundMat[i] = mat;
       }
     }
   }
@@ -1556,7 +1726,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     raise: '地面をドラッグして山を盛り上げてください',
     lower: '地面をドラッグしてへこませます（微調整）',
     erase: 'ドラッグした範囲を平地に戻します（山・川を消す）',
-    dig: 'なぞった跡を溝に掘ります（河床・堤防）。素材と幅・深さを選べます',
+    dig: 'なぞると河床を掘り、堤防上面を盛り、坂で地面につなぎます',
     water: '掘った所をなぞると水平な水面が流れます（水幅・水位を調整）',
     spot: '空き地クリックで登録 · スポットをクリックで削除 · ドラッグで移動',
     area: 'ドラッグで町や区域を塗ってください（消しゴムで消せます）',
@@ -1566,7 +1736,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     raise: '平面モード：距離感を見ながら山を置いてください',
     lower: '平面モード：へこませます（微調整）',
     erase: '平面モード：なぞった範囲を平地に戻します',
-    dig: '平面モード：川のルートを掘ります（河床・堤防）',
+    dig: '平面モード：川のルートを掘ります（河床＋盛り上げた堤防）',
     water: '平面モード：掘った所に水を流します',
     spot: '平面：クリックで置く/削除 · ドラッグで移動',
     area: '平面モード：なぞってエリアを塗ります',
@@ -1868,6 +2038,57 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   const riverDepthPlus = document.getElementById('world-map-river-depth-plus');
   if (riverDepthMinus) riverDepthMinus.addEventListener('click', () => setRiverDepth(riverDepthMeters - RIVER_DEPTH_STEP));
   if (riverDepthPlus) riverDepthPlus.addEventListener('click', () => setRiverDepth(riverDepthMeters + RIVER_DEPTH_STEP));
+
+  function setLeveeHeight(v) {
+    leveeHeightMeters = Math.max(
+      LEVEE_HEIGHT_MIN,
+      Math.min(LEVEE_HEIGHT_MAX, Math.round(v / LEVEE_HEIGHT_STEP) * LEVEE_HEIGHT_STEP),
+    );
+    syncRiverBrushUI();
+  }
+
+  function setLeveeTopWidth(v) {
+    leveeTopWidthMeters = Math.max(LEVEE_TOP_MIN, Math.min(LEVEE_TOP_MAX, Math.round(v)));
+    syncRiverBrushUI();
+  }
+
+  function setLeveeSlopeWidth(v) {
+    leveeSlopeWidthMeters = Math.max(LEVEE_SLOPE_MIN, Math.min(LEVEE_SLOPE_MAX, Math.round(v)));
+    syncRiverBrushUI();
+  }
+
+  const leveeHeightSlider = document.getElementById('world-map-levee-height');
+  if (leveeHeightSlider) {
+    leveeHeightSlider.addEventListener('input', () => {
+      setLeveeHeight(parseFloat(leveeHeightSlider.value) || LEVEE_HEIGHT_MIN);
+    });
+  }
+  const leveeHeightMinus = document.getElementById('world-map-levee-height-minus');
+  const leveeHeightPlus = document.getElementById('world-map-levee-height-plus');
+  if (leveeHeightMinus) leveeHeightMinus.addEventListener('click', () => setLeveeHeight(leveeHeightMeters - LEVEE_HEIGHT_STEP));
+  if (leveeHeightPlus) leveeHeightPlus.addEventListener('click', () => setLeveeHeight(leveeHeightMeters + LEVEE_HEIGHT_STEP));
+
+  const leveeTopSlider = document.getElementById('world-map-levee-top');
+  if (leveeTopSlider) {
+    leveeTopSlider.addEventListener('input', () => {
+      setLeveeTopWidth(parseInt(leveeTopSlider.value, 10) || LEVEE_TOP_MIN);
+    });
+  }
+  const leveeTopMinus = document.getElementById('world-map-levee-top-minus');
+  const leveeTopPlus = document.getElementById('world-map-levee-top-plus');
+  if (leveeTopMinus) leveeTopMinus.addEventListener('click', () => setLeveeTopWidth(leveeTopWidthMeters - 1));
+  if (leveeTopPlus) leveeTopPlus.addEventListener('click', () => setLeveeTopWidth(leveeTopWidthMeters + 1));
+
+  const leveeSlopeSlider = document.getElementById('world-map-levee-slope');
+  if (leveeSlopeSlider) {
+    leveeSlopeSlider.addEventListener('input', () => {
+      setLeveeSlopeWidth(parseInt(leveeSlopeSlider.value, 10) || LEVEE_SLOPE_MIN);
+    });
+  }
+  const leveeSlopeMinus = document.getElementById('world-map-levee-slope-minus');
+  const leveeSlopePlus = document.getElementById('world-map-levee-slope-plus');
+  if (leveeSlopeMinus) leveeSlopeMinus.addEventListener('click', () => setLeveeSlopeWidth(leveeSlopeWidthMeters - 1));
+  if (leveeSlopePlus) leveeSlopePlus.addEventListener('click', () => setLeveeSlopeWidth(leveeSlopeWidthMeters + 1));
 
   // 掘る素材の選択（土／草／コンクリ）
   function setDigMaterial(id) {

@@ -69,7 +69,7 @@
         </div>
         <div class="world-map-river-brush" id="world-map-river-brush" hidden>
           <div class="world-map-river-row" data-for="dig">
-            <span class="world-map-river-row__name">川幅</span>
+            <span class="world-map-river-row__name">河床幅</span>
             <button type="button" class="world-map-step" id="world-map-river-width-minus" aria-label="幅を狭く">−</button>
             <input type="range" id="world-map-river-width" min="2" max="60" step="1" value="12">
             <button type="button" class="world-map-step" id="world-map-river-width-plus" aria-label="幅を広く">＋</button>
@@ -82,6 +82,27 @@
             <input type="range" id="world-map-river-depth" min="0.5" max="8" step="0.5" value="1">
             <button type="button" class="world-map-step" id="world-map-river-depth-plus" aria-label="深く">＋</button>
             <span class="world-map-river-width-meters" id="world-map-river-depth-meters">深さ 約1m</span>
+          </div>
+          <div class="world-map-river-row" data-for="dig">
+            <span class="world-map-river-row__name">堤防高</span>
+            <button type="button" class="world-map-step" id="world-map-levee-height-minus" aria-label="低く">−</button>
+            <input type="range" id="world-map-levee-height" min="0" max="6" step="0.5" value="2">
+            <button type="button" class="world-map-step" id="world-map-levee-height-plus" aria-label="高く">＋</button>
+            <span class="world-map-river-width-meters" id="world-map-levee-height-meters">地面より +2m</span>
+          </div>
+          <div class="world-map-river-row" data-for="dig">
+            <span class="world-map-river-row__name">道幅</span>
+            <button type="button" class="world-map-step" id="world-map-levee-top-minus" aria-label="狭く">−</button>
+            <input type="range" id="world-map-levee-top" min="2" max="12" step="1" value="4">
+            <button type="button" class="world-map-step" id="world-map-levee-top-plus" aria-label="広く">＋</button>
+            <span class="world-map-river-width-meters" id="world-map-levee-top-meters">道幅 約4m</span>
+          </div>
+          <div class="world-map-river-row" data-for="dig">
+            <span class="world-map-river-row__name">坂</span>
+            <button type="button" class="world-map-step" id="world-map-levee-slope-minus" aria-label="短く">−</button>
+            <input type="range" id="world-map-levee-slope" min="3" max="60" step="1" value="15">
+            <button type="button" class="world-map-step" id="world-map-levee-slope-plus" aria-label="長く">＋</button>
+            <span class="world-map-river-width-meters" id="world-map-levee-slope-meters">坂 約15m</span>
           </div>
           <div class="world-map-river-row" data-for="dig">
             <span class="world-map-river-row__name">素材</span>
@@ -240,7 +261,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=46';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=47';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
     const msg = document.getElementById('world-map-msg');
