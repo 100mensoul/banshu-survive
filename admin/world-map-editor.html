@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>世界地図エディタ｜播州サバイブ</title>
-  <link rel="stylesheet" href="../css/world-map.css?v=24">
+  <link rel="stylesheet" href="../css/world-map.css?v=38">
 </head>
 <body class="world-map-auth" id="world-map-body">
   <div id="world-map-auth-wrap">
@@ -49,7 +49,8 @@
             <button type="button" data-tool="raise">⛰ 山を盛る</button>
             <button type="button" data-tool="lower">🕳 へこます</button>
             <button type="button" data-tool="erase">⌫ 消す</button>
-            <button type="button" data-tool="river">🌊 川を引く</button>
+            <button type="button" data-tool="dig">⛏ 川を掘る</button>
+            <button type="button" data-tool="water">🌊 水を流す</button>
             <button type="button" data-tool="spot">✦ スポット登録</button>
             <button type="button" data-tool="area">🖌 エリア塗る</button>
             <span class="sep"></span>
@@ -60,13 +61,50 @@
               <button type="button" data-view="plan">平面</button>
               <button type="button" data-view="3d" class="on">立体</button>
             </div>
+            <div class="world-map-guide" id="world-map-guide" hidden>
+              <button type="button" id="world-map-guide-toggle" class="on">🗺 下絵: 表示</button>
+              <input type="range" id="world-map-guide-opacity" min="10" max="90" step="5" value="50" aria-label="下絵の濃さ">
+            </div>
           </div>
         </div>
         <div class="world-map-river-brush" id="world-map-river-brush" hidden>
-          <label for="world-map-river-width">川の幅（m）</label>
-          <input type="range" id="world-map-river-width" min="1" max="200" step="1" value="10">
-          <span id="world-map-river-width-label">ふつう</span>
-          <span class="world-map-river-width-meters" id="world-map-river-width-meters"></span>
+          <div class="world-map-river-row" data-for="dig">
+            <span class="world-map-river-row__name">川幅</span>
+            <button type="button" class="world-map-step" id="world-map-river-width-minus" aria-label="幅を狭く">−</button>
+            <input type="range" id="world-map-river-width" min="2" max="60" step="1" value="12">
+            <button type="button" class="world-map-step" id="world-map-river-width-plus" aria-label="幅を広く">＋</button>
+            <span class="world-map-river-width-meters" id="world-map-river-width-meters">幅 約12m</span>
+            <span class="world-map-river-feel" id="world-map-river-width-label"></span>
+          </div>
+          <div class="world-map-river-row" data-for="dig">
+            <span class="world-map-river-row__name">深さ</span>
+            <button type="button" class="world-map-step" id="world-map-river-depth-minus" aria-label="浅く">−</button>
+            <input type="range" id="world-map-river-depth" min="0.5" max="8" step="0.5" value="1">
+            <button type="button" class="world-map-step" id="world-map-river-depth-plus" aria-label="深く">＋</button>
+            <span class="world-map-river-width-meters" id="world-map-river-depth-meters">深さ 約1m</span>
+          </div>
+          <div class="world-map-river-row" data-for="dig">
+            <span class="world-map-river-row__name">素材</span>
+            <button type="button" class="world-map-mat-btn" data-mat="1">土</button>
+            <button type="button" class="world-map-mat-btn" data-mat="2">草</button>
+            <button type="button" class="world-map-mat-btn" data-mat="3">コンクリ</button>
+          </div>
+          <div class="world-map-river-row" data-for="water">
+            <span class="world-map-river-row__name">水位</span>
+            <button type="button" class="world-map-step" id="world-map-river-waterlevel-minus" aria-label="水面を下げる">−</button>
+            <input type="range" id="world-map-river-waterlevel" min="0.1" max="8" step="0.1" value="1">
+            <button type="button" class="world-map-step" id="world-map-river-waterlevel-plus" aria-label="水面を上げる">＋</button>
+            <span class="world-map-river-width-meters" id="world-map-river-waterlevel-meters">水位 地表から 1.0m 下</span>
+          </div>
+        </div>
+        <div class="world-map-river-brush" id="world-map-brush-panel" hidden>
+          <div class="world-map-river-row">
+            <span class="world-map-river-row__name" id="world-map-brush-name">ブラシ幅</span>
+            <button type="button" class="world-map-step" id="world-map-brush-minus" aria-label="細く">−</button>
+            <input type="range" id="world-map-brush-size" min="2" max="200" step="1" value="20">
+            <button type="button" class="world-map-step" id="world-map-brush-plus" aria-label="太く">＋</button>
+            <span class="world-map-river-width-meters" id="world-map-brush-meters">幅 約20m</span>
+          </div>
         </div>
         <div class="world-map-area-panel" id="world-map-area-panel" hidden>
           <label for="world-map-area-select">エリア</label>
@@ -116,22 +154,20 @@
           <div class="world-map-scale-legend__river" id="world-map-river-scale-hint" hidden></div>
         </div>
 
+        <div class="world-map-shirasagi-avatar" id="world-map-shirasagi-wrap" aria-hidden="true">
+          <img
+            class="world-map-shirasagi"
+            id="world-map-shirasagi"
+            src="../images/world-map-shirasagi-fly.png?v=2"
+            alt="白鷺"
+          >
+        </div>
+
         <div class="world-map-controls">
           <div class="world-map-dpad">
             <button type="button" class="up" data-dir="up" title="前へ (↑)">▲</button>
             <button type="button" class="left" data-dir="left" title="左へ (←)">◀</button>
-            <div class="center world-map-shirasagi-cell">
-              <div class="world-map-shirasagi-wrap" id="world-map-shirasagi-wrap">
-                <img
-                  class="world-map-shirasagi"
-                  id="world-map-shirasagi"
-                  src="../images/world-map-shirasagi.png"
-                  alt="白鷺"
-                  width="104"
-                  height="104"
-                >
-              </div>
-            </div>
+            <div class="center"></div>
             <button type="button" class="right" data-dir="right" title="右へ (→)">▶</button>
             <button type="button" class="down" data-dir="down" title="後へ (↓)">▼</button>
           </div>
@@ -197,7 +233,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=24';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=44';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
     const msg = document.getElementById('world-map-msg');

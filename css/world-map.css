@@ -156,6 +156,44 @@
   padding: 3px;
 }
 
+.world-map-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 10px;
+  background: rgba(233, 225, 210, 0.92);
+  border: 1px solid rgba(58, 44, 26, 0.2);
+  box-shadow: 0 4px 18px rgba(58, 44, 26, 0.08);
+}
+
+.world-map-guide[hidden] {
+  display: none;
+}
+
+.world-map-guide button {
+  border: 1.5px solid rgba(58, 44, 26, 0.35);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--world-ink);
+  border-radius: 7px;
+  padding: 5px 4px;
+  font-size: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.world-map-guide button.on {
+  background: var(--world-accent);
+  color: #fff;
+  border-color: var(--world-accent);
+}
+
+.world-map-guide input[type="range"] {
+  width: 100%;
+  accent-color: var(--world-accent);
+}
+
 .world-map-tool-column .world-map-view-toggle button {
   width: 100%;
   padding: 5px 4px;
@@ -322,30 +360,27 @@
   pointer-events: none;
 }
 
-.world-map-shirasagi-cell {
-  position: relative;
-  width: 42px;
-  height: 42px;
-}
-
-.world-map-shirasagi-wrap {
+/* 白鷺アバター：影の真上に浮かぶワールド追従オーバーレイ（JSで位置・拡縮を制御） */
+.world-map-shirasagi-avatar {
   position: absolute;
-  inset: -8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: rotate(0rad);
-  transition: transform 0.12s linear;
+  left: 0;
+  top: 0;
+  width: 150px;
+  height: auto;
+  transform: translate(-50%, -50%);
+  transform-origin: center center;
   pointer-events: none;
-  z-index: 5;
+  z-index: 6;
+  opacity: 0;
+  will-change: transform, left, top;
+  transition: opacity 0.2s ease;
 }
 
 .world-map-shirasagi {
-  width: 138px;
-  height: 138px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 6px rgba(42, 32, 24, 0.28));
-  transform-origin: center center;
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 2px 5px rgba(30, 24, 18, 0.25));
   pointer-events: none;
 }
 
@@ -757,10 +792,11 @@
   transform: translateX(-50%);
   z-index: 11;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(233, 225, 210, 0.88);
-  padding: 6px 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  background: rgba(233, 225, 210, 0.9);
+  padding: 8px 12px;
   border-radius: 10px;
   border: 1px solid rgba(58, 44, 26, 0.25);
   font-size: 12px;
@@ -770,14 +806,83 @@
   display: none;
 }
 
+.world-map-river-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.world-map-river-row[hidden] {
+  display: none;
+}
+
+.world-map-mat-btn {
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(58, 44, 26, 0.3);
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #3a2c1a;
+}
+
+.world-map-mat-btn[data-mat="1"].on {
+  background: #9c7b4e;
+  border-color: #9c7b4e;
+  color: #fff;
+}
+
+.world-map-mat-btn[data-mat="2"].on {
+  background: #6f8f4e;
+  border-color: #6f8f4e;
+  color: #fff;
+}
+
+.world-map-mat-btn[data-mat="3"].on {
+  background: #9aa0a3;
+  border-color: #9aa0a3;
+  color: #fff;
+}
+
+.world-map-river-row__name {
+  font-weight: 700;
+  font-size: 11px;
+  width: 48px;
+  white-space: nowrap;
+}
+
 .world-map-river-brush input[type="range"] {
-  width: 120px;
+  width: 110px;
   accent-color: var(--world-accent);
 }
 
-.world-map-river-brush label {
-  font-weight: 600;
+.world-map-step {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(58, 44, 26, 0.35);
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  color: #3a2c1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.world-map-step:hover {
+  background: var(--world-accent);
+  color: #fff;
+}
+
+.world-map-river-feel {
   font-size: 11px;
+  color: #6b5a44;
+  white-space: nowrap;
 }
 
 .world-map-river-width-meters {

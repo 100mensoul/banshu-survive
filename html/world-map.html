@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>世界地図｜播州サバイブ</title>
-  <link rel="stylesheet" href="../css/world-map.css?v=24">
+  <link rel="stylesheet" href="../css/world-map.css?v=38">
 </head>
 <body class="world-map-page">
   <div class="world-map-page">
@@ -52,22 +52,20 @@
         <div class="world-map-scale-legend__peak" id="world-map-peak-hint">地形データを読み込むと表示されます</div>
       </div>
 
+      <div class="world-map-shirasagi-avatar" id="world-map-shirasagi-wrap" aria-hidden="true">
+        <img
+          class="world-map-shirasagi"
+          id="world-map-shirasagi"
+          src="../images/world-map-shirasagi-fly.png?v=2"
+          alt="白鷺"
+        >
+      </div>
+
       <div class="world-map-controls">
         <div class="world-map-dpad">
           <button type="button" class="up" data-dir="up" title="前へ (↑)">▲</button>
           <button type="button" class="left" data-dir="left" title="左へ (←)">◀</button>
-          <div class="center world-map-shirasagi-cell">
-            <div class="world-map-shirasagi-wrap" id="world-map-shirasagi-wrap">
-              <img
-                class="world-map-shirasagi"
-                id="world-map-shirasagi"
-                src="../images/world-map-shirasagi.png"
-                alt="白鷺"
-                width="104"
-                height="104"
-              >
-            </div>
-          </div>
+          <div class="center"></div>
           <button type="button" class="right" data-dir="right" title="右へ (→)">▶</button>
           <button type="button" class="down" data-dir="down" title="後へ (↓)">▼</button>
         </div>
@@ -120,7 +118,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=24';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=44';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
 
