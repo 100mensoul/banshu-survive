@@ -953,8 +953,14 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     applyHeights();
     const sel = document.getElementById('world-map-preset');
     if (sel) sel.value = id;
-    let loaded = await loadFromSupabase();
-    if (!loaded && !readOnly) tryLoadLocal();
+    const remote = await loadFromSupabase();
+    const local = readOnly ? null : readLocalData();
+    const localAt = local?.savedAt || 0;
+    if (local && localAt > remote.updatedAt + 500) {
+      applyLocalData(local);
+    } else if (!remote.loaded && local) {
+      applyLocalData(local);
+    }
     setViewMode(viewMode);
     if (!readOnly) initHistory();
     syncPresetNav();
@@ -1294,13 +1300,27 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         } else if (dir === 'lower') {
           heights[i] = Math.max(-30 * reliefScale(), heights[i] - brushStrength() * f);
         } else if (dir === 'erase') {
-          heights[i] = heights[i] * (1 - f);
-          if (water[i] > 0.5) waterDirty = true;
-          water[i] = water[i] * (1 - f);
-          if (f > 0.25) {
-            areaGrid[i] = 0;
-            groundMat[i] = 0;
-            waterY[i] = 0;
+          const t = Math.min(1, f * 1.35);
+          if (t >= 0.08) {
+            heights[i] = heights[i] * (1 - t);
+            water[i] = water[i] * (1 - t);
+            // 深い川床でも確実に消えるよう、一定以上なら平地(0)に戻す
+            if (t > 0.22) {
+              heights[i] = 0;
+              water[i] = 0;
+              waterY[i] = 0;
+              groundMat[i] = 0;
+              areaGrid[i] = 0;
+            } else if (t > 0.12) {
+              waterY[i] = 0;
+              groundMat[i] = 0;
+            }
+            if (Math.abs(heights[i]) < 0.4) heights[i] = 0;
+            if (water[i] < 0.05) {
+              water[i] = 0;
+              waterY[i] = 0;
+            }
+            waterDirty = true;
           }
         }
       }
@@ -2306,10 +2326,10 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     };
   }
 
-  function saveLocal() {
-    if (readOnly) return;
-    const data = {
+  function localPayload() {
+    return {
       seg: SEG,
+      savedAt: Date.now(),
       h: Array.from(heights),
       w: Array.from(water),
       wy: Array.from(waterY),
@@ -2322,31 +2342,100 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         return { name: s.name, slug: s.slug, x: n.x, z: n.z };
       }),
     };
-    localStorage.setItem(localKey(), JSON.stringify(data));
+  }
+
+  function saveLocal() {
+    if (readOnly) return true;
+    try {
+      localStorage.setItem(localKey(), JSON.stringify(localPayload()));
+      return true;
+    } catch (err) {
+      console.warn('localStorage save failed', err);
+      return false;
+    }
+  }
+
+  function readLocalData() {
+    try {
+      let raw = localStorage.getItem(localKey());
+      if (!raw && WORLD_ID === 'hime-memory') {
+        raw = localStorage.getItem('banshu_world_map_v2');
+      }
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function applyLocalData(d) {
+    if (!d) return false;
+    if (d.h) loadTerrainFromArrays(d.h, d.w, d.gm, d.wy);
+    if (d.ag || d.a) loadAreasFromData(d.a, d.ag);
+    if (d.s) {
+      clearSpots();
+      for (const s of d.s) {
+        if (s.x != null && s.z != null && s.x <= 1 && s.z <= 1) {
+          const w = normToWorld(s.x, s.z);
+          addSpot(w.x, w.z, s.name, s.slug || slugify(s.name));
+        } else if (s.x != null && s.z != null) {
+          addSpot(s.x, s.z, s.name, s.slug || slugify(s.name));
+        }
+      }
+    }
+    return true;
+  }
+
+  function tryLoadLocal() {
+    return applyLocalData(readLocalData());
   }
 
   async function saveAll() {
-    saveLocal();
+    const localOk = saveLocal();
     if (!supabase) {
-      setStatus('ローカルに保存しました（Supabase 未接続）');
+      setStatus(localOk ? 'ローカルに保存しました（Supabase 未接続）' : '保存失敗: ブラウザの保存容量が足りません');
       return;
     }
 
-    let { error: layerErr } = await supabase.from('map_world_layers').upsert(terrainPayload(), {
-      onConflict: 'world_id,layer_id',
-    });
+    const { data: authData } = await supabase.auth.getSession();
+    if (!authData?.session) {
+      setStatus(
+        localOk ? 'ローカルのみ保存しました（クラウド保存にはログインが必要です）' : '保存失敗: ログインとブラウザ容量を確認してください',
+        5000,
+      );
+      return;
+    }
+
+    let { data: savedLayer, error: layerErr } = await supabase
+      .from('map_world_layers')
+      .upsert(terrainPayload(), { onConflict: 'world_id,layer_id' })
+      .select('updated_at')
+      .maybeSingle();
     // 新カラム(water_y/ground_mat)が未追加のDBでも保存できるようフォールバック
     if (layerErr && /water_y|ground_mat|column/i.test(layerErr.message || '')) {
       const payload = terrainPayload();
       delete payload.water_y;
       delete payload.ground_mat;
-      ({ error: layerErr } = await supabase.from('map_world_layers').upsert(payload, {
-        onConflict: 'world_id,layer_id',
-      }));
+      ({ data: savedLayer, error: layerErr } = await supabase
+        .from('map_world_layers')
+        .upsert(payload, { onConflict: 'world_id,layer_id' })
+        .select('updated_at')
+        .maybeSingle());
     }
     if (layerErr) {
-      setStatus('地形の保存エラー: ' + layerErr.message);
+      setStatus('地形の保存エラー: ' + layerErr.message + (localOk ? '（ローカルには保存済み）' : ''), 5000);
       return;
+    }
+
+    // クラウド保存成功時刻をローカルにも記録（次回起動時の比較用）
+    if (savedLayer?.updated_at) {
+      try {
+        const d = readLocalData() || localPayload();
+        d.savedAt = Date.parse(savedLayer.updated_at) || Date.now();
+        localStorage.setItem(localKey(), JSON.stringify(d));
+      } catch {
+        /* localStorage 容量不足でもクラウド保存は成功 */
+      }
     }
 
     for (const s of spots) {
@@ -2403,6 +2492,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       if (!confirm('地形・スポット・エリアをまっさらに戻します。\n（Supabase 上のデータは削除しません）')) return;
       heights.fill(0);
       water.fill(0);
+      waterY.fill(0);
+      groundMat.fill(0);
       areaGrid.fill(0);
       areas.length = 0;
       currentAreaId = 0;
@@ -2508,43 +2599,14 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     }
   }
 
-  function tryLoadLocal() {
-    try {
-      let raw = localStorage.getItem(localKey());
-      if (!raw && WORLD_ID === 'hime-memory') {
-        raw = localStorage.getItem('banshu_world_map_v2');
-      }
-      if (!raw) return false;
-      const d = JSON.parse(raw);
-      if (d.h) loadTerrainFromArrays(d.h, d.w, d.gm, d.wy);
-      if (d.ag || d.a) loadAreasFromData(d.a, d.ag);
-      if (d.s) {
-        clearSpots();
-        for (const s of d.s) {
-          if (s.x != null && s.z != null && s.x <= 1 && s.z <= 1) {
-            const w = normToWorld(s.x, s.z);
-            addSpot(w.x, w.z, s.name, s.slug || slugify(s.name));
-          } else if (s.x != null && s.z != null) {
-            addSpot(s.x, s.z, s.name, s.slug || slugify(s.name));
-          }
-        }
-      }
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
   /**
    * Supabase に ground_mat/water_y カラムが無い場合の保険。
    * 同じブラウザのローカル保存から素材(gm)と水位(wy)だけを重ねて復元する。
    */
   function overlayMatWaterYFromLocal() {
     try {
-      const raw = localStorage.getItem(localKey());
-      if (!raw) return false;
-      const d = JSON.parse(raw);
-      if (!d.gm && !d.wy) return false;
+      const d = readLocalData();
+      if (!d || (!d.gm && !d.wy)) return false;
       const apply = (arr, mode, target, asInt) => {
         if (!arr) return false;
         let a = arr;
@@ -2570,15 +2632,16 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   async function loadFromSupabase() {
-    if (!supabase) return false;
+    if (!supabase) return { loaded: false, updatedAt: 0 };
 
     let loaded = false;
+    let updatedAt = 0;
 
     let layer = null;
     let layerErr = null;
     ({ data: layer, error: layerErr } = await supabase
       .from('map_world_layers')
-      .select('seg, heights, water, water_y, ground_mat, area_defs, area_grid')
+      .select('seg, heights, water, water_y, ground_mat, area_defs, area_grid, updated_at')
       .eq('world_id', WORLD_ID)
       .eq('layer_id', LAYER_ID)
       .maybeSingle());
@@ -2586,7 +2649,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (layerErr && /water_y|ground_mat|area_|column/i.test(layerErr.message || '')) {
       ({ data: layer, error: layerErr } = await supabase
         .from('map_world_layers')
-        .select('seg, heights, water, area_defs, area_grid')
+        .select('seg, heights, water, area_defs, area_grid, updated_at')
         .eq('world_id', WORLD_ID)
         .eq('layer_id', LAYER_ID)
         .maybeSingle());
@@ -2595,7 +2658,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (layerErr && /area_/.test(layerErr.message || '')) {
       ({ data: layer, error: layerErr } = await supabase
         .from('map_world_layers')
-        .select('seg, heights, water')
+        .select('seg, heights, water, updated_at')
         .eq('world_id', WORLD_ID)
         .eq('layer_id', LAYER_ID)
         .maybeSingle());
@@ -2610,10 +2673,10 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       if (layer.area_defs || layer.area_grid) {
         loadAreasFromData(layer.area_defs, layer.area_grid);
       }
-      // クラウドに素材/水位カラムが無ければローカルから補完
       if (layer.ground_mat == null || layer.water_y == null) {
         overlayMatWaterYFromLocal();
       }
+      updatedAt = layer.updated_at ? Date.parse(layer.updated_at) : 0;
       loaded = true;
     }
 
@@ -2633,7 +2696,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       loaded = true;
     }
 
-    return loaded;
+    return { loaded, updatedAt };
   }
 
   async function boot() {
@@ -2641,8 +2704,14 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       applyHeights();
       planZoom = preset().planZoomDefault ?? 1;
       planZoom = Math.max(planZoomMin(), planZoom);
-      const fromRemote = await loadFromSupabase();
-      if (!fromRemote && !readOnly) tryLoadLocal();
+      const remote = await loadFromSupabase();
+      const local = readOnly ? null : readLocalData();
+      const localAt = local?.savedAt || 0;
+      if (local && localAt > remote.updatedAt + 500) {
+        applyLocalData(local);
+      } else if (!remote.loaded && local) {
+        applyLocalData(local);
+      }
       setViewMode('3d');
       if (!readOnly) initHistory();
     } catch (err) {
