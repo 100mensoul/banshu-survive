@@ -12,9 +12,25 @@
     }
     body { margin: 0; padding: 1rem; background: #f0f2f0; }
     h1 { font-size: 1.2rem; margin: 0; }
-    .err { background: #ffe8e8; border: 1px solid #e66; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
-    .ok { background: #e8f5e9; border: 1px solid #4a7c59; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
-    #msg { position: relative; z-index: 120; }
+    .err { background: #ffe8e8; border: 1px solid #e66; }
+    .ok { background: #e8f5e9; border: 1px solid #4a7c59; }
+    #msg {
+      position: fixed;
+      top: 0.75rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 120;
+      width: auto;
+      max-width: min(90vw, 24rem);
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px;
+      margin: 0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      line-height: 1.35;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      pointer-events: none;
+    }
     button {
       padding: 0.45rem 1rem; cursor: pointer; border-radius: 6px; border: 1px solid #333;
       background: #fff100; font-weight: 600; font-size: 0.9rem;
@@ -99,7 +115,6 @@
     .preview-content h2 { font-size: 1.15rem; }
     .preview-content img { max-width: 100%; height: auto; }
     #auth-panel label { max-width: 360px; }
-    #msg { font-size: 0.9rem; }
 
     /* ===== 画像挿入モーダル ===== */
     .modal[hidden] { display: none; }
@@ -688,7 +703,7 @@
       msg.className = ok ? 'ok' : 'err';
       msg.hidden = false;
       clearTimeout(showMsg._t);
-      showMsg._t = setTimeout(() => { msg.hidden = true; }, 6000);
+      showMsg._t = setTimeout(() => { msg.hidden = true; }, ok ? 2000 : 4000);
     }
 
     let debounceT;
