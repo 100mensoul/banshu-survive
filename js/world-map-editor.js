@@ -23,6 +23,8 @@ const WORLD_PRESETS = {
     gridLabel: '格子1マス ≈ 数kmほどの感覚',
     riverWidthDefaultMeters: 50,
     riverWidthMaxMeters: 200,
+    waterWidthDefaultMeters: 80,
+    waterWidthMaxMeters: 200,
     brushRadius: 48,
     orbitDefault: 580,
     planZoomMin: 0.5,
@@ -39,6 +41,8 @@ const WORLD_PRESETS = {
     gridLabel: '格子1マス ≈ 数百m・町の塊の感覚',
     riverWidthDefaultMeters: 10,
     riverWidthMaxMeters: 200,
+    waterWidthDefaultMeters: 30,
+    waterWidthMaxMeters: 200,
     brushRadius: 70,
     orbitDefault: 1400,
     planZoomDefault: 2.8,
@@ -57,6 +61,9 @@ const WORLD_PRESETS = {
     riverWidthDefaultMeters: 12,
     riverWidthMinMeters: 2,
     riverWidthMaxMeters: 60,
+    waterWidthDefaultMeters: 30,
+    waterWidthMinMeters: 2,
+    waterWidthMaxMeters: 60,
     riverDepthDefaultMeters: 1,
     riverWaterLevelDefaultMeters: 2,
     brushRadius: 12,
@@ -178,6 +185,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let brushMeters;
   let riverBrushRadius;
   let riverWidthMeters;
+  let waterBrushRadius;
+  let waterWidthMeters;
   let riverDepthMeters;
   let riverWaterLevelMeters;
   let digMaterial = 1; // 1=土(茶) 2=草(緑) 3=コンクリ(グレー)
@@ -317,7 +326,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   function activeBrushRadius() {
-    return tool === 'dig' || tool === 'water' ? riverSculptRadius() : brushRadius;
+    if (tool === 'dig') return riverSculptRadius();
+    if (tool === 'water') return waterSculptRadius();
+    return brushRadius;
   }
 
   function previewColorForTool() {
@@ -397,6 +408,25 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   function syncRiverRadiusFromMeters() {
     riverBrushRadius = riverRadiusFromMeters(riverWidthMeters);
+  }
+
+  function syncWaterRadiusFromMeters() {
+    waterBrushRadius = riverRadiusFromMeters(waterWidthMeters);
+  }
+
+  /** 水を流す：川幅とは別に、塗りブラシの幅を設定できる */
+  function waterSculptRadius() {
+    const cell = terrainCellSize();
+    return Math.max(waterBrushRadius, cell * 0.55);
+  }
+
+  function waterWidthMaxMeters() {
+    const p = preset();
+    return Math.min(RIVER_WIDTH_MAX, p.waterWidthMaxMeters ?? p.riverWidthMaxMeters ?? RIVER_WIDTH_MAX);
+  }
+
+  function waterWidthMinMeters() {
+    return preset().waterWidthMinMeters ?? preset().riverWidthMinMeters ?? 2;
   }
 
   function applyPanPixels(dx, dy) {
@@ -582,9 +612,11 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     brushRadius = p.brushRadius;
     brushMeters = Math.round(brushRadius * 2 * p.metersPerUnit);
     riverWidthMeters = p.riverWidthDefaultMeters ?? 10;
+    waterWidthMeters = p.waterWidthDefaultMeters ?? riverWidthMeters * 2;
     riverDepthMeters = p.riverDepthDefaultMeters ?? 1;
     riverWaterLevelMeters = p.riverWaterLevelDefaultMeters ?? 1;
     syncRiverRadiusFromMeters();
+    syncWaterRadiusFromMeters();
     margin = SIZE * 0.07;
     syncCameraFar();
 
@@ -869,6 +901,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     const slider = document.getElementById('world-map-river-width');
     const feelEl = document.getElementById('world-map-river-width-label');
     const widthMetersEl = document.getElementById('world-map-river-width-meters');
+    const waterSlider = document.getElementById('world-map-water-width');
+    const waterWidthMetersEl = document.getElementById('world-map-water-width-meters');
     const depthSlider = document.getElementById('world-map-river-depth');
     const depthMetersEl = document.getElementById('world-map-river-depth-meters');
     const wlSlider = document.getElementById('world-map-river-waterlevel');
@@ -896,6 +930,15 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     }
     if (feelEl) feelEl.textContent = riverWidthLabel();
     if (widthMetersEl) widthMetersEl.textContent = '幅 約' + formatMeters(riverWidthMeters);
+    const wMinM = waterWidthMinMeters();
+    const wMaxM = waterWidthMaxMeters();
+    if (waterSlider) {
+      waterSlider.min = String(wMinM);
+      waterSlider.max = String(wMaxM);
+      waterWidthMeters = Math.max(wMinM, Math.min(waterWidthMeters, wMaxM));
+      waterSlider.value = String(Math.round(waterWidthMeters));
+    }
+    if (waterWidthMetersEl) waterWidthMetersEl.textContent = '幅 約' + formatMeters(waterWidthMeters);
     if (depthSlider) depthSlider.value = String(riverDepthMeters);
     if (depthMetersEl) depthMetersEl.textContent = '深さ ' + depthMetersText();
     if (wlSlider) wlSlider.value = String(riverWaterLevelMeters);
@@ -911,7 +954,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         legendRiver.hidden = false;
         legendRiver.textContent =
           tool === 'water'
-            ? '水を流す：' + waterLevelText() + '（水平）'
+            ? '水を流す：幅 約' + formatMeters(waterWidthMeters) + ' · ' + waterLevelText() + '（水平）'
             : '川を掘る：幅 約' + formatMeters(riverWidthMeters) + ' · 深さ ' + depthMetersText();
       } else {
         legendRiver.hidden = true;
@@ -945,9 +988,11 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     orbit = preset().orbitDefault;
     buildTerrain();
     riverWidthMeters = preset().riverWidthDefaultMeters ?? 10;
+    waterWidthMeters = preset().waterWidthDefaultMeters ?? riverWidthMeters * 2;
     riverDepthMeters = preset().riverDepthDefaultMeters ?? 1;
     riverWaterLevelMeters = preset().riverWaterLevelDefaultMeters ?? 1;
     syncRiverRadiusFromMeters();
+    syncWaterRadiusFromMeters();
     planZoom = preset().planZoomDefault ?? 1;
     planZoom = Math.max(planZoomMin(), planZoom);
     applyHeights();
@@ -1359,7 +1404,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   /** 「水を流す」：水平な水面を塗る（高さは地表からの下がり。セル毎に保存→川ごとに変えられる） */
   function paintWaterAt(p) {
-    const radius = riverSculptRadius();
+    const radius = waterSculptRadius();
     const cell = terrainCellSize();
     const cols = SEG + 1;
     const surfaceY = flatWaterSurfaceY();
@@ -1394,7 +1439,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   function sculptStroke(from, to, dir) {
     const isRiverTool = dir === 'dig' || dir === 'water';
-    const radius = isRiverTool ? riverSculptRadius() : brushRadius;
+    const radius =
+      dir === 'water' ? waterSculptRadius() : dir === 'dig' ? riverSculptRadius() : brushRadius;
     const step = isRiverTool
       ? Math.max(terrainCellSize() * 0.35, radius * 0.4)
       : Math.max(0.5, radius * 0.4);
@@ -1511,7 +1557,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     lower: '地面をドラッグしてへこませます（微調整）',
     erase: 'ドラッグした範囲を平地に戻します（山・川を消す）',
     dig: 'なぞった跡を溝に掘ります（河床・堤防）。素材と幅・深さを選べます',
-    water: '掘った所をなぞると水平な水面が流れます（水位＝地表からの下がり）',
+    water: '掘った所をなぞると水平な水面が流れます（水幅・水位を調整）',
     spot: '空き地クリックで登録 · スポットをクリックで削除 · ドラッグで移動',
     area: 'ドラッグで町や区域を塗ってください（消しゴムで消せます）',
     look: 'ドラッグで視点を回す · 十字キーで移動 · Shift+ドラッグでも移動',
@@ -1759,6 +1805,28 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   const riverWidthPlus = document.getElementById('world-map-river-width-plus');
   if (riverWidthMinus) riverWidthMinus.addEventListener('click', () => nudgeRiverWidth(-1));
   if (riverWidthPlus) riverWidthPlus.addEventListener('click', () => nudgeRiverWidth(1));
+
+  const waterWidthSlider = document.getElementById('world-map-water-width');
+  if (waterWidthSlider) {
+    waterWidthSlider.addEventListener('input', () => {
+      waterWidthMeters = parseInt(waterWidthSlider.value, 10) || 2;
+      syncWaterRadiusFromMeters();
+      syncRiverBrushUI();
+    });
+  }
+
+  function nudgeWaterWidth(delta) {
+    const minM = waterWidthMinMeters();
+    const maxM = waterWidthMaxMeters();
+    waterWidthMeters = Math.max(minM, Math.min(maxM, Math.round(waterWidthMeters + delta)));
+    syncWaterRadiusFromMeters();
+    syncRiverBrushUI();
+  }
+
+  const waterWidthMinus = document.getElementById('world-map-water-width-minus');
+  const waterWidthPlus = document.getElementById('world-map-water-width-plus');
+  if (waterWidthMinus) waterWidthMinus.addEventListener('click', () => nudgeWaterWidth(-1));
+  if (waterWidthPlus) waterWidthPlus.addEventListener('click', () => nudgeWaterWidth(1));
 
   // 盛る/へこます/消す のブラシ幅
   function applyBrushMeters(m) {
