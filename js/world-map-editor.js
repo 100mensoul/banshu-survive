@@ -278,6 +278,12 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   const _heronAnchor = new THREE.Vector3();
 
+  /** 白鷺の向き：ドラッグ/Q/E で変わる azimuth のみ（十字キー移動では変えない） */
+  function heronTiltRad() {
+    if (viewMode !== '3d') return 0;
+    return -azimuth;
+  }
+
   /** 白鷺アバターを影の真上に投影配置。ズームで大きさが変わる（寄ると大・引くと小） */
   function updateShirasagiAvatar() {
     if (!shirasagiWrap) return;
@@ -311,7 +317,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       fade = (orbit - fadeEnd) / (fadeStart - fadeEnd);
     }
     fade = Math.max(0, Math.min(1, fade));
-    const rot = viewMode === '3d' ? `rotate(${-azimuth}rad)` : '';
+    const rot = viewMode === '3d' ? `rotate(${heronTiltRad()}rad)` : '';
     shirasagiWrap.style.opacity = String(fade);
     shirasagiWrap.style.left = sx + 'px';
     shirasagiWrap.style.top = sy + 'px';
@@ -2288,6 +2294,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       }
       ox = e.clientX;
       oy = e.clientY;
+      updateCam();
+      updateShirasagiAvatar();
       return;
     }
     if (previewToolActive() && !painting && !draggingSpot) {

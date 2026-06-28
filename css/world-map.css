@@ -405,10 +405,10 @@
 @keyframes world-map-shirasagi-flap {
   0%,
   100% {
-    transform: translateY(0) scaleY(1);
+    transform: translateY(0);
   }
   50% {
-    transform: translateY(-4px) scaleY(0.9);
+    transform: translateY(-4px);
   }
 }
 
