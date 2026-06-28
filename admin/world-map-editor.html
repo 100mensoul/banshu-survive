@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>世界地図エディタ｜播州サバイブ</title>
-  <link rel="stylesheet" href="../css/world-map.css?v=41">
+  <link rel="stylesheet" href="../css/world-map.css?v=44">
 </head>
 <body class="world-map-auth" id="world-map-body">
   <div id="world-map-auth-wrap">
@@ -38,6 +38,14 @@
           <span class="world-map-title__main">播州サバイブ</span>
           <small>世界地図 · 編集中</small>
         </div>
+
+        <div class="world-map-zone-picker" id="world-map-zone-picker" hidden>
+          <div class="world-map-zone-picker__title">ブロック</div>
+          <div class="world-map-zone-picker__list" id="world-map-zone-picker-list"></div>
+          <p class="world-map-zone-picker__note">④ にこれまでの編集データ</p>
+        </div>
+
+        <button type="button" class="world-map-zone-back" id="world-map-zone-back" hidden>← 平面に戻る</button>
 
         <div class="world-map-actions world-map-actions--top">
           <button type="button" id="world-map-undo" title="戻る (⌘Z)" disabled>↩ 戻る</button>
@@ -238,6 +246,14 @@
           <span class="world-map-minimap__label">俯瞰</span>
         </div>
 
+        <div class="world-map-zone-context" id="world-map-zone-context" hidden>
+          <div class="world-map-zone-context__frame">
+            <canvas id="world-map-zone-context-canvas" class="world-map-zone-context__canvas" width="188" height="188"></canvas>
+            <div class="world-map-zone-context__highlight" id="world-map-zone-context-highlight"></div>
+          </div>
+          <span class="world-map-zone-context__label">コヌイの路</span>
+        </div>
+
         <div class="world-map-minimap-modal" id="world-map-minimap-modal" hidden>
           <div class="world-map-minimap-modal__backdrop" id="world-map-minimap-backdrop"></div>
           <div class="world-map-minimap-modal__panel" role="dialog" aria-label="俯瞰マップ">
@@ -280,7 +296,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=57';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=62';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
     const msg = document.getElementById('world-map-msg');

@@ -4,7 +4,7 @@ import {
   fetchChartLayout,
   loadCastAndHimejinForLayout,
   buildPeopleMapFromCast,
-} from './chart-layout-editor.js?v=8';
+} from './chart-layout-editor.js?v=15';
 
 function sbReady() {
   const url = window.__SB_URL;

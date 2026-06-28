@@ -12,6 +12,10 @@ import {
   findMarriageEdgeIndex,
   findFamilyChildIndex,
   coupleKey,
+  isCoupleLabel,
+  hasManualEndpoints,
+  hasManualLayout,
+  shiftEdgeEndpointsForNode,
 } from './chart-layout-geometry.js';
 
 const LAYOUT_ID = 'main';
@@ -72,6 +76,12 @@ export function initChartLayoutEditor(options) {
   let dragStartClientX = 0;
   let dragStartClientY = 0;
   let dragHasMoved = false;
+  let pendingEndpointDrag = null;
+  let endpointDragMoved = false;
+  let pendingLabelDrag = null;
+  let labelDragMoved = false;
+  let dragLastNormX = 0;
+  let dragLastNormY = 0;
 
   root.classList.add('chart-layout-app');
   if (readOnly) root.classList.add('chart-layout-app--readonly');
@@ -90,10 +100,13 @@ export function initChartLayoutEditor(options) {
     '<button type="button" id="chart-layout-tool-zone">▢ 範囲</button>' +
     '<button type="button" id="chart-layout-add-zone">＋範囲</button>' +
     '<span class="chart-layout-toolbar__hint" id="chart-layout-hint"></span></div>' +
-    '<div class="chart-layout-edge-panel" id="chart-layout-edge-panel" hidden>' +
+    '<div class="chart-layout-edge-modal" id="chart-layout-edge-modal" hidden>' +
+    '<div class="chart-layout-edge-modal__backdrop" id="chart-layout-edge-modal-backdrop" aria-hidden="true"></div>' +
+    '<div class="chart-layout-edge-modal__dialog" role="dialog" aria-labelledby="chart-layout-edge-title">' +
+    '<div class="chart-layout-edge-panel" id="chart-layout-edge-panel">' +
     '<strong class="chart-layout-edge-panel__title" id="chart-layout-edge-title">関係線</strong>' +
     '<p class="chart-layout-edge-panel__kind" id="chart-layout-edge-kind"></p>' +
-    '<label class="chart-layout-edge-panel__field">ラベル<input type="text" id="chart-layout-edge-label" autocomplete="off"></label>' +
+    '<label class="chart-layout-edge-panel__field">関係ラベル<input type="text" id="chart-layout-edge-label" autocomplete="off" placeholder="例：夫婦・長女・次女"></label>' +
     '<label class="chart-layout-edge-panel__field" id="chart-layout-edge-directed-wrap">' +
     '<input type="checkbox" id="chart-layout-edge-directed"> 矢印あり（有方向）</label>' +
     '<label class="chart-layout-edge-panel__field">線の種類<select id="chart-layout-edge-style">' +
@@ -102,8 +115,9 @@ export function initChartLayoutEditor(options) {
     '<button type="button" id="chart-layout-edge-reverse">逆方向を追加</button>' +
     '<button type="button" id="chart-layout-edge-front">前面</button>' +
     '<button type="button" id="chart-layout-edge-back">背面</button>' +
+    '<button type="button" id="chart-layout-edge-reset-route">初期レイアウトに戻す</button>' +
     '<button type="button" id="chart-layout-edge-delete" class="chart-layout-edge-panel__danger">削除</button>' +
-    '<button type="button" id="chart-layout-edge-close">閉じる</button></div></div>' +
+    '<button type="button" id="chart-layout-edge-close">閉じる</button></div></div></div></div>' +
     '<div class="chart-layout-node-panel" id="chart-layout-node-panel" hidden>' +
     '<strong class="chart-layout-node-panel__title" id="chart-layout-node-title">キャラ</strong>' +
     '<label class="chart-layout-node-panel__field">カードサイズ<select id="chart-layout-node-size">' +
@@ -163,7 +177,7 @@ export function initChartLayoutEditor(options) {
     } else if (tool === 'zone') {
       hintEl.textContent = '範囲をドラッグで移動 · ＋範囲で追加';
     } else {
-      hintEl.textContent = 'ドラッグで移動 · 線クリックで編集・削除 · キャラクリックでサイズ';
+      hintEl.textContent = '矢尻・ラベルをドラッグで調整 · ラベル／線ダブルクリック=編集 · モーダルで初期化';
     }
   }
 
@@ -242,12 +256,59 @@ export function initChartLayoutEditor(options) {
     if (svg.querySelector('#chart-layout-arrow')) return;
     const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
     defs.innerHTML =
-      '<marker id="chart-layout-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
-      '<path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"></path></marker>';
+      '<marker id="chart-layout-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">' +
+      '<path d="M 0 0 L 10 5 L 0 10 z" fill="#111"></path></marker>';
     svg.appendChild(defs);
   }
 
-  function appendSegment(group, seg, edgeStyle, selected) {
+  function appendLabelButton(group, lb, edgeIndex, interactive, selected, dragging) {
+    const labelGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    let groupCls = 'chart-layout-edge__label-group';
+    if (interactive) groupCls += ' chart-layout-edge__label-group--interactive';
+    if (selected) groupCls += ' chart-layout-edge__label-group--selected';
+    if (dragging) groupCls += ' chart-layout-edge__label-group--dragging';
+    labelGroup.setAttribute('class', groupCls);
+    if (interactive) {
+      labelGroup.dataset.edgeIndex = String(edgeIndex);
+      labelGroup.dataset.labelDrag = '1';
+    }
+
+    const isVertical = !!lb.vertical;
+    const hitSize = isVertical ? { w: 28, h: Math.max(36, lb.text.length * 14) } : { w: Math.max(48, lb.text.length * 13), h: 24 };
+    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    hit.setAttribute('x', String(lb.x - hitSize.w / 2));
+    hit.setAttribute('y', String(lb.y - (isVertical ? 0 : hitSize.h * 0.75)));
+    hit.setAttribute('width', String(hitSize.w));
+    hit.setAttribute('height', String(hitSize.h));
+    hit.setAttribute('class', 'chart-layout-edge-label-hit');
+    labelGroup.appendChild(hit);
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('class', 'chart-layout-edge__label' + (isVertical ? ' chart-layout-edge__label--vertical' : ''));
+    if (interactive) text.dataset.edgeIndex = String(edgeIndex);
+    if (isVertical) {
+      lb.text.split('').forEach(function (ch, i) {
+        const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+        tspan.setAttribute('x', String(lb.x));
+        if (i === 0) tspan.setAttribute('y', String(lb.y));
+        else tspan.setAttribute('dy', '1.05em');
+        tspan.textContent = ch;
+        text.appendChild(tspan);
+      });
+    } else {
+      text.setAttribute('x', String(lb.x));
+      text.setAttribute('y', String(lb.y));
+      if (lb.rotate) {
+        text.setAttribute('transform', 'rotate(' + lb.rotate + ' ' + lb.x + ' ' + lb.y + ')');
+      }
+      text.textContent = lb.text;
+    }
+    labelGroup.appendChild(text);
+    group.appendChild(labelGroup);
+  }
+
+  function appendSegment(group, seg, edgeStyle, selected, edgeIndex, interactive, markerOpts) {
+    markerOpts = markerOpts || {};
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', String(seg.x1));
     line.setAttribute('y1', String(seg.y1));
@@ -256,9 +317,261 @@ export function initChartLayoutEditor(options) {
     let cls = 'chart-layout-edge';
     if (seg.dashed || edgeStyle === 'dashed') cls += ' chart-layout-edge--dashed';
     if (selected) cls += ' chart-layout-edge--selected';
+    if (interactive && edgeIndex != null) {
+      cls += ' chart-layout-edge--interactive';
+      line.dataset.edgeIndex = String(edgeIndex);
+    }
     line.setAttribute('class', cls);
-    if (seg.arrow) line.setAttribute('marker-end', 'url(#chart-layout-arrow)');
+    if (seg.arrowBoth || (seg.arrowStart && seg.arrowEnd)) {
+      if (!markerOpts.hideStart) line.setAttribute('marker-start', 'url(#chart-layout-arrow)');
+      if (!markerOpts.hideEnd) line.setAttribute('marker-end', 'url(#chart-layout-arrow)');
+    } else if (seg.arrowStart) {
+      if (!markerOpts.hideStart) line.setAttribute('marker-start', 'url(#chart-layout-arrow)');
+    } else if (seg.arrowEnd || seg.arrow) {
+      if (!markerOpts.hideEnd) line.setAttribute('marker-end', 'url(#chart-layout-arrow)');
+    }
     group.appendChild(line);
+  }
+
+  function endpointAngles(item) {
+    const segs = item.segments;
+    if (!segs.length) return { from: 0, to: 0 };
+    const first = segs[0];
+    const last = segs[segs.length - 1];
+    return {
+      from: Math.atan2(first.y2 - first.y1, first.x2 - first.x1) * 180 / Math.PI,
+      to: Math.atan2(last.y2 - last.y1, last.x2 - last.x1) * 180 / Math.PI,
+    };
+  }
+
+  function appendArrowTipHandle(group, pt, edgeIndex, role, angleDeg, selected, dragging) {
+    const tip = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    let tipCls = 'chart-layout-edge-tip';
+    if (selected) tipCls += ' chart-layout-edge-tip--selected';
+    if (dragging) tipCls += ' chart-layout-edge-tip--dragging';
+    tip.setAttribute('class', tipCls);
+    tip.setAttribute('transform', 'translate(' + pt.x + ',' + pt.y + ') rotate(' + angleDeg + ')');
+    tip.dataset.edgeIndex = String(edgeIndex);
+    tip.dataset.endpoint = role;
+
+    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    hit.setAttribute('cx', '0');
+    hit.setAttribute('cy', '0');
+    hit.setAttribute('r', '16');
+    hit.setAttribute('class', 'chart-layout-edge-tip__hit');
+
+    const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    arrow.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
+    arrow.setAttribute('class', 'chart-layout-edge-tip__arrow');
+    arrow.setAttribute('transform', 'translate(-9, -5)');
+
+    tip.appendChild(hit);
+    tip.appendChild(arrow);
+    group.appendChild(tip);
+  }
+
+  function bindEndpointDrag() {
+    if (readOnly || !edgesSvg || edgesSvg.dataset.boundEndpoint === '1') return;
+    edgesSvg.dataset.boundEndpoint = '1';
+
+    edgesSvg.addEventListener('pointerdown', function (e) {
+      if (tool !== 'move') return;
+      const handle = e.target && e.target.closest ? e.target.closest('.chart-layout-edge-tip') : null;
+      if (!handle) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const edgeIndex = parseInt(handle.dataset.edgeIndex, 10);
+      const role = handle.dataset.endpoint;
+      if (!role || edgeIndex < 0) return;
+      ensureEdgeEndpointDefaults(edgeIndex);
+      selectedEdgeIndex = edgeIndex;
+      pendingEndpointDrag = { edgeIndex, role, pointerId: e.pointerId };
+      endpointDragMoved = false;
+      edgesSvg.setPointerCapture(e.pointerId);
+      renderEdges();
+    });
+
+    edgesSvg.addEventListener('pointermove', function (e) {
+      if (!pendingEndpointDrag || e.pointerId !== pendingEndpointDrag.pointerId) return;
+      const edge = canvas.edges[pendingEndpointDrag.edgeIndex];
+      if (!edge) return;
+      const norm = pointerToNorm(e.clientX, e.clientY);
+      if (pendingEndpointDrag.role === 'from') edge.fromPoint = norm;
+      else edge.toPoint = norm;
+      endpointDragMoved = true;
+      renderEdges();
+    });
+
+    function finishEndpointDrag(e) {
+      if (!pendingEndpointDrag || e.pointerId !== pendingEndpointDrag.pointerId) return;
+      if (edgesSvg.hasPointerCapture(e.pointerId)) edgesSvg.releasePointerCapture(e.pointerId);
+      pendingEndpointDrag = null;
+      if (endpointDragMoved) {
+        canvas = normalizeCanvas(canvas);
+        pushHistory();
+        saveLocal();
+        updateEdgeResetButton();
+      }
+      endpointDragMoved = false;
+      renderEdges();
+    }
+
+    edgesSvg.addEventListener('pointerup', finishEndpointDrag);
+    edgesSvg.addEventListener('pointercancel', finishEndpointDrag);
+  }
+
+  function bindLabelDrag() {
+    if (readOnly || !edgesSvg || edgesSvg.dataset.boundLabel === '1') return;
+    edgesSvg.dataset.boundLabel = '1';
+
+    edgesSvg.addEventListener('pointerdown', function (e) {
+      if (tool !== 'move') return;
+      const labelEl = e.target && e.target.closest ? e.target.closest('[data-label-drag="1"]') : null;
+      if (!labelEl) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const edgeIndex = parseInt(labelEl.dataset.edgeIndex, 10);
+      if (edgeIndex < 0) return;
+      ensureEdgeLabelDefault(edgeIndex);
+      selectedEdgeIndex = edgeIndex;
+      pendingLabelDrag = { edgeIndex, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY };
+      labelDragMoved = false;
+      edgesSvg.setPointerCapture(e.pointerId);
+      renderEdges();
+    });
+
+    edgesSvg.addEventListener('pointermove', function (e) {
+      if (!pendingLabelDrag || e.pointerId !== pendingLabelDrag.pointerId) return;
+      const edge = canvas.edges[pendingLabelDrag.edgeIndex];
+      if (!edge) return;
+      if (!labelDragMoved) {
+        const dist = Math.hypot(e.clientX - pendingLabelDrag.startX, e.clientY - pendingLabelDrag.startY);
+        if (dist < DRAG_THRESHOLD) return;
+        labelDragMoved = true;
+      }
+      const norm = pointerToNorm(e.clientX, e.clientY);
+      const vertical = edge.labelPoint && edge.labelPoint.vertical === true;
+      edge.labelPoint = { x: norm.x, y: norm.y, vertical: vertical };
+      renderEdges();
+    });
+
+    function finishLabelDrag(e) {
+      if (!pendingLabelDrag || e.pointerId !== pendingLabelDrag.pointerId) return;
+      if (edgesSvg.hasPointerCapture(e.pointerId)) edgesSvg.releasePointerCapture(e.pointerId);
+      const edgeIndex = pendingLabelDrag.edgeIndex;
+      const moved = labelDragMoved;
+      pendingLabelDrag = null;
+      if (moved) {
+        canvas = normalizeCanvas(canvas);
+        pushHistory();
+        saveLocal();
+        updateEdgeResetButton();
+        labelDragMoved = false;
+        renderEdges();
+        return;
+      }
+      labelDragMoved = false;
+      selectEdge(edgeIndex, { openModal: true });
+    }
+
+    edgesSvg.addEventListener('pointerup', finishLabelDrag);
+    edgesSvg.addEventListener('pointercancel', finishLabelDrag);
+  }
+
+  function ensureEdgeEndpointDefaults(index) {
+    const edge = canvas.edges[index];
+    if (!edge) return;
+    if (edge.fromPoint && edge.toPoint) return;
+    const rect = stage.getBoundingClientRect();
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    const savedFp = edge.fromPoint;
+    const savedTp = edge.toPoint;
+    delete edge.fromPoint;
+    delete edge.toPoint;
+    const plan = buildRenderPlan(canvas, w, h, personName);
+    const item = plan.edges.find(function (it) { return it.index === index; });
+    if (item && item.endpointFrom && item.endpointTo) {
+      edge.fromPoint = savedFp || { x: item.endpointFrom.x / w, y: item.endpointFrom.y / h };
+      edge.toPoint = savedTp || { x: item.endpointTo.x / w, y: item.endpointTo.y / h };
+    } else {
+      if (savedFp) edge.fromPoint = savedFp;
+      if (savedTp) edge.toPoint = savedTp;
+    }
+  }
+
+  function ensureEdgeLabelDefault(index) {
+    const edge = canvas.edges[index];
+    if (!edge || edge.labelPoint) return;
+    const text = String(edge.label || '').trim();
+    if (!text) return;
+    const rect = stage.getBoundingClientRect();
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    const plan = buildRenderPlan(canvas, w, h, personName);
+    const item = plan.edges.find(function (it) { return it.index === index; });
+    const lb = item && item.labels[0];
+    if (lb) {
+      edge.labelPoint = { x: lb.x / w, y: lb.y / h, vertical: !!lb.vertical };
+    }
+  }
+
+  function updateEdgeResetButton() {
+    const btn = $('#chart-layout-edge-reset-route');
+    if (!btn) return;
+    if (selectedEdgeIndex < 0) {
+      btn.hidden = true;
+      return;
+    }
+    const edge = canvas.edges[selectedEdgeIndex];
+    if (!edge) {
+      btn.hidden = true;
+      return;
+    }
+    btn.hidden = false;
+    btn.disabled = !hasManualLayout(edge);
+  }
+
+  function resetEdgeRoute() {
+    if (selectedEdgeIndex < 0) return;
+    const edge = canvas.edges[selectedEdgeIndex];
+    if (!edge) return;
+    delete edge.fromPoint;
+    delete edge.toPoint;
+    delete edge.labelPoint;
+    canvas = normalizeCanvas(canvas);
+    pushHistory();
+    saveLocal();
+    updateEdgeResetButton();
+    renderEdges();
+    setStatus('線とラベルを初期レイアウトに戻しました');
+  }
+
+  function bindEdgeSelection() {
+    if (readOnly || !edgesSvg || edgesSvg.dataset.boundSelect === '1') return;
+    edgesSvg.dataset.boundSelect = '1';
+    edgesSvg.addEventListener('pointerdown', function (e) {
+      if (tool !== 'move') return;
+      if (e.target && e.target.closest && e.target.closest('.chart-layout-edge-tip, .chart-layout-edge__label-group')) return;
+      const target = e.target;
+      const edgeEl = target && target.closest
+        ? target.closest('[data-edge-index]')
+        : null;
+      if (!edgeEl || !edgeEl.dataset.edgeIndex) return;
+      e.stopPropagation();
+      e.preventDefault();
+      selectEdge(parseInt(edgeEl.dataset.edgeIndex, 10), { openModal: false });
+    });
+
+    edgesSvg.addEventListener('dblclick', function (e) {
+      if (tool !== 'move') return;
+      if (e.target && e.target.closest && e.target.closest('.chart-layout-edge-tip, .chart-layout-edge__label-group')) return;
+      const edgeEl = e.target && e.target.closest ? e.target.closest('[data-edge-index]') : null;
+      if (!edgeEl || !edgeEl.dataset.edgeIndex) return;
+      e.stopPropagation();
+      e.preventDefault();
+      selectEdge(parseInt(edgeEl.dataset.edgeIndex, 10), { openModal: true });
+    });
   }
 
   function renderZones() {
@@ -296,15 +609,27 @@ export function initChartLayoutEditor(options) {
     edgesSvg.classList.toggle('chart-layout-edges--edit', edgesInteractive);
 
     plan.edges.forEach(function (item) {
-      const selected = item.familyIndices
-        ? item.familyIndices.indexOf(selectedEdgeIndex) >= 0
-        : item.index === selectedEdgeIndex;
+      const selected = item.index === selectedEdgeIndex;
       const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       group.classList.add('chart-layout-edge-group');
       group.dataset.edgeIndex = String(item.index);
 
-      item.segments.forEach(function (seg) {
-        appendSegment(group, seg, canvas.edges[item.index]?.style, selected);
+      const showTips = edgesInteractive && item.draggableEndpoints && item.endpointFrom && item.endpointTo;
+      const segCount = item.segments.length;
+
+      item.segments.forEach(function (seg, segIdx) {
+        appendSegment(
+          group,
+          seg,
+          canvas.edges[item.index]?.style,
+          selected,
+          item.index,
+          edgesInteractive,
+          showTips ? {
+            hideStart: segIdx === 0,
+            hideEnd: segIdx === segCount - 1,
+          } : null
+        );
       });
 
       if (edgesInteractive) {
@@ -324,25 +649,41 @@ export function initChartLayoutEditor(options) {
       }
 
       item.labels.forEach(function (lb) {
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', String(lb.x));
-        text.setAttribute('y', String(lb.y));
-        text.setAttribute('class', 'chart-layout-edge__label');
-        text.textContent = lb.text;
-        group.appendChild(text);
+        const labelDragging = pendingLabelDrag
+          && pendingLabelDrag.edgeIndex === item.index
+          && labelDragMoved;
+        appendLabelButton(group, lb, item.index, edgesInteractive, selected, labelDragging);
       });
+
+      if (showTips) {
+        const angles = endpointAngles(item);
+        const dragIdx = pendingEndpointDrag ? pendingEndpointDrag.edgeIndex : -1;
+        appendArrowTipHandle(
+          group,
+          item.endpointFrom,
+          item.index,
+          'from',
+          angles.from + 180,
+          selected,
+          dragIdx === item.index && pendingEndpointDrag.role === 'from'
+        );
+        appendArrowTipHandle(
+          group,
+          item.endpointTo,
+          item.index,
+          'to',
+          angles.to,
+          selected,
+          dragIdx === item.index && pendingEndpointDrag.role === 'to'
+        );
+      }
 
       edgesSvg.appendChild(group);
     });
 
-    if (!readOnly) {
-      edgesSvg.querySelectorAll('.chart-layout-edge-hit').forEach(function (hit) {
-        hit.addEventListener('click', function (e) {
-          e.stopPropagation();
-          selectEdge(parseInt(hit.dataset.edgeIndex, 10));
-        });
-      });
-    }
+    bindEdgeSelection();
+    bindEndpointDrag();
+    bindLabelDrag();
   }
 
   function photoHtml(p) {
@@ -434,11 +775,33 @@ export function initChartLayoutEditor(options) {
     requestAnimationFrame(renderEdges);
   }
 
-  function closeEdgePanel() { selectedEdgeIndex = -1; $('#chart-layout-edge-panel').hidden = true; renderEdges(); }
+  function closeEdgeModal() {
+    $('#chart-layout-edge-modal').hidden = true;
+    renderEdges();
+  }
+
+  function closeEdgePanel() {
+    selectedEdgeIndex = -1;
+    pendingEndpointDrag = null;
+    pendingLabelDrag = null;
+    closeEdgeModal();
+  }
+
+  function openEdgeModal() {
+    $('#chart-layout-edge-modal').hidden = false;
+    window.requestAnimationFrame(function () {
+      const input = $('#chart-layout-edge-label');
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    });
+  }
   function closeNodePanel() { selectedNodeSlug = null; $('#chart-layout-node-panel').hidden = true; renderSizeGuides(); renderNodes(); }
   function closeZonePanel() { selectedZoneId = null; $('#chart-layout-zone-panel').hidden = true; renderZones(); }
 
-  function selectEdge(index) {
+  function selectEdge(index, opts) {
+    opts = opts || {};
     if (index < 0 || index >= canvas.edges.length) { closeEdgePanel(); return; }
     closeNodePanel();
     closeZonePanel();
@@ -447,7 +810,8 @@ export function initChartLayoutEditor(options) {
     const kindLabels = { relation: '関係線', marriage: '夫婦線', 'family-child': '親子線（家系図）' };
     let title = '';
     if (edge.kind === 'family-child') {
-      title = personName(edge.parents[0]) + '・' + personName(edge.parents[1] || edge.parents[0]) + ' → ' + personName(edge.child);
+      const role = edge.label || '子';
+      title = personName(edge.parents[0]) + '・' + personName(edge.parents[1] || edge.parents[0]) + 'の' + role + '：' + personName(edge.child);
     } else if (edge.kind === 'marriage') {
       title = personName(edge.from) + ' — ' + personName(edge.to) + '（夫婦）';
     } else {
@@ -460,7 +824,12 @@ export function initChartLayoutEditor(options) {
     $('#chart-layout-edge-directed').checked = !!edge.directed;
     $('#chart-layout-edge-directed-wrap').hidden = edge.kind !== 'relation';
     $('#chart-layout-edge-reverse').hidden = edge.kind !== 'relation';
-    $('#chart-layout-edge-panel').hidden = false;
+    if (edge.kind === 'family-child') {
+      $('#chart-layout-edge-kind').textContent = '親子関係 — ラベル例：長女・次女・長男';
+    }
+    updateEdgeResetButton();
+    if (opts.openModal) openEdgeModal();
+    else closeEdgeModal();
     if (tool !== 'move') setTool('move', { keepEdgePanel: true });
     else renderEdges();
   }
@@ -502,27 +871,42 @@ export function initChartLayoutEditor(options) {
 
   function addRelationEdge(from, to) {
     const idx = findRelationEdgeIndex(canvas.edges, from, to, false);
-    if (idx >= 0) { selectEdge(idx); return; }
+    if (idx >= 0) { selectEdge(idx, { openModal: true }); return; }
     canvas.edges.push({ kind: 'relation', from, to, label: '', style: 'solid', directed: false, lane: 0, zIndex: 0 });
     pushHistory();
     saveLocal();
-    selectEdge(canvas.edges.length - 1);
+    selectEdge(canvas.edges.length - 1, { openModal: true });
     setStatus('関係線を追加しました');
   }
 
   function addMarriageEdge(from, to) {
     const idx = findMarriageEdgeIndex(canvas.edges, from, to);
-    if (idx >= 0) { selectEdge(idx); return; }
-    canvas.edges.push({ kind: 'marriage', from, to, label: '', style: 'solid', directed: false, lane: 0, zIndex: 0 });
+    if (idx >= 0) { selectEdge(idx, { openModal: true }); return; }
+    canvas.edges = canvas.edges.filter(function (e) {
+      if (e.kind !== 'relation') return true;
+      if (coupleKey(e.from, e.to) !== coupleKey(from, to)) return true;
+      return !isCoupleLabel(e.label);
+    });
+    canvas.edges.push({
+      kind: 'marriage',
+      from,
+      to,
+      label: '夫婦',
+      style: 'solid',
+      directed: false,
+      lane: 0,
+      zIndex: 0,
+    });
+    canvas = normalizeCanvas(canvas);
     pushHistory();
     saveLocal();
-    selectEdge(canvas.edges.length - 1);
+    selectEdge(canvas.edges.length - 1, { openModal: true });
     setStatus('夫婦線を追加しました');
   }
 
   function addFamilyChildEdge(parents, child) {
     const idx = findFamilyChildIndex(canvas.edges, parents, child);
-    if (idx >= 0) { selectEdge(idx); return; }
+    if (idx >= 0) { selectEdge(idx, { openModal: true }); return; }
     canvas.edges.push({
       kind: 'family-child',
       parents: parents.slice(),
@@ -531,14 +915,15 @@ export function initChartLayoutEditor(options) {
       to: child,
       label: '',
       style: 'solid',
-      directed: true,
+      directed: false,
+      bidirectional: true,
       lane: 0,
       zIndex: 0,
     });
     pushHistory();
     saveLocal();
-    selectEdge(canvas.edges.length - 1);
-    setStatus('親子線を追加しました — ラベル（長男・長女など）を入力');
+    selectEdge(canvas.edges.length - 1, { openModal: true });
+    setStatus('親子関係を追加 — ラベルに「長女」「次女」などを入力');
   }
 
   function handleLineClick(slug) {
@@ -596,7 +981,7 @@ export function initChartLayoutEditor(options) {
     const edge = canvas.edges[selectedEdgeIndex];
     if (!edge || edge.kind !== 'relation') return;
     const rev = findRelationEdgeIndex(canvas.edges, edge.to, edge.from, true);
-    if (rev >= 0) { selectEdge(rev); return; }
+    if (rev >= 0) { selectEdge(rev, { openModal: true }); return; }
     canvas.edges.push({
       kind: 'relation',
       from: edge.to,
@@ -610,7 +995,7 @@ export function initChartLayoutEditor(options) {
     canvas = normalizeCanvas(canvas);
     pushHistory();
     saveLocal();
-    selectEdge(canvas.edges.length - 1);
+    selectEdge(canvas.edges.length - 1, { openModal: true });
     setStatus('逆方向の関係線を追加しました（例：尊敬 / 信頼）');
   }
 
@@ -729,6 +1114,9 @@ export function initChartLayoutEditor(options) {
         dragPointerId = e.pointerId;
         dragStartClientX = e.clientX;
         dragStartClientY = e.clientY;
+        const node = nodeBySlug(slug);
+        dragLastNormX = node ? node.x : 0;
+        dragLastNormY = node ? node.y : 0;
         dragHasMoved = false;
         el.setPointerCapture(e.pointerId);
         e.preventDefault();
@@ -739,8 +1127,13 @@ export function initChartLayoutEditor(options) {
         if (!dragHasMoved) { dragHasMoved = true; el.classList.add('chart-layout-node--dragging'); closeNodePanel(); }
         const norm = pointerToNorm(e.clientX, e.clientY);
         const node = nodeBySlug(slug);
+        const dx = norm.x - dragLastNormX;
+        const dy = norm.y - dragLastNormY;
         node.x = norm.x;
         node.y = norm.y;
+        dragLastNormX = norm.x;
+        dragLastNormY = norm.y;
+        shiftEdgeEndpointsForNode(canvas.edges, slug, dx, dy);
         el.style.left = node.x * 100 + '%';
         el.style.top = node.y * 100 + '%';
         renderEdges();
@@ -825,7 +1218,9 @@ export function initChartLayoutEditor(options) {
   $('#chart-layout-edge-front').addEventListener('click', function () { bumpEdgeZ(1); });
   $('#chart-layout-edge-back').addEventListener('click', function () { bumpEdgeZ(-1); });
   $('#chart-layout-edge-delete').addEventListener('click', removeSelectedEdge);
-  $('#chart-layout-edge-close').addEventListener('click', closeEdgePanel);
+  $('#chart-layout-edge-reset-route').addEventListener('click', resetEdgeRoute);
+  $('#chart-layout-edge-close').addEventListener('click', closeEdgeModal);
+  $('#chart-layout-edge-modal-backdrop').addEventListener('click', closeEdgeModal);
   $('#chart-layout-zone-title').addEventListener('change', applyZonePanel);
   $('#chart-layout-zone-color').addEventListener('change', applyZonePanel);
   $('#chart-layout-zone-delete').addEventListener('click', removeZone);
@@ -835,17 +1230,25 @@ export function initChartLayoutEditor(options) {
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
         if (linkFromSlug || linkParents.length) { resetLinkState(); syncToolHint(); renderNodes(); }
+        else if (!$('#chart-layout-edge-modal').hidden) closeEdgeModal();
         else if (selectedEdgeIndex >= 0) closeEdgePanel();
         else if (selectedNodeSlug) closeNodePanel();
         else if (selectedZoneId) closeZonePanel();
         else if (tool !== 'move') setTool('move');
       }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedEdgeIndex >= 0) {
+        const tag = (e.target && e.target.tagName) || '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        e.preventDefault();
+        removeSelectedEdge();
+      }
     });
     stage.addEventListener('click', function (e) {
-      if (e.target.closest('.chart-layout-node, .chart-layout-edge-hit, .chart-layout-edge-group, .chart-layout-zone, [class*="panel"]')) return;
+      if (e.target.closest('.chart-layout-node, .chart-layout-edge-hit, .chart-layout-edge-group, .chart-layout-edge-tip, .chart-layout-zone, [class*="panel"]')) return;
       resetLinkState();
       syncToolHint();
       closeNodePanel();
+      closeEdgePanel();
       if (tool !== 'zone') closeZonePanel();
       renderNodes();
     });

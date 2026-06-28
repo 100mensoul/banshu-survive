@@ -10,6 +10,55 @@ const CAR_LEN_M = 4.5;
 const CAR_W_M = 1.8;
 const CAR_H_M = 1.5;
 
+/** コヌイの路：ゾーン定義（名称は将来変更可） */
+const KONUI_LEGACY_ZONE_ID = 'zone-4';
+const KONUI_ZONES = [
+  {
+    id: 'zone-1',
+    num: '①',
+    name: '約束の地',
+    hint: 'ツインコモンズ',
+    color: '#6a8ab8',
+    tx: 0.04,
+    ty: 0.06,
+    tw: 0.32,
+    th: 0.28,
+  },
+  {
+    id: 'zone-2',
+    num: '②',
+    name: '緑の子午線',
+    hint: '372号',
+    color: '#4a7c59',
+    tx: 0.28,
+    ty: 0.32,
+    tw: 0.38,
+    th: 0.22,
+  },
+  {
+    id: 'zone-3',
+    num: '③',
+    name: 'フラワーゲート',
+    hint: '花田IC',
+    color: '#c9a86a',
+    tx: 0.1,
+    ty: 0.62,
+    tw: 0.44,
+    th: 0.22,
+  },
+  {
+    id: 'zone-4',
+    num: '④',
+    name: 'フォークノード',
+    hint: '道の駅・天川',
+    color: '#6f9e72',
+    tx: 0.58,
+    ty: 0.28,
+    tw: 0.36,
+    th: 0.38,
+  },
+];
+
 const WORLD_PRESETS = {
   'new-harima': {
     worldId: 'new-harima',
@@ -78,6 +127,17 @@ const WORLD_PRESETS = {
     brushRadius: 12,
     orbitDefault: 280,
     guideImage: '../images/konui-guide.png',
+    zones: KONUI_ZONES,
+    overviewTrace: '../images/konui-guide.png',
+    /** ゾーン詳細編集（④の既存データと同じ解像度を維持） */
+    zoneDetail: {
+      size: 500,
+      seg: 480,
+      metersPerUnit: 2,
+      gridCell: 25,
+      orbitDefault: 280,
+      brushRadius: 12,
+    },
   },
 };
 
@@ -220,6 +280,15 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let viewMode = '3d';
 
   let currentPresetId = defaultPreset || (readOnly ? 'hime-memory' : 'konui-michi');
+  /** コヌイの路：選択中ゾーン（null = 俯瞰） */
+  let currentZoneId = null;
+  let konuiOverviewMode = false;
+  let overviewState = null;
+  let zoneMarkerGroup = null;
+  let overviewMiniScene = null;
+  let overviewMiniLand = null;
+  let overviewPlanRenderer = null;
+  const OVERVIEW_CTX_PX = 188;
   let SIZE;
   let SEG;
   let GRID_CELL;
@@ -248,8 +317,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let waterY; // セル毎の水面の高さ（ワールド単位・絶対Y）
   let groundMat; // 0=自動 1=土 2=草 3=コンクリ(薄灰) 4=アスファルト(道)
   let areaGrid;
-  let areas;
-  let currentAreaId;
+  let areas = [];
+  let currentAreaId = 0;
   let colAttr;
   let land;
   let wireMesh;
@@ -557,8 +626,258 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     return WORLD_PRESETS[currentPresetId];
   }
 
+  function konuiZones() {
+    return preset().zones || null;
+  }
+
+  function isKonuiZoned() {
+    return currentPresetId === 'konui-michi' && !!konuiZones()?.length;
+  }
+
+  function isKonuiOverview() {
+    return isKonuiZoned() && konuiOverviewMode && !currentZoneId;
+  }
+
+  /** コヌイの路：全体平面ビュー用（1km四方） */
+  function overviewSpec() {
+    const p = preset();
+    return {
+      size: p.size,
+      seg: p.seg,
+      gridCell: p.gridCell,
+      metersPerUnit: p.metersPerUnit,
+      orbitDefault: p.orbitDefault,
+      brushRadius: p.brushRadius,
+      gridLabel: p.gridLabel,
+    };
+  }
+
+  /** いま編集中の地形パラメータ */
+  function terrainSpec() {
+    const p = preset();
+    if (isKonuiOverview()) return { ...p, ...overviewSpec() };
+    if (isKonuiZoned() && currentZoneId && p.zoneDetail) return { ...p, ...p.zoneDetail };
+    return p;
+  }
+
+  function activeLayerId() {
+    if (isKonuiZoned() && currentZoneId) return `${LAYER_ID}-${currentZoneId}`;
+    if (isKonuiZoned() && konuiOverviewMode) return `${LAYER_ID}-overview`;
+    return LAYER_ID;
+  }
+
+  function legacyKonuiLocalKey() {
+    return 'banshu_world_map_v3_konui-michi';
+  }
+
+  function migrateKonuiLegacyLocal() {
+    if (readOnly) return;
+    try {
+      const base = legacyKonuiLocalKey();
+      const legacy = localStorage.getItem(base);
+      const z4Key = `${base}_${KONUI_LEGACY_ZONE_ID}`;
+      const z1Key = `${base}_zone-1`;
+      if (legacy && !localStorage.getItem(z4Key)) {
+        localStorage.setItem(z4Key, legacy);
+      }
+      // 誤って zone-1 へ移した分を ④ へ（④が空のときのみ）
+      const z1Data = localStorage.getItem(z1Key);
+      if (z1Data && !localStorage.getItem(z4Key)) {
+        localStorage.setItem(z4Key, z1Data);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function zoneWorldRect(z) {
+    const half = SIZE / 2;
+    return {
+      x0: z.tx * SIZE - half,
+      z0: z.ty * SIZE - half,
+      x1: (z.tx + z.tw) * SIZE - half,
+      z1: (z.ty + z.th) * SIZE - half,
+    };
+  }
+
+  function findKonuiZone(id) {
+    return (konuiZones() || []).find((z) => z.id === id) || null;
+  }
+
+  function currentZoneLabel() {
+    const z = findKonuiZone(currentZoneId);
+    return z ? `${z.num} ${z.name}` : '';
+  }
+
   function localKey() {
-    return `banshu_world_map_v3_${WORLD_ID}`;
+    const base = `banshu_world_map_v3_${WORLD_ID}`;
+    if (isKonuiZoned() && currentZoneId) return `${base}_${currentZoneId}`;
+    if (isKonuiZoned() && konuiOverviewMode) return `${base}_overview`;
+    return base;
+  }
+
+  function destroyZoneMarkers() {
+    if (!zoneMarkerGroup) return;
+    scene.remove(zoneMarkerGroup);
+    zoneMarkerGroup.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) o.material.dispose();
+    });
+    zoneMarkerGroup = null;
+  }
+
+  function buildZoneMarkersOnPlan() {
+    destroyZoneMarkers();
+    if (!isKonuiOverview() || !konuiZones()) return;
+    zoneMarkerGroup = new THREE.Group();
+    for (const z of konuiZones()) {
+      const r = zoneWorldRect(z);
+      const y = 1.4;
+      const pts = [
+        new THREE.Vector3(r.x0, y, r.z0),
+        new THREE.Vector3(r.x1, y, r.z0),
+        new THREE.Vector3(r.x1, y, r.z1),
+        new THREE.Vector3(r.x0, y, r.z1),
+        new THREE.Vector3(r.x0, y, r.z0),
+      ];
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+      const lineMat = new THREE.LineBasicMaterial({
+        color: z.color,
+        transparent: true,
+        opacity: 0.9,
+        depthTest: false,
+      });
+      const line = new THREE.Line(lineGeo, lineMat);
+      line.renderOrder = 1001;
+      zoneMarkerGroup.add(line);
+    }
+    zoneMarkerGroup.visible = viewMode === 'plan';
+    scene.add(zoneMarkerGroup);
+  }
+
+  function destroyOverviewMiniLand() {
+    if (overviewMiniLand && overviewMiniScene) {
+      overviewMiniScene.remove(overviewMiniLand);
+      overviewMiniLand.geometry.dispose();
+      overviewMiniLand.material.dispose();
+      overviewMiniLand = null;
+    }
+  }
+
+  function areaColorFromList(areaList, id) {
+    const a = (areaList || []).find((x) => x.id === id);
+    if (!a?.color) return null;
+    const hex = a.color.replace('#', '');
+    return {
+      r: parseInt(hex.slice(0, 2), 16) / 255,
+      g: parseInt(hex.slice(2, 4), 16) / 255,
+      b: parseInt(hex.slice(4, 6), 16) / 255,
+    };
+  }
+
+  function colorOverviewMiniVertices(col, st) {
+    const hArr = st.h;
+    const gMat = st.gm || [];
+    const aGrid = st.ag || [];
+    const areaList = st.a || [];
+    for (let i = 0; i < hArr.length; i++) {
+      if (gMat[i] > 0) {
+        const mc = matColor(gMat[i]);
+        col.setXYZ(i, mc.r, mc.g, mc.b);
+        continue;
+      }
+      const y = hArr[i];
+      if (y < -0.01) {
+        col.setXYZ(i, cCutGray.r, cCutGray.g, cCutGray.b);
+        continue;
+      }
+      if (aGrid[i] > 0) {
+        const ac = areaColorFromList(areaList, aGrid[i]);
+        if (ac) {
+          col.setXYZ(i, ac.r, ac.g, ac.b);
+          continue;
+        }
+      }
+      let band = HEIGHT_BANDS[HEIGHT_BANDS.length - 1];
+      for (const b of HEIGHT_BANDS) {
+        if (y < b.max) {
+          band = b;
+          break;
+        }
+      }
+      const hex = band.css.replace('#', '');
+      col.setXYZ(i, parseInt(hex.slice(0, 2), 16) / 255, parseInt(hex.slice(2, 4), 16) / 255, parseInt(hex.slice(4, 6), 16) / 255);
+    }
+    col.needsUpdate = true;
+  }
+
+  function rebuildOverviewMiniLand() {
+    destroyOverviewMiniLand();
+    if (!overviewState?.h?.length) return;
+    if (!overviewMiniScene) {
+      overviewMiniScene = new THREE.Scene();
+      overviewMiniScene.background = new THREE.Color(0xe9e1d2);
+    }
+    const st = overviewState;
+    const seg = st.seg;
+    const sz = st.size || preset().size;
+    const geo = new THREE.PlaneGeometry(sz, sz, seg, seg);
+    geo.rotateX(-Math.PI / 2);
+    const vPos = geo.attributes.position;
+    for (let i = 0; i < vPos.count; i++) {
+      vPos.setY(i, st.h[i] || 0);
+    }
+    vPos.needsUpdate = true;
+    geo.computeVertexNormals();
+    const col = new THREE.Float32BufferAttribute(new Float32Array(vPos.count * 3), 3);
+    geo.setAttribute('color', col);
+    colorOverviewMiniVertices(col, st);
+    overviewMiniLand = new THREE.Mesh(
+      geo,
+      new THREE.MeshBasicMaterial({ vertexColors: true }),
+    );
+    overviewMiniScene.add(overviewMiniLand);
+  }
+
+  function captureOverviewState() {
+    if (!heights || !isKonuiOverview()) return;
+    overviewState = { ...localPayload(), size: SIZE, seg: SEG };
+    rebuildOverviewMiniLand();
+  }
+
+  function ensureOverviewPlanRenderer() {
+    const canvas = document.getElementById('world-map-zone-context-canvas');
+    if (!canvas) return null;
+    if (!overviewPlanRenderer) {
+      overviewPlanRenderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: false,
+        powerPreference: 'low-power',
+      });
+      overviewPlanRenderer.setClearColor(0xe9e1d2, 1);
+    }
+    return overviewPlanRenderer;
+  }
+
+  function renderOverviewPlanContext() {
+    if (!overviewState || !currentZoneId || viewMode !== '3d') return;
+    const r = ensureOverviewPlanRenderer();
+    if (!r || !overviewMiniLand) return;
+    const sz = overviewState.size || preset().size;
+    const half = sz * 0.52;
+    minimapCamera.left = -half;
+    minimapCamera.right = half;
+    minimapCamera.top = half;
+    minimapCamera.bottom = -half;
+    minimapCamera.position.set(0, sz * 0.65, 0);
+    minimapCamera.up.set(0, 0, -1);
+    minimapCamera.lookAt(0, 0, 0);
+    minimapCamera.updateProjectionMatrix();
+    const pr = Math.min(window.devicePixelRatio, 2);
+    r.setPixelRatio(pr);
+    r.setSize(OVERVIEW_CTX_PX, OVERVIEW_CTX_PX, false);
+    r.render(overviewMiniScene, minimapCamera);
   }
 
   function orbitMin() {
@@ -588,6 +907,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     clearSpots();
     destroyGuidePlane();
     destroyWaterSurface();
+    destroyZoneMarkers();
     if (land) {
       scene.remove(land, wireMesh, gridHelper, scaleMarkerGroup);
       geo.dispose();
@@ -709,12 +1029,12 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   function buildTerrain() {
-    const p = preset();
+    const p = terrainSpec();
     SIZE = p.size;
     SEG = p.seg;
     GRID_CELL = p.gridCell;
-    WORLD_ID = p.worldId;
-    brushRadius = p.brushRadius;
+    WORLD_ID = preset().worldId;
+    brushRadius = p.brushRadius ?? preset().brushRadius;
     brushMeters = Math.round(brushRadius * 2 * p.metersPerUnit);
     riverWidthMeters = p.riverWidthDefaultMeters ?? 10;
     waterWidthMeters = p.waterWidthDefaultMeters ?? riverWidthMeters * 2;
@@ -779,10 +1099,16 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     syncRiverBrushUI();
     updateScaleLegend();
     setupMinimapCamera();
-    buildGuidePlane();
+    if (isKonuiOverview() || !isKonuiZoned()) buildGuidePlane();
+    if (isKonuiOverview()) buildZoneMarkersOnPlan();
   }
 
-  buildTerrain();
+  if (!isKonuiZoned()) {
+    buildTerrain();
+  } else {
+    WORLD_ID = preset().worldId;
+    konuiOverviewMode = true;
+  }
 
   const cLow = new THREE.Color(0x83975a);
   const cMid = new THREE.Color(0x9c7b46);
@@ -965,7 +1291,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   function updateScaleLegend() {
-    const p = preset();
+    const p = terrainSpec();
     const mpu = p.metersPerUnit;
     const gridM = GRID_CELL * mpu;
     const gridEl = document.getElementById('world-map-grid-hint');
@@ -1205,10 +1531,20 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (!WORLD_PRESETS[id] || id === currentPresetId) return;
     if (!readOnly) saveLocal();
     deletedSpotSlugs.length = 0;
+    currentZoneId = null;
+    konuiOverviewMode = false;
     destroyTerrain();
     currentPresetId = id;
     target.set(0, 0, 0);
     orbit = preset().orbitDefault;
+    if (isKonuiZoned()) {
+      WORLD_ID = preset().worldId;
+      migrateKonuiLegacyLocal();
+      await showKonuiOverview();
+      syncPresetNav();
+      setStatus(preset().label + ' — 平面ビューで編集', 4000);
+      return;
+    }
     buildTerrain();
     riverWidthMeters = preset().riverWidthDefaultMeters ?? 10;
     waterWidthMeters = preset().waterWidthDefaultMeters ?? riverWidthMeters * 2;
@@ -1251,8 +1587,175 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     const label = document.getElementById('world-map-preset-nav-label');
     if (prevBtn) prevBtn.title = '← ' + WORLD_PRESETS[prevId].shortLabel;
     if (nextBtn) nextBtn.title = WORLD_PRESETS[nextId].shortLabel + ' →';
-    if (label) label.textContent = preset().shortLabel || preset().label;
+    if (label) {
+      const base = preset().shortLabel || preset().label;
+      if (currentZoneId) label.textContent = `${base} · ${currentZoneLabel()}`;
+      else if (isKonuiOverview()) label.textContent = `${base} · 平面`;
+      else label.textContent = base;
+    }
   }
+
+  const zonePickerEl = document.getElementById('world-map-zone-picker');
+  const zonePickerList = document.getElementById('world-map-zone-picker-list');
+  const zoneContextEl = document.getElementById('world-map-zone-context');
+  const zoneContextHighlight = document.getElementById('world-map-zone-context-highlight');
+  const zoneBackBtn = document.getElementById('world-map-zone-back');
+
+  function buildZonePickerList() {
+    if (!zonePickerList || !konuiZones()) return;
+    zonePickerList.innerHTML = '';
+    for (const z of konuiZones()) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'world-map-zone-picker__btn';
+      btn.style.setProperty('--zone-color', z.color);
+      btn.innerHTML = `<span class="world-map-zone-picker__num">${z.num}</span><span class="world-map-zone-picker__name">${z.name}</span>`;
+      btn.addEventListener('click', () => enterKonuiZone(z.id));
+      zonePickerList.appendChild(btn);
+    }
+  }
+
+  function updateZoneContextHighlight() {
+    const z = findKonuiZone(currentZoneId);
+    if (!zoneContextHighlight || !z) return;
+    zoneContextHighlight.style.left = z.tx * 100 + '%';
+    zoneContextHighlight.style.top = z.ty * 100 + '%';
+    zoneContextHighlight.style.width = z.tw * 100 + '%';
+    zoneContextHighlight.style.height = z.th * 100 + '%';
+    zoneContextHighlight.style.borderColor = z.color;
+    zoneContextHighlight.style.background = z.color + '33';
+  }
+
+  function syncKonuiViewToggle() {
+    const planBtn = document.querySelector('.world-map-view-toggle button[data-view="plan"]');
+    const d3Btn = document.querySelector('.world-map-view-toggle button[data-view="3d"]');
+    if (!isKonuiZoned()) return;
+    if (isKonuiOverview()) {
+      if (planBtn) {
+        planBtn.hidden = false;
+        planBtn.classList.add('on');
+      }
+      if (d3Btn) {
+        d3Btn.hidden = true;
+        d3Btn.classList.remove('on');
+      }
+    } else if (currentZoneId) {
+      if (planBtn) {
+        planBtn.hidden = true;
+        planBtn.classList.remove('on');
+      }
+      if (d3Btn) {
+        d3Btn.hidden = false;
+        d3Btn.classList.add('on');
+      }
+    }
+  }
+
+  function syncKonuiZoneUI() {
+    const overview = isKonuiOverview();
+    document.body.classList.remove('world-map-body--zone-overview');
+    if (zonePickerEl) zonePickerEl.hidden = !overview;
+    if (zoneBackBtn) zoneBackBtn.hidden = overview || !currentZoneId;
+    if (minimapEl) {
+      minimapEl.hidden = overview || viewMode !== '3d' || (isKonuiZoned() && !!currentZoneId);
+    }
+    if (zoneContextEl) {
+      zoneContextEl.hidden = overview || !currentZoneId || viewMode !== '3d';
+      if (currentZoneId) updateZoneContextHighlight();
+    }
+    if (zoneMarkerGroup) zoneMarkerGroup.visible = overview && viewMode === 'plan';
+    syncKonuiViewToggle();
+    syncPresetNav();
+  }
+
+  async function loadOverviewData() {
+    const remote = await loadFromSupabase();
+    const local = readOnly ? null : readLocalData();
+    const localAt = local?.savedAt || 0;
+    if (local && localAt > remote.updatedAt + 500) {
+      applyLocalData(local);
+    } else if (!remote.loaded && local) {
+      applyLocalData(local);
+    } else if (land) {
+      applyHeights();
+    }
+  }
+
+  async function showKonuiOverview() {
+    konuiOverviewMode = true;
+    currentZoneId = null;
+    destroyTerrain();
+    buildTerrain();
+    target.set(0, 0, 0);
+    orbit = preset().orbitDefault;
+    azimuth = 0;
+    polar = 0.95;
+    planZoom = preset().planZoomDefault ?? 1;
+    planZoom = Math.max(planZoomMin(), planZoom);
+    tool = 'look';
+    document.querySelectorAll('.world-map-tools button').forEach((x) => {
+      x.classList.toggle('on', x.dataset.tool === 'look');
+    });
+    await loadOverviewData();
+    buildZoneMarkersOnPlan();
+    setViewMode('plan');
+    syncKonuiZoneUI();
+    if (!readOnly) initHistory();
+    if (loadingEl) loadingEl.style.display = 'none';
+  }
+
+  async function loadZoneData() {
+    migrateKonuiLegacyLocal();
+    const remote = await loadFromSupabase();
+    const local = readOnly ? null : readLocalData();
+    const localAt = local?.savedAt || 0;
+    if (local && localAt > remote.updatedAt + 500) {
+      applyLocalData(local);
+    } else if (!remote.loaded && local) {
+      applyLocalData(local);
+    } else if (land) {
+      applyHeights();
+    }
+  }
+
+  async function enterKonuiZone(zoneId) {
+    if (!findKonuiZone(zoneId)) return;
+    if (!readOnly && isKonuiOverview() && heights) saveLocal();
+    captureOverviewState();
+    currentZoneId = zoneId;
+    konuiOverviewMode = false;
+    destroyTerrain();
+    buildTerrain();
+    target.set(0, 0, 0);
+    orbit = terrainSpec().orbitDefault ?? preset().orbitDefault;
+    azimuth = 0;
+    polar = 0.95;
+    planZoom = preset().planZoomDefault ?? 1;
+    planZoom = Math.max(planZoomMin(), planZoom);
+    tool = 'look';
+    document.querySelectorAll('.world-map-tools button').forEach((x) => {
+      x.classList.toggle('on', x.dataset.tool === 'look');
+    });
+    syncKonuiZoneUI();
+    syncToolSettingsPanel();
+    updateZoneContextHighlight();
+    await loadZoneData();
+    setViewMode('3d');
+    if (!readOnly) initHistory();
+    setStatus(`${currentZoneLabel()} — 立体ビューで編集`, 4000);
+  }
+
+  async function returnToKonuiOverview() {
+    if (!readOnly && currentZoneId) saveLocal();
+    await showKonuiOverview();
+    setStatus('コヌイの路 — 平面ビューで編集', 4000);
+  }
+
+  if (zoneBackBtn) {
+    zoneBackBtn.addEventListener('click', () => returnToKonuiOverview());
+  }
+
+  buildZonePickerList();
 
   function switchPresetStep(delta) {
     const idx = PRESET_ORDER.indexOf(currentPresetId);
@@ -1815,7 +2318,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     empty.value = '0';
     empty.textContent = '— 選んでください —';
     sel.appendChild(empty);
-    for (const a of areas) {
+    for (const a of areas || []) {
       const opt = document.createElement('option');
       opt.value = String(a.id);
       opt.textContent = a.name;
@@ -1887,20 +2390,35 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   function setViewMode(mode) {
+    if (isKonuiZoned() && currentZoneId && mode === 'plan') return;
+    if (isKonuiOverview()) mode = 'plan';
     viewMode = mode;
     document.querySelectorAll('.world-map-view-toggle button').forEach((b) => {
       b.classList.toggle('on', b.dataset.view === mode);
     });
+    if (!land) {
+      syncKonuiViewToggle();
+      updateCam();
+      return;
+    }
     scene.fog = null;
     wireMesh.material.opacity = mode === 'plan' ? 0.35 : 0.05;
     gridHelper.material.opacity = mode === 'plan' ? 0.45 : 0.15;
     land.material.flatShading = mode === 'plan';
-    if (minimapEl) minimapEl.hidden = mode !== '3d';
+    if (minimapEl) {
+      minimapEl.hidden = mode !== '3d' || isKonuiOverview() || (isKonuiZoned() && !!currentZoneId);
+    }
+    if (zoneContextEl) {
+      zoneContextEl.hidden = isKonuiOverview() || !currentZoneId || mode !== '3d';
+    }
+    if (zoneMarkerGroup) zoneMarkerGroup.visible = isKonuiOverview() && mode === 'plan';
     if (mode !== '3d') closeMinimapModal();
     applyGuideVisibility();
     recolor();
     refreshPanelText();
     updateScaleLegend();
+    syncKonuiViewToggle();
+    syncKonuiZoneUI();
     updateCam();
   }
 
@@ -2316,6 +2834,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   const _pickFallback = new THREE.Vector3();
 
   function pickGround(e) {
+    if (!land) return null;
     const r = renderer.domElement.getBoundingClientRect();
     ndc.x = ((e.clientX - r.left) / r.width) * 2 - 1;
     ndc.y = -((e.clientY - r.top) / r.height) * 2 + 1;
@@ -2633,6 +3152,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let oy = 0;
 
   function groundY(x, z) {
+    if (!heights) return 0;
     return heights[nearestIndex(x, z)] || 0;
   }
 
@@ -2773,7 +3293,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   function terrainPayload() {
     return {
       world_id: WORLD_ID,
-      layer_id: LAYER_ID,
+      layer_id: activeLayerId(),
       seg: SEG,
       heights: Array.from(heights),
       water: Array.from(water),
@@ -2803,7 +3323,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   function saveLocal() {
-    if (readOnly) return true;
+    if (readOnly || !heights) return true;
     try {
       localStorage.setItem(localKey(), JSON.stringify(localPayload()));
       return true;
@@ -2816,6 +3336,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   function readLocalData() {
     try {
       let raw = localStorage.getItem(localKey());
+      if (!raw && isKonuiZoned() && currentZoneId === KONUI_LEGACY_ZONE_ID) {
+        raw = localStorage.getItem(legacyKonuiLocalKey());
+      }
       if (!raw && WORLD_ID === 'hime-memory') {
         raw = localStorage.getItem('banshu_world_map_v2');
       }
@@ -2849,6 +3372,10 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   async function saveAll() {
+    if (!heights) {
+      setStatus('地形が読み込まれていません', 3000);
+      return;
+    }
     const localOk = saveLocal();
     if (!supabase) {
       setStatus(localOk ? 'ローカルに保存しました（Supabase 未接続）' : '保存失敗: ブラウザの保存容量が足りません');
@@ -2901,7 +3428,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       const { error } = await supabase.from('map_spots').upsert(
         {
           world_id: WORLD_ID,
-          layer: LAYER_ID,
+          layer: activeLayerId(),
           slug: s.slug,
           name: s.name,
           category: 'unknown',
@@ -2923,7 +3450,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         .from('map_spots')
         .delete()
         .eq('world_id', WORLD_ID)
-        .eq('layer', LAYER_ID)
+        .eq('layer', activeLayerId())
         .eq('slug', slug);
       if (error) {
         setStatus('スポット削除エラー (' + slug + '): ' + error.message);
@@ -3101,7 +3628,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       .from('map_world_layers')
       .select('seg, heights, water, water_y, ground_mat, area_defs, area_grid, updated_at')
       .eq('world_id', WORLD_ID)
-      .eq('layer_id', LAYER_ID)
+      .eq('layer_id', activeLayerId())
       .maybeSingle());
 
     if (layerErr && /water_y|ground_mat|area_|column/i.test(layerErr.message || '')) {
@@ -3109,7 +3636,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         .from('map_world_layers')
         .select('seg, heights, water, area_defs, area_grid, updated_at')
         .eq('world_id', WORLD_ID)
-        .eq('layer_id', LAYER_ID)
+        .eq('layer_id', activeLayerId())
         .maybeSingle());
     }
 
@@ -3118,7 +3645,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
         .from('map_world_layers')
         .select('seg, heights, water, updated_at')
         .eq('world_id', WORLD_ID)
-        .eq('layer_id', LAYER_ID)
+        .eq('layer_id', activeLayerId())
         .maybeSingle());
     }
 
@@ -3136,13 +3663,39 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       }
       updatedAt = layer.updated_at ? Date.parse(layer.updated_at) : 0;
       loaded = true;
+    } else if (
+      !loaded &&
+      isKonuiZoned() &&
+      currentZoneId === KONUI_LEGACY_ZONE_ID &&
+      activeLayerId() !== LAYER_ID
+    ) {
+      // 旧データ（layer_id=hirao）を ④フォークノード へ引き継ぐ
+      const { data: legacyLayer } = await supabase
+        .from('map_world_layers')
+        .select('seg, heights, water, water_y, ground_mat, area_defs, area_grid, updated_at')
+        .eq('world_id', WORLD_ID)
+        .eq('layer_id', LAYER_ID)
+        .maybeSingle();
+      if (legacyLayer?.heights) {
+        loadTerrainFromArrays(
+          legacyLayer.heights,
+          legacyLayer.water,
+          legacyLayer.ground_mat,
+          legacyLayer.water_y,
+        );
+        if (legacyLayer.area_defs || legacyLayer.area_grid) {
+          loadAreasFromData(legacyLayer.area_defs, legacyLayer.area_grid);
+        }
+        updatedAt = legacyLayer.updated_at ? Date.parse(legacyLayer.updated_at) : 0;
+        loaded = true;
+      }
     }
 
     const { data: spotRows, error: spotErr } = await supabase
       .from('map_spots')
       .select('slug, name, x, z')
       .eq('world_id', WORLD_ID)
-      .eq('layer', LAYER_ID)
+      .eq('layer', activeLayerId())
       .order('created_at', { ascending: true });
 
     if (spotErr) {
@@ -3152,6 +3705,21 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     } else if (spotRows && spotRows.length > 0) {
       loadSpotsFromRows(spotRows);
       loaded = true;
+    } else if (
+      isKonuiZoned() &&
+      currentZoneId === KONUI_LEGACY_ZONE_ID &&
+      activeLayerId() !== LAYER_ID
+    ) {
+      const { data: legacySpots } = await supabase
+        .from('map_spots')
+        .select('slug, name, x, z')
+        .eq('world_id', WORLD_ID)
+        .eq('layer', LAYER_ID)
+        .order('created_at', { ascending: true });
+      if (legacySpots?.length) {
+        loadSpotsFromRows(legacySpots);
+        loaded = true;
+      }
     }
 
     return { loaded, updatedAt };
@@ -3159,6 +3727,12 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   async function boot() {
     try {
+      if (isKonuiZoned()) {
+        migrateKonuiLegacyLocal();
+        await showKonuiOverview();
+        setStatus('コヌイの路 — 平面ビューで編集 · ブロックは右の一覧から', 5000);
+        return;
+      }
       applyHeights();
       planZoom = preset().planZoomDefault ?? 1;
       planZoom = Math.max(planZoomMin(), planZoom);
@@ -3262,7 +3836,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     });
 
     renderer.render(scene, activeCamera);
-    renderMinimaps();
+    if (land) renderMinimaps();
+    renderOverviewPlanContext();
     requestAnimationFrame(tick);
   }
 
