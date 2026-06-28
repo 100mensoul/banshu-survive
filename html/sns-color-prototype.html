@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>公式SNS 配色プロトタイプ｜播州サバイブ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #d4b82a;
+    --gold-bright: #e8d45a;
+    --ink: #141008;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Zen Kaku Gothic New", sans-serif;
+    background: #fefefe;
+    color: #222;
+  }
+
+  /* プロト用の説明ヘッダ */
+  .proto-note {
+    background: #222;
+    color: #fff;
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+  .proto-note b { color: var(--gold-bright); }
+  .proto-label {
+    max-width: 980px;
+    margin: 2.4rem auto 0;
+    padding: 0 1rem;
+  }
+  .proto-label h2 {
+    display: inline-block;
+    margin: 0;
+    padding: 0.35rem 0.9rem;
+    background: #222;
+    color: #fff;
+    font-size: 1rem;
+    border-radius: 4px;
+  }
+  .proto-label p {
+    margin: 0.5rem 0 0;
+    color: #555;
+    font-size: 0.88rem;
+  }
+
+  /* ===== 共通：セクション枠 ===== */
+  .social-links {
+    text-align: center;
+    padding: 2.2rem 1rem 2.6rem;
+    border-top: 4px double #aaa;
+    margin-top: 0.8rem;
+  }
+  .section-title {
+    font-size: 1.7rem;
+    font-weight: 700;
+    margin: 0 0 1.2rem;
+    letter-spacing: 0.04em;
+  }
+  .section-title .en {
+    font-size: 0.9rem;
+    letter-spacing: 0.2em;
+    margin-left: 0.4rem;
+    opacity: 0.7;
+  }
+  .feeds-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.8rem;
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: left;
+  }
+  .row-dual {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.1rem;
+    width: 100%;
+    max-width: 400px;
+  }
+  @media (min-width: 700px) {
+    .row-dual {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem 1.2rem;
+      max-width: 680px;
+    }
+  }
+  .subhead {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0 0 0.4rem;
+  }
+  .subhead .meta { font-weight: 600; font-size: 0.85em; opacity: 0.75; }
+
+  /* Instagram / YouTube モック（中身は雰囲気だけ） */
+  .mock-frame {
+    width: 100%;
+    max-width: 320px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    background: #fff;
+    margin: 0 auto;
+  }
+  .mock-ig-head {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.8rem 0.9rem;
+  }
+  .mock-ig-ava { width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(45deg,#f9ce34,#ee2a7b,#6228d7); flex: 0 0 auto; }
+  .mock-ig-name { font-size: 0.9rem; font-weight: 700; }
+  .mock-ig-sub { font-size: 0.76rem; color: #777; }
+  .mock-ig-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 3px; }
+  .mock-ig-grid span { aspect-ratio: 1/1; display:block; }
+  .mock-ig-grid span:nth-child(1){background:#a7c7a0;}
+  .mock-ig-grid span:nth-child(2){background:#7c8a99;}
+  .mock-ig-grid span:nth-child(3){background:#9b7d5a;}
+  .mock-ig-grid span:nth-child(4){background:#c2b280;}
+  .mock-ig-grid span:nth-child(5){background:#88a0b0;}
+  .mock-ig-grid span:nth-child(6){background:#6f6f6f;}
+  .mock-yt {
+    width: 100%; max-width: 560px; aspect-ratio: 16/9;
+    background: repeating-linear-gradient(135deg,#222 0 12px,#2c2c2c 12px 24px);
+    border-radius: 10px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; letter-spacing: 0.1em;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+  }
+  .ig-btn {
+    display:inline-block; margin: 0.45rem auto 0; padding: 0.3rem 0.7rem;
+    border-radius: 4px; font-size: 0.7rem; font-weight: 700; color:#fff;
+    background: linear-gradient(45deg,#e8892e,#d94a6c,#a43a9a); text-decoration:none;
+  }
+  .ig-cell { width: 100%; max-width: 320px; margin: 0 auto; text-align: center; }
+  .ig-cell .subhead { text-align: left; }
+  .ig-open-wrap { text-align: right; max-width: 320px; margin: 0 auto; }
+
+  /* ===== Xカード（共通土台） ===== */
+  .x-card {
+    display: flex; flex-direction: column; gap: 0.65rem;
+    width: 100%; max-width: 320px; margin: 0 auto;
+    padding: 1rem 1.1rem 1.1rem;
+    border-radius: 12px;
+    text-decoration: none; color: #0f1419;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  @media (min-width:700px){ .x-card{ max-width:none; } }
+  .x-card:hover { transform: translateY(-3px); }
+  .x-head { display:flex; align-items:center; gap:0.6rem; }
+  .x-ava { width:40px; height:40px; border-radius:50%; overflow:hidden;
+    flex:0 0 auto; background:#e8ecef; border:1px solid #e1e8ed; }
+  .x-ava img { width:100%; height:100%; object-fit:cover; display:block; }
+  .x-name { font-size:1rem; font-weight:700; line-height:1.3; }
+  .x-handle { font-size:0.82rem; opacity:0.7; }
+  .x-bio { font-size:0.88rem; line-height:1.6; }
+  .x-btn {
+    align-self:flex-start; margin-top:0.15rem;
+    padding:0.42rem 1rem; border-radius:999px;
+    font-size:0.8rem; font-weight:700; color:#fff; background:#0f1419;
+  }
+
+  /* =========================================================
+     案A：夜のSNS（ダーク背景）
+     ========================================================= */
+  .scheme-a {
+    background:
+      radial-gradient(1200px 300px at 50% -10%, rgba(212,184,42,0.12), transparent 60%),
+      #18130d;
+    border-top: 4px double #5a4a22;
+  }
+  .scheme-a .section-title { color: var(--gold-bright); text-shadow: 0 1px 0 rgba(0,0,0,0.5); }
+  .scheme-a .subhead { color: #f3ead0; }
+  .scheme-a .x-card {
+    background: #fffdf6;
+    border: 1px solid rgba(212,184,42,0.35);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  }
+  .scheme-a .x-handle { color:#536471; }
+  .scheme-a .x-bio { color:#333; }
+
+  /* =========================================================
+     案B：ブランドカラーの差し色（明るい背景）
+     ========================================================= */
+  .scheme-b { background: #fffef5; border-top: 4px double #aaa; }
+  .scheme-b .section-title { color:#333; }
+  .scheme-b .x-card {
+    background:#fff; border:1px solid #e6e6e6;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    position: relative; overflow: hidden;
+    padding-left: 1.3rem;
+  }
+  .scheme-b .x-card::before {
+    content:""; position:absolute; left:0; top:0; bottom:0; width:6px;
+  }
+  .scheme-b .x-card--news::before { background:#e0245e; }   /* ヒメソク=速報の赤 */
+  .scheme-b .x-card--diary::before { background:#1d9bf0; }  /* 平尾=私的の青 */
+  .scheme-b .x-badge {
+    display:inline-block; align-self:flex-start;
+    font-size:0.66rem; font-weight:700; color:#fff;
+    padding:0.12rem 0.5rem; border-radius:999px; letter-spacing:0.04em;
+  }
+  .scheme-b .x-card--news .x-badge { background:#e0245e; }
+  .scheme-b .x-card--diary .x-badge { background:#1d9bf0; }
+
+  /* =========================================================
+     案C：金枠で世界観統一（上品）
+     ========================================================= */
+  .scheme-c { background:#fffef5; border-top: 4px double #c9b96e; }
+  .scheme-c .section-title { color:#5a4a1a; }
+  .scheme-c .section-title::after {
+    content:""; display:block; width:64px; height:3px; margin:0.5rem auto 0;
+    background: linear-gradient(90deg, var(--gold-bright), var(--gold));
+    border-radius:2px;
+  }
+  .scheme-c .subhead { color:#5a4a1a; }
+  .scheme-c .x-card {
+    background:#fffdf3;
+    border:1px solid var(--gold);
+    box-shadow: 0 6px 18px rgba(168,134,32,0.18);
+  }
+  .scheme-c .x-btn { background: linear-gradient(180deg,#3a2f12,#141008); }
+
+  /* =========================================================
+     案C 枠バリエーション（Xカードの枠だけ作り込み）
+     ========================================================= */
+  .variants-wrap { background:#fffef5; padding:2rem 1rem 2.8rem; border-top:4px double #c9b96e; }
+  .variants-grid {
+    display:grid; grid-template-columns:1fr; gap:1.8rem;
+    max-width:720px; margin:1.2rem auto 0;
+  }
+  @media (min-width:700px){ .variants-grid{ grid-template-columns:1fr 1fr; gap:1.8rem 1.4rem; } }
+  .variant .vlabel { margin:0 0 0.55rem; font-size:0.9rem; font-weight:700; color:#5a4a1a; }
+  .variant .vdesc { margin:0 0 0.7rem; font-size:0.8rem; color:#7a6a3a; }
+  .variants-wrap .x-card { color:#0f1419; }
+  .variants-wrap .x-name { color:#0f1419; }
+  .variants-wrap .x-handle { color:#536471; }
+  .variants-wrap .x-bio { color:#333; }
+  .variants-wrap .x-btn { background: linear-gradient(180deg,#3a2f12,#141008); }
+
+  /* C-1 二重金枠（高札・証書風） */
+  .frame-double {
+    background:#fffdf3;
+    border:3px double var(--gold);
+    border-radius:10px;
+    box-shadow:0 6px 18px rgba(168,134,32,0.18);
+  }
+
+  /* C-2 額縁（金線＋内側の細線） */
+  .frame-mat {
+    background:#fffdf3;
+    border:1px solid var(--gold);
+    border-radius:12px;
+    box-shadow:
+      inset 0 0 0 4px #fffdf3,
+      inset 0 0 0 5px rgba(212,184,42,0.55),
+      0 6px 18px rgba(168,134,32,0.18);
+  }
+
+  /* C-3 グラデ金縁（ロゴの金グラデを枠に） */
+  .frame-grad {
+    border:2px solid transparent;
+    border-radius:12px;
+    background:
+      linear-gradient(#fffdf3,#fffdf3) padding-box,
+      linear-gradient(135deg,#e8d45a 0%,#c4a028 55%,#a88620 100%) border-box;
+    box-shadow:0 6px 18px rgba(168,134,32,0.18);
+  }
+
+  /* C-4 金リボン（上辺に金の帯＋細枠） */
+  .frame-ribbon {
+    border:1px solid #e7dcab;
+    border-radius:12px;
+    background:
+      linear-gradient(#fffdf3,#fffdf3) 0 7px / 100% calc(100% - 7px) no-repeat,
+      linear-gradient(90deg,#e8d45a,#a88620) 0 0 / 100% 7px no-repeat;
+    box-shadow:0 6px 18px rgba(168,134,32,0.18);
+  }
+
+  /* C-5 隅金具（四隅に金のL字・額縁風） */
+  .frame-corner {
+    position:relative;
+    background:#fffdf3;
+    border:1px solid #e3d8ab;
+    border-radius:6px;
+    box-shadow:0 6px 18px rgba(168,134,32,0.18);
+  }
+  .frame-corner::before,
+  .frame-corner::after {
+    content:""; position:absolute; width:16px; height:16px; pointer-events:none;
+  }
+  .frame-corner::before { top:6px; left:6px; border-top:2px solid var(--gold); border-left:2px solid var(--gold); }
+  .frame-corner::after { bottom:6px; right:6px; border-bottom:2px solid var(--gold); border-right:2px solid var(--gold); }
+  .frame-corner .x-corner-tr,
+  .frame-corner .x-corner-bl { content:""; position:absolute; width:16px; height:16px; pointer-events:none; }
+  .frame-corner .x-corner-tr { top:6px; right:6px; border-top:2px solid var(--gold); border-right:2px solid var(--gold); }
+  .frame-corner .x-corner-bl { bottom:6px; left:6px; border-bottom:2px solid var(--gold); border-left:2px solid var(--gold); }
+
+  /* 平尾「金具で手紙風」: 便箋の紙＋四隅の金具 */
+  .frame-letter {
+    position:relative;
+    background:#fdf8ea;
+    border:1px solid #e7dcae;
+    border-radius:4px;
+    box-shadow:0 6px 18px rgba(168,134,32,0.16);
+  }
+  /* 罫線あり版（便箋らしさ強め） */
+  .frame-letter--ruled {
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 27px,
+        rgba(176,146,58,0.12) 27px,
+        rgba(176,146,58,0.12) 28px
+      ),
+      #fdf8ea;
+  }
+  .frame-letter::before,
+  .frame-letter::after,
+  .frame-letter .x-corner-tr,
+  .frame-letter .x-corner-bl {
+    content:""; position:absolute; width:15px; height:15px; pointer-events:none;
+  }
+  .frame-letter::before { top:6px; left:6px; border-top:2px solid var(--gold); border-left:2px solid var(--gold); }
+  .frame-letter::after { bottom:6px; right:6px; border-bottom:2px solid var(--gold); border-right:2px solid var(--gold); }
+  .frame-letter .x-corner-tr { top:6px; right:6px; border-top:2px solid var(--gold); border-right:2px solid var(--gold); }
+  .frame-letter .x-corner-bl { bottom:6px; left:6px; border-bottom:2px solid var(--gold); border-left:2px solid var(--gold); }
+  /* ヘッダ下の便箋ライン（レターヘッド感） */
+  .frame-letter .x-head {
+    padding-bottom:0.6rem;
+    border-bottom:1px solid rgba(176,146,58,0.3);
+  }
+</style>
+</head>
+<body>
+
+<div class="proto-note">
+  <b>配色プロトタイプ</b>：トップの「公式SNS」を3案で見比べ用。Instagram/YouTubeは雰囲気モック、<b>Xカードのみ実データ（アイコン）</b>です。<br>
+  気に入った案の番号（A / B / C）を教えてください。本番にはこのファイルの色だけを反映します（このページ自体は公開ナビには出しません）。
+</div>
+
+<!-- ============ 案C：Xカード枠バリエーション ============ -->
+<div class="proto-label">
+  <h2>★ 採用＝案C：Xカードの枠バリエーション</h2>
+  <p>背景は明るいまま。Xカードの枠だけ作り込み。C-1〜C-5で好きなものを選んでください。</p>
+</div>
+<section class="variants-wrap">
+  <div class="variants-grid">
+
+    <div class="variant">
+      <p class="vlabel">C-1 二重金枠</p>
+      <p class="vdesc">金の二重線。高札・証書のような端正さ。</p>
+      <a class="x-card frame-double" href="https://x.com/himesoku_hirao" target="_blank" rel="noopener noreferrer">
+        <span class="x-head"><span class="x-ava"><img src="https://unavatar.io/x/himesoku_hirao" alt="" referrerpolicy="no-referrer"></span>
+          <span><span class="x-name">ヒメソク</span><br><span class="x-handle">@himesoku_hirao</span></span></span>
+        <span class="x-bio">Rの動向を追う、播記者の速報アカウント。</span>
+        <span class="x-btn">Xを見る</span>
+      </a>
+    </div>
+
+    <div class="variant">
+      <p class="vlabel">C-2 額縁（金線＋内側の細線）</p>
+      <p class="vdesc">外に金線、少し内側にもう一本。額装したような奥行き。</p>
+      <a class="x-card frame-mat" href="https://x.com/hirao_hamita" target="_blank" rel="noopener noreferrer">
+        <span class="x-head"><span class="x-ava"><img src="https://unavatar.io/x/hirao_hamita" alt="" referrerpolicy="no-referrer"></span>
+          <span><span class="x-name">平尾は見た</span><br><span class="x-handle">@hirao_hamita</span></span></span>
+        <span class="x-bio">播記者・平尾の、私的なつぶやき。</span>
+        <span class="x-btn">Xを見る</span>
+      </a>
+    </div>
+
+    <div class="variant">
+      <p class="vlabel">C-3 グラデ金縁</p>
+      <p class="vdesc">ロゴと同じ金グラデを枠に。光が差したような立体感。</p>
+      <a class="x-card frame-grad" href="https://x.com/himesoku_hirao" target="_blank" rel="noopener noreferrer">
+        <span class="x-head"><span class="x-ava"><img src="https://unavatar.io/x/himesoku_hirao" alt="" referrerpolicy="no-referrer"></span>
+          <span><span class="x-name">ヒメソク</span><br><span class="x-handle">@himesoku_hirao</span></span></span>
+        <span class="x-bio">Rの動向を追う、播記者の速報アカウント。</span>
+        <span class="x-btn">Xを見る</span>
+      </a>
+    </div>
+
+    <div class="variant">
+      <p class="vlabel">C-4 金リボン（上辺に金帯）</p>
+      <p class="vdesc">カード上辺に金の帯。新聞・号外のような見出し感。</p>
+      <a class="x-card frame-ribbon" href="https://x.com/hirao_hamita" target="_blank" rel="noopener noreferrer">
+        <span class="x-head"><span class="x-ava"><img src="https://unavatar.io/x/hirao_hamita" alt="" referrerpolicy="no-referrer"></span>
+          <span><span class="x-name">平尾は見た</span><br><span class="x-handle">@hirao_hamita</span></span></span>
+        <span class="x-bio">播記者・平尾の、私的なつぶやき。</span>
+        <span class="x-btn">Xを見る</span>
+      </a>
+    </div>
+
+    <div class="variant">
+      <p class="vlabel">C-5 隅金具（四隅にL字）</p>
+      <p class="vdesc">四隅に金の鉤。古文書・額縁のような趣き。</p>
+      <a class="x-card frame-corner" href="https://x.com/himesoku_hirao" target="_blank" rel="noopener noreferrer">
+        <span class="x-corner-tr" aria-hidden="true"></span><span class="x-corner-bl" aria-hidden="true"></span>
+        <span class="x-head"><span class="x-ava"><img src="https://unavatar.io/x/himesoku_hirao" alt="" referrerpolicy="no-referrer"></span>
+          <span><span class="x-name">ヒメソク</span><br><span class="x-handle">@himesoku_hirao</span></span></span>
+        <span class="x-bio">Rの動向を追う、播記者の速報アカウント。</span>
+        <span class="x-btn">Xを見る</span>
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ 案A：ダーク背景 ============ -->
+<div class="proto-label">
+  <h2>案A：夜のSNS（背景ダーク＋金見出し）</h2>
+  <p>背景を炭色に。白カード・白Instagramが強く浮かぶ。黒×金の世界観と地続き。</p>
+</div>
+<section class="social-links scheme-a">
+  <h2 class="section-title">公式SNS <span class="en">FOLLOW US</span></h2>
+  <div class="feeds-grid">
+    <div class="row-dual">
+      <div class="ig-cell">
+        <p class="subhead">Instagram <span class="meta">@ban.kisha</span></p>
+        <div class="mock-frame">
+          <div class="mock-ig-head"><span class="mock-ig-ava"></span><span><span class="mock-ig-name">ban.kisha</span><br><span class="mock-ig-sub">フォロワー3人・投稿18件</span></span></div>
+          <div class="mock-ig-grid"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="ig-open-wrap"><a class="ig-btn" href="#">Instagramを開く</a></div>
+      </div>
+      <div class="ig-cell">
+        <p class="subhead">Instagram <span class="meta">@hirao_banshu</span></p>
+        <div class="mock-frame">
+          <div class="mock-ig-head"><span class="mock-ig-ava"></span><span><span class="mock-ig-name">hirao_banshu</span><br><span class="mock-ig-sub">フォロワー0人・投稿34件</span></span></div>
+          <div class="mock-ig-grid"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="ig-open-wrap"><a class="ig-btn" href="#">Instagramを開く</a></div>
+      </div>
+    </div>
+    <div class="row-dual">
+      <a class="x-card" href="https://x.com/himesoku_hirao" target="_blank" rel="noopener noreferrer">
+        <span class="x-head"><span class="x-ava"><img src="https://unavatar.io/x/himesoku_hirao" alt="" referrerpolicy="no-referrer"></span>
+          <span><span class="x-name">ヒメソク</span><br><span class="x-handle">@himesoku_hirao</span></span></span>
+        <span class="x-bio">Rの動向を追う、播記者の速報アカウント。</span>
+        <span class="x-btn">Xを見る</span>
+      </a>
+      <a class="x-card" href="https://x.com/hirao_hamita" target="_blank" rel="noopener noreferrer">
+        <span class="x-head"><span class="x-ava"><img src="https://unavatar.io/x/hirao_hamita" alt="" referrerpolicy="no-referrer"></span>
+          <span><span class="x-name">平尾は見た</span><br><span class="x-handle">@hirao_hamita</span></span></span>
+        <span class="x-bio">播記者・平尾の、私的なつぶやき。</span>
+        <span class="x-btn">Xを見る</span>
+      </a>
+    </div>
+    <div class="mock-yt">YouTube</div>
+  </div>
+</section>
+
+<!-- ============ 案B：ブランド差し色 ============ -->
+<div class="proto-label">
+  <h2>案B：ブランドカラーの差し色（背景は明るいまま）</h2>
+  <p>ヒメソク＝速報の赤帯／平尾＝私的の青帯。賑やかでポップ。</p>
+</div>
+<section class="social-links scheme-b">
+  <h2 class="section-title">公式SNS <span class="en">FOLLOW US</span></h2>
+  <div class="feeds-grid">
+    <div class="row-dual">
+      <div class="ig-cell">
+        <p class="subhead">Instagram <span class="meta">@ban.kisha</span></p>
+        <div class="mock-frame">
+          <div class="mock-ig-head"><span class="mock-ig-ava"></span><span><span class="mock-ig-name">ban.kisha</span><br><span class="mock-ig-sub">フォロワー3人・投稿18件</span></span></div>
+          <div class="mock-ig-grid"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="ig-open-wrap"><a class="ig-btn" href="#">Instagramを開く</a></div>
+      </div>
+      <div class="ig-cell">
+        <p class="subhead">Instagram <span class="meta">@hirao_banshu</span></p>
+        <div class="mock-frame">
+          <div class="mock-ig-head"><span class="mock-ig-ava"></span><span><span class="mock-ig-name">hirao_banshu</span><br><span class="mock-ig-sub">フォロワー0人・投稿34件</span></span></div>
+          <div class="mock-ig-grid"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="ig-open-wrap"><a class="ig-btn" href="#">Instagramを開く</a></div>
+      </div>
+    </div>
+    <div class="row-dual">
+      <a class="x-card x-card--news" href="https://x.com/himesoku_hirao" target="_blank" rel="noopener noreferrer">
+        <span class="x-badge">速報</span>
+        <span class="x-head"><span class="x-ava"><img src="https://unavatar.io/x/himesoku_hirao" alt="" referrerpolicy="no-referrer"></span>
+          <span><span class="x-name">ヒメソク</span><br><span class="x-handle">@himesoku_hirao</span></span></span>
+        <span class="x-bio">Rの動向を追う、播記者の速報アカウント。</span>
+        <span class="x-btn">Xを見る</span>
+      </a>
+      <a class="x-card x-card--diary" href="https://x.com/hirao_hamita" target="_blank" rel="noopener noreferrer">
+        <span class="x-badge">私的</span>
+        <span class="x-head"><span class="x-ava"><img src="https://unavatar.io/x/hirao_hamita" alt="" referrerpolicy="no-referrer"></span>
+          <span><span class="x-name">平尾は見た</span><br><span class="x-handle">@hirao_hamita</span></span></span>
+        <span class="x-bio">播記者・平尾の、私的なつぶやき。</span>
+        <span class="x-btn">Xを見る</span>
+      </a>
+    </div>
+    <div class="mock-yt">YouTube</div>
+  </div>
+</section>
+
+<!-- ============ 案C：金枠 ============ -->
+<div class="proto-label">
+  <h2>案C：金枠で世界観統一（上品）</h2>
+  <p>背景は明るいまま、カードに金〜琥珀のふち。落ち着いた高級感。</p>
+</div>
+<section class="social-links scheme-c">
+  <h2 class="section-title">公式SNS <span class="en">FOLLOW US</span></h2>
+  <div class="feeds-grid">
+    <div class="row-dual">
+      <div class="ig-cell">
+        <p class="subhead">Instagram <span class="meta">@ban.kisha</span></p>
+        <div class="mock-frame">
+          <div class="mock-ig-head"><span class="mock-ig-ava"></span><span><span class="mock-ig-name">ban.kisha</span><br><span class="mock-ig-sub">フォロワー3人・投稿18件</span></span></div>
+          <div class="mock-ig-grid"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="ig-open-wrap"><a class="ig-btn" href="#">Instagramを開く</a></div>
+      </div>
+      <div class="ig-cell">
+        <p class="subhead">Instagram <span class="meta">@hirao_banshu</span></p>
+        <div class="mock-frame">
+          <div class="mock-ig-head"><span class="mock-ig-ava"></span><span><span class="mock-ig-name">hirao_banshu</span><br><span class="mock-ig-sub">フォロワー0人・投稿34件</span></span></div>
+          <div class="mock-ig-grid"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </div>
+        <div class="ig-open-wrap"><a class="ig-btn" href="#">Instagramを開く</a></div>
+      </div>
+    </div>
+    <div class="row-dual">
+      <a class="x-card" href="https://x.com/himesoku_hirao" target="_blank" rel="noopener noreferrer">
+        <span class="x-head"><span class="x-ava"><img src="https://unavatar.io/x/himesoku_hirao" alt="" referrerpolicy="no-referrer"></span>
+          <span><span class="x-name">ヒメソク</span><br><span class="x-handle">@himesoku_hirao</span></span></span>
+        <span class="x-bio">Rの動向を追う、播記者の速報アカウント。</span>
+        <span class="x-btn">Xを見る</span>
+      </a>
+      <a class="x-card" href="https://x.com/hirao_hamita" target="_blank" rel="noopener noreferrer">
+        <span class="x-head"><span class="x-ava"><img src="https://unavatar.io/x/hirao_hamita" alt="" referrerpolicy="no-referrer"></span>
+          <span><span class="x-name">平尾は見た</span><br><span class="x-handle">@hirao_hamita</span></span></span>
+        <span class="x-bio">播記者・平尾の、私的なつぶやき。</span>
+        <span class="x-btn">Xを見る</span>
+      </a>
+    </div>
+    <div class="mock-yt">YouTube</div>
+  </div>
+</section>
+
+</body>
+</html>

@@ -169,8 +169,8 @@
 }
 
 .harima-harema__cell[data-weather='cloudy'] {
-  background: rgba(118, 116, 110, 0.58);
-  border-color: rgba(70, 68, 64, 0.4);
+  background: rgba(148, 146, 140, 0.78);
+  border-color: rgba(108, 106, 100, 0.48);
 }
 
 .harima-harema__cell[data-weather='rain'] {

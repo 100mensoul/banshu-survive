@@ -7,6 +7,7 @@
   <meta name="description" content="毎夢ドラマ『播州サバイブ』相関図。登場人物の関係性がひと目でわかるビジュアルチャート。写真をクリックすると詳細をご覧いただけます。">
   <link rel="stylesheet" href="../css/main.css?v=navmichi7">
   <link rel="stylesheet" href="../css/chart-page.css?v=8">
+  <link rel="stylesheet" href="../css/chart-layout.css?v=5">
 </head>
 <body class="page-chart">
 
@@ -90,6 +91,12 @@
       <img src="../images/chart.png" alt="播州サバイブ 人物相関図（全体ビジュアル）" width="800" height="600" loading="lazy">
     </section>
 
+    <section class="chart-interactive" aria-label="インタラクティブ相関図">
+      <p class="chart-interactive__label">INTERACTIVE — 人物相関（クリックで詳細）</p>
+      <div id="chart-layout-root"></div>
+      <p class="chart-interactive__note">※キャラをタップ／クリックすると詳細をご覧いただけます。</p>
+    </section>
+
     <section class="chart-board-wrap" aria-label="登場人物（クリックで詳細）">
       <div id="chart-board-root" class="chart-board"></div>
     </section>
@@ -140,6 +147,7 @@
   <script src="../js/chart-cast-data.js?v=2"></script>
   <script src="../js/chart-page.js?v=4"></script>
   <script type="module" src="../js/chart-cast-public.js?v=2"></script>
+  <script type="module" src="../js/chart-layout-public.js?v=8"></script>
   <script type="module" src="../js/home-episode-nav.js"></script>
 </body>
 </html>

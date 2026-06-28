@@ -200,6 +200,10 @@ window.initChartPage = function (data) {
     });
   }
 
+  window.__chartPageOpenMember = function (id) {
+    openModal(id);
+  };
+
   renderBoard();
   bindModal();
 };

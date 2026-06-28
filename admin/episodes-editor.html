@@ -703,7 +703,7 @@
       msg.className = ok ? 'ok' : 'err';
       msg.hidden = false;
       clearTimeout(showMsg._t);
-      showMsg._t = setTimeout(() => { msg.hidden = true; }, ok ? 2000 : 4000);
+      showMsg._t = setTimeout(() => { msg.hidden = true; }, ok ? 1000 : 4000);
     }
 
     let debounceT;
