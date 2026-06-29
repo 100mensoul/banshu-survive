@@ -141,8 +141,14 @@ function attachLabelPoint(edge, raw) {
   return edge;
 }
 
+function attachElbowPoint(edge, raw) {
+  const ep = normalizeEdgePoint(raw?.elbowPoint);
+  if (ep) edge.elbowPoint = ep;
+  return edge;
+}
+
 function attachLayoutFields(edge, raw) {
-  return attachLabelPoint(attachEndpointFields(edge, raw), raw);
+  return attachElbowPoint(attachLabelPoint(attachEndpointFields(edge, raw), raw), raw);
 }
 
 export function defaultCanvasFromGroups(groups) {
@@ -228,7 +234,100 @@ export function assignAutoLanes(edges) {
   });
 }
 
-export const EDGE_MARKER_INSET = 12;
+export const EDGE_MARKER_INSET = 14;
+export const ARROW_TIP_LEN = 10;
+
+export function snapPx(v) {
+  return Math.round(Number(v) || 0);
+}
+
+export function snapOrthogonalPoint(p) {
+  return { x: snapPx(p.x), y: snapPx(p.y) };
+}
+
+export function snapAngleDeg(deg) {
+  const snaps = [0, 90, 180, 270];
+  const n = ((deg % 360) + 360) % 360;
+  let best = snaps[0];
+  let bestDiff = 360;
+  snaps.forEach(function (s) {
+    const d = Math.min(Math.abs(n - s), 360 - Math.abs(n - s));
+    if (d < bestDiff) { bestDiff = d; best = s; }
+  });
+  return best;
+}
+
+/** カード外周に垂直スナップ（0/90/180/270° のみ） */
+export function snapPointToRectBorder(bounds, px, py, inset) {
+  inset = inset == null ? EDGE_MARKER_INSET : inset;
+  const clamp = function (lo, hi, v) { return Math.max(lo, Math.min(hi, v)); };
+  const dTop = Math.abs(py - bounds.top);
+  const dBottom = Math.abs(py - bounds.bottom);
+  const dLeft = Math.abs(px - bounds.left);
+  const dRight = Math.abs(px - bounds.right);
+  const minD = Math.min(dTop, dBottom, dLeft, dRight);
+  if (minD === dTop) {
+    return {
+      x: snapPx(clamp(bounds.left + 6, bounds.right - 6, px)),
+      y: snapPx(bounds.top - inset),
+      side: 'top',
+      angle: 270,
+    };
+  }
+  if (minD === dBottom) {
+    return {
+      x: snapPx(clamp(bounds.left + 6, bounds.right - 6, px)),
+      y: snapPx(bounds.bottom + inset),
+      side: 'bottom',
+      angle: 90,
+    };
+  }
+  if (minD === dLeft) {
+    return {
+      x: snapPx(bounds.left - inset),
+      y: snapPx(clamp(bounds.top + 6, bounds.bottom - 6, py)),
+      side: 'left',
+      angle: 180,
+    };
+  }
+  return {
+    x: snapPx(bounds.right + inset),
+    y: snapPx(clamp(bounds.top + 6, bounds.bottom - 6, py)),
+    side: 'right',
+    angle: 0,
+  };
+}
+
+export function shortenSegment(x1, y1, x2, y2, trimStart, trimEnd) {
+  let sx1 = x1;
+  let sy1 = y1;
+  let sx2 = x2;
+  let sy2 = y2;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  if (trimStart > 0) {
+    sx1 += ux * trimStart;
+    sy1 += uy * trimStart;
+  }
+  if (trimEnd > 0) {
+    sx2 -= ux * trimEnd;
+    sy2 -= uy * trimEnd;
+  }
+  return { x1: snapPx(sx1), y1: snapPx(sy1), x2: snapPx(sx2), y2: snapPx(sy2) };
+}
+
+export function cornersFromSegments(segments) {
+  const corners = [];
+  for (let i = 0; i < segments.length - 1; i++) {
+    const a = segments[i];
+    const b = segments[i + 1];
+    corners.push({ x: snapPx(a.x2), y: snapPx(a.y2), index: i });
+  }
+  return corners;
+}
 
 /** 矩形の外側で、相手方向を向いた接点（矢印がカードに隠れない） */
 export function borderPointFacing(bounds, targetX, targetY, inset) {
@@ -241,8 +340,8 @@ export function borderPointFacing(bounds, targetX, targetY, inset) {
   const hh = bounds.nh / 2;
   const scale = 1 / Math.max(Math.abs(dx) / hw, Math.abs(dy) / hh, 0.001);
   return {
-    x: bounds.cx + dx * scale + (dx >= 0 ? inset : -inset),
-    y: bounds.cy + dy * scale + (dy >= 0 ? inset : -inset),
+    x: snapPx(bounds.cx + dx * scale + (dx >= 0 ? inset : -inset)),
+    y: snapPx(bounds.cy + dy * scale + (dy >= 0 ? inset : -inset)),
   };
 }
 
@@ -446,6 +545,10 @@ function orthogonalRouteBetweenBounds(bFrom, bTo, opts) {
   const dx = bTo.cx - bFrom.cx;
 
   function addSeg(x1, y1, x2, y2, flags) {
+    x1 = snapPx(x1);
+    y1 = snapPx(y1);
+    x2 = snapPx(x2);
+    y2 = snapPx(y2);
     segments.push({
       x1, y1, x2, y2,
       dashed: flags.dashed != null ? flags.dashed : dashed,
@@ -456,7 +559,14 @@ function orthogonalRouteBetweenBounds(bFrom, bTo, opts) {
   }
 
   function finish(label) {
-    return { segments, hitTargets, label: label || null };
+    return {
+      segments,
+      hitTargets,
+      label: label || null,
+      endpointFromAngle: segmentEndpointMeta(segments[0], true).angle,
+      endpointToAngle: segmentEndpointMeta(segments[segments.length - 1], false).angle,
+      elbowCorners: cornersFromSegments(segments),
+    };
   }
 
   // ほぼ横並び → 横1本だけ
@@ -535,7 +645,7 @@ function customEndpointRoute(pFrom, pTo, opts) {
   return orthogonalRouteBetweenPoints(pFrom, pTo, opts);
 }
 
-/** 2点間を直角ジグザグのみで結ぶ（斜め線なし） */
+/** 2点間を直角ジグザグのみで結ぶ（斜め線なし・elbowPoint で折れ位置調整可） */
 function orthogonalRouteBetweenPoints(pFrom, pTo, opts) {
   opts = opts || {};
   const dashed = !!opts.dashed;
@@ -546,10 +656,16 @@ function orthogonalRouteBetweenPoints(pFrom, pTo, opts) {
   const preferVerticalLabel = !!opts.preferVerticalLabel;
   const segments = [];
   const hitTargets = [];
-  const dx = Math.abs(pTo.x - pFrom.x);
-  const dy = Math.abs(pTo.y - pFrom.y);
+
+  pFrom = snapOrthogonalPoint(pFrom);
+  pTo = snapOrthogonalPoint(pTo);
 
   function addSeg(x1, y1, x2, y2, flags) {
+    x1 = snapPx(x1);
+    y1 = snapPx(y1);
+    x2 = snapPx(x2);
+    y2 = snapPx(y2);
+    if (x1 === x2 && y1 === y2) return;
     segments.push({
       x1, y1, x2, y2,
       dashed: flags.dashed != null ? flags.dashed : dashed,
@@ -561,8 +677,8 @@ function orthogonalRouteBetweenPoints(pFrom, pTo, opts) {
 
   function buildLabel() {
     if (!text) return null;
-    if (preferVerticalLabel || dy >= dx) {
-      const vertSeg = segments.find(function (s) { return Math.abs(s.x2 - s.x1) < 4 && Math.abs(s.y2 - s.y1) > 8; });
+    if (preferVerticalLabel || Math.abs(pTo.y - pFrom.y) >= Math.abs(pTo.x - pFrom.x)) {
+      const vertSeg = segments.find(function (s) { return s.x1 === s.x2 && Math.abs(s.y2 - s.y1) > 8; });
       if (vertSeg) {
         const side = vertSeg.x1 <= (pFrom.x + pTo.x) / 2 ? 14 : -14;
         const midY = (vertSeg.y1 + vertSeg.y2) / 2;
@@ -574,7 +690,7 @@ function orthogonalRouteBetweenPoints(pFrom, pTo, opts) {
         };
       }
     }
-    const horizSeg = segments.find(function (s) { return Math.abs(s.y2 - s.y1) < 4 && Math.abs(s.x2 - s.x1) > 8; });
+    const horizSeg = segments.find(function (s) { return s.y1 === s.y2 && Math.abs(s.x2 - s.x1) > 8; });
     if (horizSeg) {
       return {
         x: (horizSeg.x1 + horizSeg.x2) / 2,
@@ -591,6 +707,9 @@ function orthogonalRouteBetweenPoints(pFrom, pTo, opts) {
     };
   }
 
+  const dx = Math.abs(pTo.x - pFrom.x);
+  const dy = Math.abs(pTo.y - pFrom.y);
+
   if (dx < 6) {
     addSeg(pFrom.x, pFrom.y, pTo.x, pTo.y, {
       arrowStart: bidirectional,
@@ -601,19 +720,39 @@ function orthogonalRouteBetweenPoints(pFrom, pTo, opts) {
       arrowStart: bidirectional,
       arrowEnd: bidirectional || oneWay,
     });
-  } else {
-    const elbow = { x: pTo.x, y: pFrom.y };
-    addSeg(pFrom.x, pFrom.y, elbow.x, elbow.y, {
+  } else if (opts.elbowPoint) {
+    const ex = snapPx(opts.elbowPoint.x);
+    const ey = snapPx(opts.elbowPoint.y);
+    addSeg(pFrom.x, pFrom.y, ex, pFrom.y, {
       dashed: false,
       arrowStart: bidirectional,
       arrowEnd: false,
     });
-    addSeg(elbow.x, elbow.y, pTo.x, pTo.y, {
+    addSeg(ex, pFrom.y, ex, ey, { dashed: false, arrowStart: false, arrowEnd: false });
+    addSeg(ex, ey, pTo.x, ey, { dashed: false, arrowStart: false, arrowEnd: false });
+    addSeg(pTo.x, ey, pTo.x, pTo.y, {
+      dashed,
+      arrowStart: false,
+      arrowEnd: bidirectional || oneWay,
+    });
+  } else {
+    const ex = pTo.x;
+    const ey = pFrom.y;
+    addSeg(pFrom.x, pFrom.y, ex, ey, {
+      dashed: false,
+      arrowStart: bidirectional,
+      arrowEnd: false,
+    });
+    addSeg(ex, ey, pTo.x, pTo.y, {
       dashed,
       arrowStart: false,
       arrowEnd: bidirectional || oneWay,
     });
   }
+
+  const fromMeta = segmentEndpointMeta(segments[0], true);
+  const last = segments[segments.length - 1];
+  const toMeta = segmentEndpointMeta(last, false);
 
   return {
     segments,
@@ -621,8 +760,21 @@ function orthogonalRouteBetweenPoints(pFrom, pTo, opts) {
     label: buildLabel(),
     endpointFrom: { x: pFrom.x, y: pFrom.y },
     endpointTo: { x: pTo.x, y: pTo.y },
+    endpointFromAngle: fromMeta.angle,
+    endpointToAngle: toMeta.angle,
+    elbowCorners: cornersFromSegments(segments),
     manual: true,
   };
+}
+
+function segmentEndpointMeta(seg, atStart) {
+  if (!seg) return { angle: 0 };
+  const dx = seg.x2 - seg.x1;
+  const dy = seg.y2 - seg.y1;
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return { angle: atStart ? (dx >= 0 ? 180 : 0) : (dx >= 0 ? 0 : 180) };
+  }
+  return { angle: atStart ? (dy >= 0 ? 270 : 90) : (dy >= 0 ? 90 : 270) };
 }
 
 function applyManualLabel(item, edge, w, h) {
@@ -645,10 +797,6 @@ export function hasManualLabel(edge) {
   return !!(edge && edge.labelPoint);
 }
 
-export function hasManualLayout(edge) {
-  return hasManualEndpoints(edge) || hasManualLabel(edge);
-}
-
 export function shiftEdgeEndpointsForNode(edges, slug, dx, dy) {
   if (!slug || (!dx && !dy)) return;
   edges.forEach(function (edge) {
@@ -657,6 +805,13 @@ export function shiftEdgeEndpointsForNode(edges, slug, dx, dy) {
       pt.x = clamp01(pt.x + dx);
       pt.y = clamp01(pt.y + dy);
     }
+    function touches() {
+      if (edge.kind === 'family-child') {
+        return edge.child === slug || (edge.parents && edge.parents.indexOf(slug) >= 0);
+      }
+      return edge.from === slug || edge.to === slug;
+    }
+    if (!touches()) return;
     if (edge.kind === 'family-child') {
       if (edge.child === slug) shiftPt(edge.fromPoint);
       if (edge.parents && edge.parents.indexOf(slug) >= 0) shiftPt(edge.toPoint);
@@ -664,14 +819,46 @@ export function shiftEdgeEndpointsForNode(edges, slug, dx, dy) {
       if (edge.from === slug) shiftPt(edge.fromPoint);
       if (edge.to === slug) shiftPt(edge.toPoint);
     }
+    shiftPt(edge.elbowPoint);
   });
+}
+
+export function hasManualLayout(edge) {
+  return hasManualEndpoints(edge) || hasManualLabel(edge) || !!(edge && edge.elbowPoint);
+}
+
+export function resolveEndpointNodeSlug(edge, role) {
+  if (edge.kind === 'family-child') {
+    return role === 'from' ? edge.child : edge.parents[0];
+  }
+  return role === 'from' ? edge.from : edge.to;
+}
+
+export function snapEndpointNormForEdge(edge, role, norm, canvas, w, h) {
+  const slug = resolveEndpointNodeSlug(edge, role);
+  const node = canvas.nodes.find(function (n) { return n.slug === slug; });
+  if (!node) return norm;
+  const bounds = nodePixelBounds(node, w, h);
+  const snapped = snapPointToRectBorder(bounds, norm.x * w, norm.y * h, EDGE_MARKER_INSET);
+  return { x: clamp01(snapped.x / w), y: clamp01(snapped.y / h), angle: snapped.angle };
 }
 
 function buildManualOrAutoRoute(edge, bFrom, bTo, w, h, autoOpts) {
   if (edge.fromPoint && edge.toPoint) {
-    const pFrom = { x: edge.fromPoint.x * w, y: edge.fromPoint.y * h };
-    const pTo = { x: edge.toPoint.x * w, y: edge.toPoint.y * h };
-    return customEndpointRoute(pFrom, pTo, autoOpts);
+    let pFrom = snapOrthogonalPoint({ x: edge.fromPoint.x * w, y: edge.fromPoint.y * h });
+    let pTo = snapOrthogonalPoint({ x: edge.toPoint.x * w, y: edge.toPoint.y * h });
+    if (bFrom) {
+      const sf = snapPointToRectBorder(bFrom, pFrom.x, pFrom.y, EDGE_MARKER_INSET);
+      pFrom = { x: sf.x, y: sf.y };
+    }
+    if (bTo) {
+      const st = snapPointToRectBorder(bTo, pTo.x, pTo.y, EDGE_MARKER_INSET);
+      pTo = { x: st.x, y: st.y };
+    }
+    const elbow = edge.elbowPoint
+      ? { x: edge.elbowPoint.x * w, y: edge.elbowPoint.y * h }
+      : null;
+    return orthogonalRouteBetweenPoints(pFrom, pTo, Object.assign({}, autoOpts, { elbowPoint: elbow }));
   }
   const route = orthogonalRouteBetweenBounds(bFrom, bTo, autoOpts);
   const eps = endpointsFromSegments(route.segments);
@@ -696,6 +883,9 @@ function applyRouteToItem(item, route, index) {
   if (route.label) item.labels.push(route.label);
   item.endpointFrom = route.endpointFrom;
   item.endpointTo = route.endpointTo;
+  item.endpointFromAngle = route.endpointFromAngle != null ? route.endpointFromAngle : 0;
+  item.endpointToAngle = route.endpointToAngle != null ? route.endpointToAngle : 0;
+  item.elbowCorners = route.elbowCorners || cornersFromSegments(item.segments);
   item.manualEndpoints = !!route.manual;
   item.draggableEndpoints = true;
 }
@@ -801,6 +991,9 @@ export function buildRenderPlan(canvas, w, h, personName) {
         const eps = endpointsFromSegments(item.segments);
         item.endpointFrom = eps.from;
         item.endpointTo = eps.to;
+        item.endpointFromAngle = segmentEndpointMeta(item.segments[0], true).angle;
+        item.endpointToAngle = segmentEndpointMeta(item.segments[item.segments.length - 1], false).angle;
+        item.elbowCorners = cornersFromSegments(item.segments);
         item.draggableEndpoints = true;
       }
       edgeItems.push(item);

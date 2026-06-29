@@ -16,7 +16,11 @@ import {
   hasManualEndpoints,
   hasManualLayout,
   shiftEdgeEndpointsForNode,
-} from './chart-layout-geometry.js';
+  snapEndpointNormForEdge,
+  shortenSegment,
+  ARROW_TIP_LEN,
+  snapAngleDeg,
+} from './chart-layout-geometry.js?v=19';
 
 const LAYOUT_ID = 'main';
 const LOCAL_KEY = 'banshu_chart_layout_v1';
@@ -80,6 +84,8 @@ export function initChartLayoutEditor(options) {
   let endpointDragMoved = false;
   let pendingLabelDrag = null;
   let labelDragMoved = false;
+  let pendingElbowDrag = null;
+  let elbowDragMoved = false;
   let dragLastNormX = 0;
   let dragLastNormY = 0;
 
@@ -177,7 +183,7 @@ export function initChartLayoutEditor(options) {
     } else if (tool === 'zone') {
       hintEl.textContent = '範囲をドラッグで移動 · ＋範囲で追加';
     } else {
-      hintEl.textContent = '矢尻・ラベルをドラッグで調整 · ラベル／線ダブルクリック=編集 · モーダルで初期化';
+      hintEl.textContent = '矢尻・折れ点・ラベルをドラッグ · ダブルクリック=編集 · モーダルで初期化';
     }
   }
 
@@ -309,11 +315,26 @@ export function initChartLayoutEditor(options) {
 
   function appendSegment(group, seg, edgeStyle, selected, edgeIndex, interactive, markerOpts) {
     markerOpts = markerOpts || {};
+    let x1 = seg.x1;
+    let y1 = seg.y1;
+    let x2 = seg.x2;
+    let y2 = seg.y2;
+    if (markerOpts.trimStart || markerOpts.trimEnd) {
+      const trimmed = shortenSegment(
+        x1, y1, x2, y2,
+        markerOpts.trimStart ? ARROW_TIP_LEN : 0,
+        markerOpts.trimEnd ? ARROW_TIP_LEN : 0
+      );
+      x1 = trimmed.x1;
+      y1 = trimmed.y1;
+      x2 = trimmed.x2;
+      y2 = trimmed.y2;
+    }
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', String(seg.x1));
-    line.setAttribute('y1', String(seg.y1));
-    line.setAttribute('x2', String(seg.x2));
-    line.setAttribute('y2', String(seg.y2));
+    line.setAttribute('x1', String(x1));
+    line.setAttribute('y1', String(y1));
+    line.setAttribute('x2', String(x2));
+    line.setAttribute('y2', String(y2));
     let cls = 'chart-layout-edge';
     if (seg.dashed || edgeStyle === 'dashed') cls += ' chart-layout-edge--dashed';
     if (selected) cls += ' chart-layout-edge--selected';
@@ -333,41 +354,47 @@ export function initChartLayoutEditor(options) {
     group.appendChild(line);
   }
 
-  function endpointAngles(item) {
-    const segs = item.segments;
-    if (!segs.length) return { from: 0, to: 0 };
-    const first = segs[0];
-    const last = segs[segs.length - 1];
-    return {
-      from: Math.atan2(first.y2 - first.y1, first.x2 - first.x1) * 180 / Math.PI,
-      to: Math.atan2(last.y2 - last.y1, last.x2 - last.x1) * 180 / Math.PI,
-    };
-  }
-
   function appendArrowTipHandle(group, pt, edgeIndex, role, angleDeg, selected, dragging) {
     const tip = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     let tipCls = 'chart-layout-edge-tip';
     if (selected) tipCls += ' chart-layout-edge-tip--selected';
     if (dragging) tipCls += ' chart-layout-edge-tip--dragging';
     tip.setAttribute('class', tipCls);
-    tip.setAttribute('transform', 'translate(' + pt.x + ',' + pt.y + ') rotate(' + angleDeg + ')');
+    const angle = snapAngleDeg(angleDeg);
+    tip.setAttribute('transform', 'translate(' + pt.x + ',' + pt.y + ') rotate(' + angle + ')');
     tip.dataset.edgeIndex = String(edgeIndex);
     tip.dataset.endpoint = role;
 
-    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    hit.setAttribute('cx', '0');
-    hit.setAttribute('cy', '0');
-    hit.setAttribute('r', '16');
+    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    hit.setAttribute('x', '-14');
+    hit.setAttribute('y', '-14');
+    hit.setAttribute('width', '28');
+    hit.setAttribute('height', '28');
     hit.setAttribute('class', 'chart-layout-edge-tip__hit');
 
     const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     arrow.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
     arrow.setAttribute('class', 'chart-layout-edge-tip__arrow');
-    arrow.setAttribute('transform', 'translate(-9, -5)');
+    arrow.setAttribute('transform', 'translate(-10, -5)');
 
     tip.appendChild(hit);
     tip.appendChild(arrow);
     group.appendChild(tip);
+  }
+
+  function appendElbowHandle(group, pt, edgeIndex, cornerIndex, selected, dragging) {
+    const elbow = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    elbow.setAttribute('x', String(pt.x - 7));
+    elbow.setAttribute('y', String(pt.y - 7));
+    elbow.setAttribute('width', '14');
+    elbow.setAttribute('height', '14');
+    let cls = 'chart-layout-edge-elbow';
+    if (selected) cls += ' chart-layout-edge-elbow--selected';
+    if (dragging) cls += ' chart-layout-edge-elbow--dragging';
+    elbow.setAttribute('class', cls);
+    elbow.dataset.edgeIndex = String(edgeIndex);
+    elbow.dataset.cornerIndex = String(cornerIndex);
+    group.appendChild(elbow);
   }
 
   function bindEndpointDrag() {
@@ -396,8 +423,17 @@ export function initChartLayoutEditor(options) {
       const edge = canvas.edges[pendingEndpointDrag.edgeIndex];
       if (!edge) return;
       const norm = pointerToNorm(e.clientX, e.clientY);
-      if (pendingEndpointDrag.role === 'from') edge.fromPoint = norm;
-      else edge.toPoint = norm;
+      const rect = stage.getBoundingClientRect();
+      const snapped = snapEndpointNormForEdge(
+        edge,
+        pendingEndpointDrag.role,
+        norm,
+        canvas,
+        rect.width || 1,
+        rect.height || 1
+      );
+      if (pendingEndpointDrag.role === 'from') edge.fromPoint = { x: snapped.x, y: snapped.y };
+      else edge.toPoint = { x: snapped.x, y: snapped.y };
       endpointDragMoved = true;
       renderEdges();
     });
@@ -418,6 +454,55 @@ export function initChartLayoutEditor(options) {
 
     edgesSvg.addEventListener('pointerup', finishEndpointDrag);
     edgesSvg.addEventListener('pointercancel', finishEndpointDrag);
+  }
+
+  function bindElbowDrag() {
+    if (readOnly || !edgesSvg || edgesSvg.dataset.boundElbow === '1') return;
+    edgesSvg.dataset.boundElbow = '1';
+
+    edgesSvg.addEventListener('pointerdown', function (e) {
+      if (tool !== 'move') return;
+      const handle = e.target && e.target.closest ? e.target.closest('.chart-layout-edge-elbow') : null;
+      if (!handle) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const edgeIndex = parseInt(handle.dataset.edgeIndex, 10);
+      if (edgeIndex < 0) return;
+      ensureEdgeEndpointDefaults(edgeIndex);
+      ensureEdgeElbowDefault(edgeIndex);
+      selectedEdgeIndex = edgeIndex;
+      pendingElbowDrag = { edgeIndex, pointerId: e.pointerId };
+      elbowDragMoved = false;
+      edgesSvg.setPointerCapture(e.pointerId);
+      renderEdges();
+    });
+
+    edgesSvg.addEventListener('pointermove', function (e) {
+      if (!pendingElbowDrag || e.pointerId !== pendingElbowDrag.pointerId) return;
+      const edge = canvas.edges[pendingElbowDrag.edgeIndex];
+      if (!edge) return;
+      const norm = pointerToNorm(e.clientX, e.clientY);
+      edge.elbowPoint = { x: norm.x, y: norm.y };
+      elbowDragMoved = true;
+      renderEdges();
+    });
+
+    function finishElbowDrag(e) {
+      if (!pendingElbowDrag || e.pointerId !== pendingElbowDrag.pointerId) return;
+      if (edgesSvg.hasPointerCapture(e.pointerId)) edgesSvg.releasePointerCapture(e.pointerId);
+      pendingElbowDrag = null;
+      if (elbowDragMoved) {
+        canvas = normalizeCanvas(canvas);
+        pushHistory();
+        saveLocal();
+        updateEdgeResetButton();
+      }
+      elbowDragMoved = false;
+      renderEdges();
+    }
+
+    edgesSvg.addEventListener('pointerup', finishElbowDrag);
+    edgesSvg.addEventListener('pointercancel', finishElbowDrag);
   }
 
   function bindLabelDrag() {
@@ -494,6 +579,14 @@ export function initChartLayoutEditor(options) {
     if (item && item.endpointFrom && item.endpointTo) {
       edge.fromPoint = savedFp || { x: item.endpointFrom.x / w, y: item.endpointFrom.y / h };
       edge.toPoint = savedTp || { x: item.endpointTo.x / w, y: item.endpointTo.y / h };
+      if (!savedFp) {
+        const sf = snapEndpointNormForEdge(edge, 'from', edge.fromPoint, canvas, w, h);
+        edge.fromPoint = { x: sf.x, y: sf.y };
+      }
+      if (!savedTp) {
+        const st = snapEndpointNormForEdge(edge, 'to', edge.toPoint, canvas, w, h);
+        edge.toPoint = { x: st.x, y: st.y };
+      }
     } else {
       if (savedFp) edge.fromPoint = savedFp;
       if (savedTp) edge.toPoint = savedTp;
@@ -513,6 +606,20 @@ export function initChartLayoutEditor(options) {
     const lb = item && item.labels[0];
     if (lb) {
       edge.labelPoint = { x: lb.x / w, y: lb.y / h, vertical: !!lb.vertical };
+    }
+  }
+
+  function ensureEdgeElbowDefault(index) {
+    const edge = canvas.edges[index];
+    if (!edge || edge.elbowPoint) return;
+    const rect = stage.getBoundingClientRect();
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    const plan = buildRenderPlan(canvas, w, h, personName);
+    const item = plan.edges.find(function (it) { return it.index === index; });
+    const corner = item && item.elbowCorners && item.elbowCorners[0];
+    if (corner) {
+      edge.elbowPoint = { x: corner.x / w, y: corner.y / h };
     }
   }
 
@@ -539,6 +646,7 @@ export function initChartLayoutEditor(options) {
     delete edge.fromPoint;
     delete edge.toPoint;
     delete edge.labelPoint;
+    delete edge.elbowPoint;
     canvas = normalizeCanvas(canvas);
     pushHistory();
     saveLocal();
@@ -552,7 +660,7 @@ export function initChartLayoutEditor(options) {
     edgesSvg.dataset.boundSelect = '1';
     edgesSvg.addEventListener('pointerdown', function (e) {
       if (tool !== 'move') return;
-      if (e.target && e.target.closest && e.target.closest('.chart-layout-edge-tip, .chart-layout-edge__label-group')) return;
+      if (e.target && e.target.closest && e.target.closest('.chart-layout-edge-tip, .chart-layout-edge-elbow, .chart-layout-edge__label-group')) return;
       const target = e.target;
       const edgeEl = target && target.closest
         ? target.closest('[data-edge-index]')
@@ -565,7 +673,7 @@ export function initChartLayoutEditor(options) {
 
     edgesSvg.addEventListener('dblclick', function (e) {
       if (tool !== 'move') return;
-      if (e.target && e.target.closest && e.target.closest('.chart-layout-edge-tip, .chart-layout-edge__label-group')) return;
+      if (e.target && e.target.closest && e.target.closest('.chart-layout-edge-tip, .chart-layout-edge-elbow, .chart-layout-edge__label-group')) return;
       const edgeEl = e.target && e.target.closest ? e.target.closest('[data-edge-index]') : null;
       if (!edgeEl || !edgeEl.dataset.edgeIndex) return;
       e.stopPropagation();
@@ -618,6 +726,8 @@ export function initChartLayoutEditor(options) {
       const segCount = item.segments.length;
 
       item.segments.forEach(function (seg, segIdx) {
+        const trimStart = showTips && segIdx === 0 && (seg.arrowStart || seg.arrowBoth);
+        const trimEnd = showTips && segIdx === segCount - 1 && (seg.arrowEnd || seg.arrowBoth || seg.arrow);
         appendSegment(
           group,
           seg,
@@ -626,8 +736,10 @@ export function initChartLayoutEditor(options) {
           item.index,
           edgesInteractive,
           showTips ? {
-            hideStart: segIdx === 0,
-            hideEnd: segIdx === segCount - 1,
+            hideStart: segIdx === 0 && trimStart,
+            hideEnd: segIdx === segCount - 1 && trimEnd,
+            trimStart: trimStart,
+            trimEnd: trimEnd,
           } : null
         );
       });
@@ -656,26 +768,39 @@ export function initChartLayoutEditor(options) {
       });
 
       if (showTips) {
-        const angles = endpointAngles(item);
         const dragIdx = pendingEndpointDrag ? pendingEndpointDrag.edgeIndex : -1;
         appendArrowTipHandle(
           group,
           item.endpointFrom,
           item.index,
           'from',
-          angles.from + 180,
+          item.endpointFromAngle != null ? item.endpointFromAngle : 180,
           selected,
-          dragIdx === item.index && pendingEndpointDrag.role === 'from'
+          dragIdx === item.index && pendingEndpointDrag && pendingEndpointDrag.role === 'from'
         );
         appendArrowTipHandle(
           group,
           item.endpointTo,
           item.index,
           'to',
-          angles.to,
+          item.endpointToAngle != null ? item.endpointToAngle : 0,
           selected,
-          dragIdx === item.index && pendingEndpointDrag.role === 'to'
+          dragIdx === item.index && pendingEndpointDrag && pendingEndpointDrag.role === 'to'
         );
+      }
+
+      if (edgesInteractive && selected && item.elbowCorners && item.elbowCorners.length) {
+        const elbowDragIdx = pendingElbowDrag ? pendingElbowDrag.edgeIndex : -1;
+        item.elbowCorners.forEach(function (corner, ci) {
+          appendElbowHandle(
+            group,
+            corner,
+            item.index,
+            ci,
+            selected || item.index === selectedEdgeIndex,
+            elbowDragIdx === item.index && elbowDragMoved
+          );
+        });
       }
 
       edgesSvg.appendChild(group);
@@ -683,6 +808,7 @@ export function initChartLayoutEditor(options) {
 
     bindEdgeSelection();
     bindEndpointDrag();
+    bindElbowDrag();
     bindLabelDrag();
   }
 
@@ -784,6 +910,7 @@ export function initChartLayoutEditor(options) {
     selectedEdgeIndex = -1;
     pendingEndpointDrag = null;
     pendingLabelDrag = null;
+    pendingElbowDrag = null;
     closeEdgeModal();
   }
 
@@ -1244,7 +1371,7 @@ export function initChartLayoutEditor(options) {
       }
     });
     stage.addEventListener('click', function (e) {
-      if (e.target.closest('.chart-layout-node, .chart-layout-edge-hit, .chart-layout-edge-group, .chart-layout-edge-tip, .chart-layout-zone, [class*="panel"]')) return;
+      if (e.target.closest('.chart-layout-node, .chart-layout-edge-hit, .chart-layout-edge-group, .chart-layout-edge-tip, .chart-layout-edge-elbow, .chart-layout-zone, [class*="panel"]')) return;
       resetLinkState();
       syncToolHint();
       closeNodePanel();

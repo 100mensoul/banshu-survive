@@ -337,6 +337,26 @@
   fill: #c47a28;
 }
 
+.chart-layout-edge-elbow {
+  fill: #fff;
+  stroke: #c47a28;
+  stroke-width: 2;
+  pointer-events: all;
+  cursor: grab;
+}
+
+.chart-layout-edge-elbow:hover,
+.chart-layout-edge-elbow--selected {
+  fill: #fff3d6;
+  stroke: #922;
+  stroke-width: 2.5;
+}
+
+.chart-layout-edge-elbow--dragging {
+  cursor: grabbing;
+  fill: #ffe8cc;
+}
+
 .chart-layout-edge-hit {
   stroke: transparent;
   stroke-width: 24;
@@ -468,7 +488,8 @@
 .chart-layout-edge {
   stroke: #111;
   stroke-width: 2;
-  stroke-linecap: round;
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
 }
 
 .chart-layout-edge--dashed {
