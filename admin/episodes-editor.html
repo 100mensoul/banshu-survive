@@ -156,6 +156,115 @@
     }
     .ref-empty { color: #888; font-size: 0.85rem; margin: 0.25rem 0; }
 
+    /* 編集履歴モーダル */
+    .history-modal-box {
+      width: min(920px, 96vw);
+      max-height: min(88vh, 820px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .history-layout {
+      display: grid;
+      gap: 0.75rem;
+      flex: 1;
+      min-height: 0;
+    }
+    @media (min-width: 700px) {
+      .history-layout { grid-template-columns: 220px minmax(0, 1fr); }
+    }
+    .history-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: min(52vh, 520px);
+      overflow-y: auto;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    .history-list li {
+      padding: 0.55rem 0.65rem;
+      border-bottom: 1px solid #ececec;
+      cursor: pointer;
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
+    .history-list li:last-child { border-bottom: none; }
+    .history-list li:hover { background: #f3f3e0; }
+    .history-list li.active { background: #fff100; }
+    .history-list .hist-time { font-weight: 700; display: block; }
+    .history-list .hist-title { color: #555; font-size: 0.78rem; }
+    .history-empty { color: #888; font-size: 0.85rem; margin: 0; padding: 0.5rem; }
+    .history-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      min-height: 0;
+      overflow-y: auto;
+      max-height: min(52vh, 520px);
+    }
+    .history-field label {
+      display: block;
+      margin: 0 0 0.2rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #555;
+    }
+    .history-field .hist-value {
+      font-size: 0.88rem;
+      padding: 0.45rem 0.55rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .history-field .hist-value.title { font-weight: 600; }
+    .history-field textarea.hist-body {
+      width: 100%;
+      min-height: 10rem;
+      max-height: 18rem;
+      resize: vertical;
+      box-sizing: border-box;
+      font-family: ui-monospace, 'Cascadia Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      padding: 0.45rem 0.55rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+    }
+    .history-field .hist-memo {
+      font-family: ui-monospace, 'Cascadia Code', monospace;
+      font-size: 0.82rem;
+      white-space: pre-wrap;
+      max-height: 8rem;
+      overflow-y: auto;
+    }
+    .history-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.15rem;
+    }
+    .history-actions button {
+      padding: 0.3rem 0.55rem;
+      font-size: 0.78rem;
+    }
+    .history-preview-md {
+      font-size: 0.9rem;
+      line-height: 1.7;
+      padding: 0.5rem 0.6rem;
+      border: 1px dashed #ccc;
+      border-radius: 6px;
+      background: #fafafa;
+      max-height: 12rem;
+      overflow-y: auto;
+      user-select: text;
+    }
+    .history-preview-md img { max-width: 100%; height: auto; }
+
     /* 本文下ボタン行 */
     .editor-actions {
       margin-top: 1rem;
@@ -409,6 +518,7 @@
           <button type="button" class="secondary" id="btn-open-image">画像</button>
           <button type="button" class="secondary" id="btn-open-note">メモ</button>
           <button type="button" class="secondary" id="btn-open-ref">参照</button>
+          <button type="button" class="secondary" id="btn-open-history">履歴</button>
         </div>
       </div>
     </div>
@@ -499,6 +609,60 @@
     </div>
   </div>
 
+  <!-- 編集履歴モーダル -->
+  <div class="modal" id="history-modal" hidden>
+    <div class="modal-backdrop" id="history-modal-backdrop"></div>
+    <div class="modal-box history-modal-box">
+      <h2>編集履歴</h2>
+      <p class="hint">保存のたびに直前の版が残ります（15日間）。いきなり全体を戻さず、下の Markdown から選択してコピーするか、項目ごとにエディタへ反映してください。反映後は<strong>まだ保存されていません</strong>。</p>
+      <div class="history-layout">
+        <div>
+          <strong style="font-size:0.82rem;">保存日時</strong>
+          <ul class="history-list" id="history-list"></ul>
+        </div>
+        <div class="history-detail" id="history-detail" hidden>
+          <div class="history-field">
+            <label>タイトル</label>
+            <div class="hist-value title" id="hist-title"></div>
+            <div class="history-actions">
+              <button type="button" class="secondary" id="hist-apply-title">タイトルをエディタに反映</button>
+            </div>
+          </div>
+          <div class="history-field">
+            <label>本文（Markdown・選択してコピー可）</label>
+            <textarea class="hist-body" id="hist-body" readonly></textarea>
+            <div class="history-actions">
+              <button type="button" class="secondary" id="hist-copy-body">本文をコピー</button>
+              <button type="button" class="secondary" id="hist-apply-body">本文をエディタに置き換え</button>
+              <button type="button" class="secondary" id="hist-append-body">本文をエディタ末尾に追加</button>
+            </div>
+          </div>
+          <div class="history-field">
+            <label>プレビュー（選択してコピー可）</label>
+            <div class="history-preview-md" id="hist-preview"></div>
+          </div>
+          <div class="history-field" id="hist-memo-wrap" hidden>
+            <label>メモ</label>
+            <div class="hist-value hist-memo" id="hist-memo"></div>
+            <div class="history-actions">
+              <button type="button" class="secondary" id="hist-apply-memo">メモをエディタに反映</button>
+            </div>
+          </div>
+          <div class="history-field" id="hist-meta-wrap">
+            <label>メタ情報</label>
+            <div class="hist-value" id="hist-meta"></div>
+            <div class="history-actions">
+              <button type="button" class="secondary" id="hist-apply-meta">状態・話数などを反映</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="secondary" id="btn-close-history">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <script src="../js/supabase-public-config.js"></script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -535,6 +699,9 @@
     const previewScrollBySlug = {};
     const FOCUS_DARK_KEY = 'episodes-editor-focus-dark';
     let focusDark = localStorage.getItem(FOCUS_DARK_KEY) === '1';
+    const REVISION_RETENTION_DAYS = 15;
+    let historyRevisions = [];
+    let selectedRevision = null;
 
     function getBodySlug() {
       return document.getElementById('h-slug').value.trim() || '__new__';
@@ -748,6 +915,7 @@
       listEl.querySelectorAll('li').forEach((li) => li.classList.remove('active'));
       renderPreview();
       updatePublicUrl();
+      updateHistoryBadge();
     }
 
     function fillForm(row) {
@@ -775,6 +943,7 @@
       }
       renderPreview();
       updatePublicUrl();
+      updateHistoryBadge();
     }
 
     async function loadList() {
@@ -938,6 +1107,248 @@
     document.getElementById('btn-close-note').addEventListener('click', () => { noteModal.hidden = true; });
     document.getElementById('note-modal-backdrop').addEventListener('click', () => { noteModal.hidden = true; });
 
+    /* ===== 編集履歴 ===== */
+    const historyModal = document.getElementById('history-modal');
+    const historyListEl = document.getElementById('history-list');
+    const historyDetailEl = document.getElementById('history-detail');
+
+    function formatRevisionTime(iso) {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return iso || '';
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function episodeRowSnapshot(row) {
+      return {
+        slug: row.slug || '',
+        title: row.title || '',
+        body: row.body || '',
+        status: row.status === 'published' ? 'published' : 'draft',
+        season: row.season != null ? row.season : null,
+        episode_number: row.episode_number != null ? row.episode_number : null,
+        edit_links: Array.isArray(row.edit_links) ? row.edit_links : [],
+        memo: row.memo || null,
+      };
+    }
+
+    function snapshotsEqual(a, b) {
+      if (!a || !b) return false;
+      return a.title === b.title
+        && a.body === b.body
+        && a.status === b.status
+        && a.season === b.season
+        && a.episode_number === b.episode_number
+        && (a.memo || '') === (b.memo || '')
+        && JSON.stringify(a.edit_links) === JSON.stringify(b.edit_links);
+    }
+
+    async function archiveEpisodeRevision(episodeId, currentRow) {
+      if (!episodeId || !currentRow) return;
+      const snap = episodeRowSnapshot(currentRow);
+      const { data: { session } } = await supabase.auth.getSession();
+      const { error } = await supabase.from('episode_revisions').insert({
+        episode_id: episodeId,
+        slug: snap.slug,
+        title: snap.title,
+        body: snap.body,
+        status: snap.status,
+        season: snap.season,
+        episode_number: snap.episode_number,
+        edit_links: snap.edit_links,
+        memo: snap.memo,
+        saved_by: session?.user?.id || null,
+      });
+      if (error) throw new Error('履歴の保存に失敗: ' + error.message);
+    }
+
+    async function pruneOldRevisions(episodeId) {
+      if (!episodeId) return;
+      const cutoff = new Date(Date.now() - REVISION_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+      await supabase
+        .from('episode_revisions')
+        .delete()
+        .eq('episode_id', episodeId)
+        .lt('saved_at', cutoff);
+    }
+
+    function renderHistoryDetail(rev) {
+      selectedRevision = rev;
+      if (!rev) {
+        historyDetailEl.hidden = true;
+        return;
+      }
+      historyDetailEl.hidden = false;
+      document.getElementById('hist-title').textContent = rev.title || '（タイトルなし）';
+      document.getElementById('hist-body').value = rev.body || '';
+      document.getElementById('hist-preview').innerHTML = marked.parse(rev.body || '');
+      const memoWrap = document.getElementById('hist-memo-wrap');
+      const memoText = rev.memo || '';
+      if (memoText.trim()) {
+        memoWrap.hidden = false;
+        document.getElementById('hist-memo').textContent = memoText;
+      } else {
+        memoWrap.hidden = true;
+      }
+      const statusLabel = rev.status === 'published' ? '公開' : '下書き';
+      const season = rev.season != null ? rev.season : '—';
+      const ep = rev.episode_number != null ? rev.episode_number : '—';
+      const refCount = Array.isArray(rev.edit_links) ? rev.edit_links.length : 0;
+      document.getElementById('hist-meta').textContent =
+        `状態: ${statusLabel} / シーズン: ${season} / 話数: ${ep} / 参照リンク: ${refCount}件`;
+    }
+
+    function renderHistoryList() {
+      historyListEl.innerHTML = '';
+      if (historyRevisions.length === 0) {
+        historyListEl.innerHTML = '<li class="history-empty">まだ履歴がありません。2回目以降の保存から残ります。</li>';
+        renderHistoryDetail(null);
+        return;
+      }
+      historyRevisions.forEach((rev, idx) => {
+        const li = document.createElement('li');
+        if (selectedRevision && selectedRevision.id === rev.id) li.classList.add('active');
+        li.innerHTML =
+          `<span class="hist-time">${formatRevisionTime(rev.saved_at)}</span>` +
+          `<span class="hist-title">${(rev.title || '').replace(/</g, '&lt;')}</span>`;
+        li.addEventListener('click', () => {
+          historyListEl.querySelectorAll('li').forEach((el) => el.classList.remove('active'));
+          li.classList.add('active');
+          renderHistoryDetail(rev);
+        });
+        historyListEl.appendChild(li);
+        if (idx === 0 && !selectedRevision) {
+          li.classList.add('active');
+          renderHistoryDetail(rev);
+        }
+      });
+    }
+
+    async function loadHistoryRevisions() {
+      const episodeId = document.getElementById('row-id').value.trim();
+      if (!episodeId) {
+        historyRevisions = [];
+        selectedRevision = null;
+        renderHistoryList();
+        return;
+      }
+      const cutoff = new Date(Date.now() - REVISION_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from('episode_revisions')
+        .select('*')
+        .eq('episode_id', episodeId)
+        .gte('saved_at', cutoff)
+        .order('saved_at', { ascending: false });
+      if (error) {
+        showMsg('履歴の取得エラー: ' + error.message, false);
+        historyRevisions = [];
+      } else {
+        historyRevisions = data || [];
+      }
+      selectedRevision = null;
+      renderHistoryList();
+    }
+
+    async function updateHistoryBadge() {
+      const episodeId = document.getElementById('row-id').value.trim();
+      const btn = document.getElementById('btn-open-history');
+      if (!episodeId) {
+        btn.textContent = '履歴';
+        return;
+      }
+      const cutoff = new Date(Date.now() - REVISION_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+      const { count, error } = await supabase
+        .from('episode_revisions')
+        .select('id', { count: 'exact', head: true })
+        .eq('episode_id', episodeId)
+        .gte('saved_at', cutoff);
+      if (error || count == null) {
+        btn.textContent = '履歴';
+        return;
+      }
+      btn.textContent = count > 0 ? `履歴 (${count})` : '履歴';
+    }
+
+    function applyRevisionToEditor(fields) {
+      if (!selectedRevision) return;
+      if (fields.title) {
+        document.getElementById('title').value = selectedRevision.title || '';
+      }
+      if (fields.body != null) {
+        const ta = getActiveBodyTextarea();
+        if (fields.append) {
+          ta.value = ta.value + (ta.value && !ta.value.endsWith('\n') ? '\n\n' : '') + (selectedRevision.body || '');
+        } else {
+          ta.value = selectedRevision.body || '';
+        }
+        syncBothBodyTextareas(ta);
+        ta.focus();
+      }
+      if (fields.memo) {
+        noteBody.value = selectedRevision.memo || '';
+        updateNoteBadge();
+      }
+      if (fields.meta) {
+        document.getElementById('status').value = selectedRevision.status === 'published' ? 'published' : 'draft';
+        document.getElementById('season').value = selectedRevision.season != null ? selectedRevision.season : '';
+        document.getElementById('episode_number').value =
+          selectedRevision.episode_number != null ? selectedRevision.episode_number : '';
+      }
+      if (fields.refLinks) {
+        refLinks = Array.isArray(selectedRevision.edit_links)
+          ? selectedRevision.edit_links.map((x) => ({ label: (x && x.label) || '', url: (x && x.url) || '' }))
+          : [];
+        updateRefBadge();
+      }
+      showMsg('エディタに反映しました（まだ保存されていません）', true);
+    }
+
+    document.getElementById('btn-open-history').addEventListener('click', async () => {
+      if (!document.getElementById('row-id').value.trim()) {
+        showMsg('履歴は保存済みエピソードにのみ残ります', false);
+        return;
+      }
+      await loadHistoryRevisions();
+      historyModal.hidden = false;
+    });
+    document.getElementById('btn-close-history').addEventListener('click', () => { historyModal.hidden = true; });
+    document.getElementById('history-modal-backdrop').addEventListener('click', () => { historyModal.hidden = true; });
+
+    document.getElementById('hist-apply-title').addEventListener('click', () => {
+      if (!selectedRevision) return;
+      if (!confirm('タイトルをこの版に置き換えますか？（保存はまだ行われません）')) return;
+      applyRevisionToEditor({ title: true });
+    });
+    document.getElementById('hist-copy-body').addEventListener('click', async () => {
+      const text = document.getElementById('hist-body').value;
+      try {
+        await navigator.clipboard.writeText(text);
+        showMsg('本文をコピーしました', true);
+      } catch {
+        document.getElementById('hist-body').select();
+        showMsg('コピーできない場合は選択して Cmd+C を使ってください', false);
+      }
+    });
+    document.getElementById('hist-apply-body').addEventListener('click', () => {
+      if (!selectedRevision) return;
+      if (!confirm('本文をこの版で置き換えますか？（未保存の編集は失われます。保存はまだ行われません）')) return;
+      applyRevisionToEditor({ body: true });
+    });
+    document.getElementById('hist-append-body').addEventListener('click', () => {
+      if (!selectedRevision) return;
+      applyRevisionToEditor({ body: true, append: true });
+    });
+    document.getElementById('hist-apply-memo').addEventListener('click', () => {
+      if (!selectedRevision) return;
+      if (!confirm('メモをこの版に置き換えますか？（保存はまだ行われません）')) return;
+      applyRevisionToEditor({ memo: true });
+    });
+    document.getElementById('hist-apply-meta').addEventListener('click', () => {
+      if (!selectedRevision) return;
+      if (!confirm('状態・シーズン・話数をこの版に反映しますか？（参照リンクも含みます。保存はまだ行われません）')) return;
+      applyRevisionToEditor({ meta: true, refLinks: true });
+    });
+
     /* ===== 集中編集モーダル ===== */
     applyFocusTheme();
     document.getElementById('btn-open-focus').addEventListener('click', openFocusModal);
@@ -962,7 +1373,7 @@
     });
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
-      if (!imageModal.hidden || !refModal.hidden || !noteModal.hidden) return;
+      if (!imageModal.hidden || !refModal.hidden || !noteModal.hidden || !historyModal.hidden) return;
       if (previewFocusModeOpen) closePreviewFocusModal();
       else if (focusModeOpen) closeFocusModal();
     });
@@ -1047,6 +1458,38 @@
         return;
       }
 
+      const episodeId = document.getElementById('row-id').value.trim();
+      let existingRow = null;
+      if (episodeId) {
+        const { data } = await supabase.from('episodes').select('*').eq('id', episodeId).maybeSingle();
+        existingRow = data;
+      }
+      if (!existingRow && payload.slug) {
+        const { data } = await supabase.from('episodes').select('*').eq('slug', payload.slug).maybeSingle();
+        existingRow = data;
+      }
+
+      const nextSnap = {
+        slug: payload.slug,
+        title: payload.title,
+        body: payload.body,
+        status: payload.status,
+        season: payload.season,
+        episode_number: payload.episode_number,
+        edit_links: payload.edit_links,
+        memo: payload.memo,
+      };
+
+      try {
+        if (existingRow && !snapshotsEqual(episodeRowSnapshot(existingRow), nextSnap)) {
+          await archiveEpisodeRevision(existingRow.id, existingRow);
+        }
+      } catch (err) {
+        showMsg(err.message || '履歴の保存に失敗しました', false);
+        saveBtns.forEach((btn) => { btn.disabled = false; });
+        return;
+      }
+
       const { data, error } = await supabase
         .from('episodes')
         .upsert(payload, { onConflict: 'slug' })
@@ -1060,9 +1503,12 @@
       }
       if (data?.id) {
         document.getElementById('row-id').value = data.id;
+        await pruneOldRevisions(data.id);
       }
       await loadList();
       updatePublicUrl();
+      updateHistoryBadge();
+      if (!historyModal.hidden) await loadHistoryRevisions();
       showMsg('保存しました', true);
       saveBtns.forEach((btn) => { btn.disabled = false; });
       if (focusModeOpen) mdBodyFocus.focus();
