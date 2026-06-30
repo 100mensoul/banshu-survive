@@ -937,6 +937,30 @@
   color: #6b5a44;
 }
 
+.world-map-road-style-row input[type="color"] {
+  width: 44px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(58, 44, 26, 0.25);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.world-map-road-style-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: #3a2c1a;
+  cursor: pointer;
+}
+
+.world-map-road-style-check input {
+  accent-color: var(--world-accent);
+}
+
 .world-map-river-row__name {
   font-weight: 700;
   font-size: 11px;

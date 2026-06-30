@@ -109,6 +109,8 @@ const WORLD_PRESETS = {
     shortLabel: 'コヌイの路',
     hint: '花田IC〜道の駅〜ツインコモンズ（半径〜1km圏）',
     size: 500,
+    sizeZ: 580,
+    mapOffsetZ: 40,
     seg: 480,
     gridCell: 25,
     metersPerUnit: 2,
@@ -161,12 +163,21 @@ const MAT_EARTH = 1;
 const MAT_GRASS = 2;
 const MAT_CONCRETE = 3;
 const MAT_ASPHALT = 4;
+const MAT_HIGHWAY = 5;
+
+const ROAD_STYLES_KEY = 'banshu_world_map_road_styles_v1';
+const DEFAULT_ROAD_STYLES = {
+  roadColor: '#858c94',
+  highwayColor: '#c9b07a',
+  highwayOutline: true,
+};
 
 const TOOL_SETTINGS_TITLES = {
   dig: '川を掘る',
   water: '水を流す',
   ground: '地面を盛る',
   road: '道路',
+  highway: '幹線道路',
   raise: '山を盛る',
   lower: 'へこます',
   erase: '消す',
@@ -179,6 +190,7 @@ function toolHasSettingsPanel(t) {
     t === 'water' ||
     t === 'ground' ||
     t === 'road' ||
+    t === 'highway' ||
     t === 'raise' ||
     t === 'lower' ||
     t === 'erase' ||
@@ -290,6 +302,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let overviewPlanRenderer = null;
   const OVERVIEW_CTX_PX = 188;
   let SIZE;
+  let SIZE_X;
+  let SIZE_Z;
+  let MAP_OFFSET_Z;
   let SEG;
   let GRID_CELL;
   let WORLD_ID;
@@ -309,6 +324,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   let groundHeightMeters;
   let roadWidthMeters;
   let roadBrushRadius;
+  let roadStyles = { ...DEFAULT_ROAD_STYLES };
   let toolSettingsOpen = true;
   let geo;
   let pos;
@@ -447,6 +463,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       tool === 'water' ||
       tool === 'ground' ||
       tool === 'road' ||
+      tool === 'highway' ||
       tool === 'raise' ||
       tool === 'lower' ||
       tool === 'erase'
@@ -457,15 +474,22 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (tool === 'dig') return riverSculptRadius();
     if (tool === 'water') return waterSculptRadius();
     if (tool === 'ground') return groundSculptRadius();
-    if (tool === 'road') return roadSculptRadius();
+    if (tool === 'road' || tool === 'highway') return roadSculptRadius();
     return brushRadius;
   }
 
+  function previewColorHexForTool() {
+    if (tool === 'highway') return roadStyles.highwayColor;
+    if (tool === 'road') return roadStyles.roadColor;
+    return null;
+  }
+
   function previewColorForTool() {
+    const hex = previewColorHexForTool();
+    if (hex) return parseInt(hex.replace('#', ''), 16);
     if (tool === 'erase') return 0xc05a4a;
     if (tool === 'raise' || tool === 'lower') return 0xc08a3a;
     if (tool === 'ground') return 0x6f8f4e;
-    if (tool === 'road') return 0x858c94;
     return 0x4a8ab8;
   }
 
@@ -509,7 +533,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   function terrainCellSize() {
-    return SIZE / SEG;
+    return Math.min(SIZE_X, SIZE_Z) / SEG;
   }
 
   /** コヌイの路 (500) を基準に、大きいマップでも凹凸が見えるようスケール */
@@ -643,6 +667,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     const p = preset();
     return {
       size: p.size,
+      sizeZ: p.sizeZ,
+      mapOffsetZ: p.mapOffsetZ,
       seg: p.seg,
       gridCell: p.gridCell,
       metersPerUnit: p.metersPerUnit,
@@ -650,6 +676,40 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       brushRadius: p.brushRadius,
       gridLabel: p.gridLabel,
     };
+  }
+
+  function applyMapSizesFromSpec() {
+    const p = terrainSpec();
+    SIZE_X = p.sizeX ?? p.size;
+    SIZE_Z = p.sizeZ ?? p.size;
+    MAP_OFFSET_Z = p.mapOffsetZ ?? 0;
+    SIZE = Math.max(SIZE_X, SIZE_Z);
+  }
+
+  function mapBoundX() {
+    return { min: -SIZE_X / 2, max: SIZE_X / 2 };
+  }
+
+  function mapBoundZ() {
+    return { min: -SIZE_Z / 2 + MAP_OFFSET_Z, max: SIZE_Z / 2 + MAP_OFFSET_Z };
+  }
+
+  function clampMapX(x) {
+    const b = mapBoundX();
+    return Math.max(b.min + margin, Math.min(b.max - margin, x));
+  }
+
+  function clampMapZ(z) {
+    const b = mapBoundZ();
+    return Math.max(b.min + margin, Math.min(b.max - margin, z));
+  }
+
+  function gridCoordX(x) {
+    return ((x + SIZE_X / 2) / SIZE_X) * SEG;
+  }
+
+  function gridCoordZ(z) {
+    return ((z - MAP_OFFSET_Z + SIZE_Z / 2) / SIZE_Z) * SEG;
   }
 
   /** いま編集中の地形パラメータ */
@@ -691,12 +751,13 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   function zoneWorldRect(z) {
-    const half = SIZE / 2;
+    const halfX = SIZE_X / 2;
+    const halfZ = SIZE_Z / 2;
     return {
-      x0: z.tx * SIZE - half,
-      z0: z.ty * SIZE - half,
-      x1: (z.tx + z.tw) * SIZE - half,
-      z1: (z.ty + z.th) * SIZE - half,
+      x0: z.tx * SIZE_X - halfX,
+      z0: z.ty * SIZE_Z - halfZ + MAP_OFFSET_Z,
+      x1: (z.tx + z.tw) * SIZE_X - halfX,
+      z1: (z.ty + z.th) * SIZE_Z - halfZ + MAP_OFFSET_Z,
     };
   }
 
@@ -820,8 +881,10 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     }
     const st = overviewState;
     const seg = st.seg;
-    const sz = st.size || preset().size;
-    const geo = new THREE.PlaneGeometry(sz, sz, seg, seg);
+    const sx = st.sizeX || st.size || preset().size;
+    const sz = st.sizeZ || st.size || preset().size;
+    const oz = st.oz || 0;
+    const geo = new THREE.PlaneGeometry(sx, sz, seg, seg);
     geo.rotateX(-Math.PI / 2);
     const vPos = geo.attributes.position;
     for (let i = 0; i < vPos.count; i++) {
@@ -836,12 +899,13 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       geo,
       new THREE.MeshBasicMaterial({ vertexColors: true }),
     );
+    overviewMiniLand.position.set(0, 0, oz);
     overviewMiniScene.add(overviewMiniLand);
   }
 
   function captureOverviewState() {
     if (!heights || !isKonuiOverview()) return;
-    overviewState = { ...localPayload(), size: SIZE, seg: SEG };
+    overviewState = { ...localPayload(), size: SIZE, sizeX: SIZE_X, sizeZ: SIZE_Z, oz: MAP_OFFSET_Z, seg: SEG };
     rebuildOverviewMiniLand();
   }
 
@@ -864,13 +928,15 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (!overviewState || !currentZoneId || viewMode !== '3d') return;
     const r = ensureOverviewPlanRenderer();
     if (!r || !overviewMiniLand) return;
-    const sz = overviewState.size || preset().size;
-    const half = sz * 0.52;
+    const sz = overviewState.sizeZ || overviewState.size || preset().size;
+    const sx = overviewState.sizeX || overviewState.size || preset().size;
+    const span = Math.max(sx, sz);
+    const half = span * 0.52;
     minimapCamera.left = -half;
     minimapCamera.right = half;
     minimapCamera.top = half;
     minimapCamera.bottom = -half;
-    minimapCamera.position.set(0, sz * 0.65, 0);
+    minimapCamera.position.set(0, span * 0.65, 0);
     minimapCamera.up.set(0, 0, -1);
     minimapCamera.lookAt(0, 0, 0);
     minimapCamera.updateProjectionMatrix();
@@ -939,7 +1005,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       updateGuideUI();
       return;
     }
-    const geoG = new THREE.PlaneGeometry(SIZE, SIZE);
+    const geoG = new THREE.PlaneGeometry(SIZE_X, SIZE_Z);
     geoG.rotateX(-Math.PI / 2);
     const mat = new THREE.MeshBasicMaterial({
       transparent: true,
@@ -948,7 +1014,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       depthWrite: false,
     });
     guidePlane = new THREE.Mesh(geoG, mat);
-    guidePlane.position.y = 4;
+    guidePlane.position.set(0, 4, MAP_OFFSET_Z);
     guidePlane.renderOrder = 999;
     guidePlane.visible = false;
     scene.add(guidePlane);
@@ -960,13 +1026,12 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       const iw = tex.image && tex.image.width ? tex.image.width : 1;
       const ih = tex.image && tex.image.height ? tex.image.height : 1;
       const aspect = iw / ih;
+      const fieldAspect = SIZE_X / SIZE_Z;
       if (guidePlane) {
-        if (aspect >= 1) {
-          // 横長：幅(X)はそのまま、奥行(Z)を縮める
-          guidePlane.scale.set(1, 1, 1 / aspect);
+        if (aspect >= fieldAspect) {
+          guidePlane.scale.set(1, 1, fieldAspect / aspect);
         } else {
-          // 縦長：奥行(Z)はそのまま、幅(X)を縮める
-          guidePlane.scale.set(aspect, 1, 1);
+          guidePlane.scale.set(aspect / fieldAspect, 1, 1);
         }
       }
       applyGuideVisibility();
@@ -1030,7 +1095,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   function buildTerrain() {
     const p = terrainSpec();
-    SIZE = p.size;
+    applyMapSizesFromSpec();
     SEG = p.seg;
     GRID_CELL = p.gridCell;
     WORLD_ID = preset().worldId;
@@ -1051,8 +1116,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     margin = SIZE * 0.015;
     syncCameraFar();
 
-    geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
+    geo = new THREE.PlaneGeometry(SIZE_X, SIZE_Z, SEG, SEG);
     geo.rotateX(-Math.PI / 2);
+    if (MAP_OFFSET_Z) geo.translate(0, 0, MAP_OFFSET_Z);
     pos = geo.attributes.position;
     N = pos.count;
     heights = new Float32Array(N);
@@ -1086,11 +1152,12 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     );
     scene.add(wireMesh);
 
-    const gridDivisions = Math.round(SIZE / GRID_CELL);
-    gridHelper = new THREE.GridHelper(SIZE, gridDivisions, 0x5c4a32, 0x8a7a62);
+    const gridSpan = Math.max(SIZE_X, SIZE_Z);
+    const gridDivisions = Math.round(gridSpan / GRID_CELL);
+    gridHelper = new THREE.GridHelper(gridSpan, gridDivisions, 0x5c4a32, 0x8a7a62);
     gridHelper.material.transparent = true;
     gridHelper.material.opacity = 0.22;
-    gridHelper.position.y = 0.4;
+    gridHelper.position.set(0, 0.4, MAP_OFFSET_Z);
     scene.add(gridHelper);
 
     buildScaleMarkers();
@@ -1120,12 +1187,57 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   const cMatGrass = new THREE.Color(0x6f8f4e);
   const cMatConcrete = new THREE.Color(0x9aa0a3);
   const cMatAsphalt = new THREE.Color(0x858c94);
+  const cMatHighway = new THREE.Color(0xc9b07a);
+
+  function applyHexToColor(hex, target) {
+    const h = (hex || '#888888').replace('#', '');
+    if (h.length !== 6) return;
+    target.setRGB(
+      parseInt(h.slice(0, 2), 16) / 255,
+      parseInt(h.slice(2, 4), 16) / 255,
+      parseInt(h.slice(4, 6), 16) / 255,
+    );
+  }
+
+  function loadRoadStyles() {
+    try {
+      const raw = localStorage.getItem(ROAD_STYLES_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      roadStyles = { ...DEFAULT_ROAD_STYLES, ...d };
+    } catch {
+      roadStyles = { ...DEFAULT_ROAD_STYLES };
+    }
+    applyHexToColor(roadStyles.roadColor, cMatAsphalt);
+    applyHexToColor(roadStyles.highwayColor, cMatHighway);
+  }
+
+  function saveRoadStyles() {
+    try {
+      localStorage.setItem(ROAD_STYLES_KEY, JSON.stringify(roadStyles));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function syncRoadStyleUI() {
+    const roadColorInput = document.getElementById('world-map-road-color');
+    const highwayColorInput = document.getElementById('world-map-highway-color');
+    const outlineInput = document.getElementById('world-map-highway-outline');
+    if (roadColorInput) roadColorInput.value = roadStyles.roadColor;
+    if (highwayColorInput) highwayColorInput.value = roadStyles.highwayColor;
+    if (outlineInput) outlineInput.checked = !!roadStyles.highwayOutline;
+  }
+
   function matColor(id) {
     if (id === MAT_GRASS) return cMatGrass;
     if (id === MAT_CONCRETE) return cMatConcrete;
     if (id === MAT_ASPHALT) return cMatAsphalt;
+    if (id === MAT_HIGHWAY) return cMatHighway;
     return cMatEarth;
   }
+
+  loadRoadStyles();
 
   // 川の水面（フラットな青い面）。掘った地形(河床・堤防)とは別レイヤーで描く。
   let waterSurfaceMesh = null;
@@ -1231,6 +1343,47 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     colAttr.needsUpdate = true;
   }
 
+  function applyHighwayPlanDecorations() {
+    if (viewMode !== 'plan' || !roadStyles.highwayOutline) return;
+    const cols = SEG + 1;
+    const cOutline = new THREE.Color(0x4a4035);
+
+    for (let i = 0; i < N; i++) {
+      if (groundMat[i] !== MAT_HIGHWAY) continue;
+      const gx = i % cols;
+      const gz = Math.floor(i / cols);
+      let edge = false;
+      for (const [dx, dz] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
+        const nx = gx + dx;
+        const nz = gz + dz;
+        if (nx < 0 || nx > SEG || nz < 0 || nz > SEG) {
+          edge = true;
+          break;
+        }
+        if (groundMat[nz * cols + nx] !== MAT_HIGHWAY) {
+          edge = true;
+          break;
+        }
+      }
+      if (!edge) continue;
+      const r = colAttr.getX(i);
+      const g = colAttr.getY(i);
+      const b = colAttr.getZ(i);
+      colAttr.setXYZ(
+        i,
+        r * 0.5 + cOutline.r * 0.5,
+        g * 0.5 + cOutline.g * 0.5,
+        b * 0.5 + cOutline.b * 0.5,
+      );
+    }
+    colAttr.needsUpdate = true;
+  }
+
   function recolorPlan() {
     for (let i = 0; i < N; i++) {
       if (groundMat[i] > 0) {
@@ -1267,6 +1420,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       colAttr.setXYZ(i, r, g, bch);
     }
     colAttr.needsUpdate = true;
+    applyHighwayPlanDecorations();
   }
 
   function recolor() {
@@ -1365,7 +1519,11 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   function roadLegendText() {
-    return '道路：道幅 約' + formatMeters(roadWidthMeters) + ' · アスファルト';
+    return '道路：道幅 約' + formatMeters(roadWidthMeters);
+  }
+
+  function highwayLegendText() {
+    return '幹線道路：道幅 約' + formatMeters(roadWidthMeters) + ' · 平面で縁取り';
   }
 
   function roadWidthText() {
@@ -1379,13 +1537,19 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     const riverPanel = document.getElementById('world-map-river-brush');
     const groundPanel = document.getElementById('world-map-ground-panel');
     const roadPanel = document.getElementById('world-map-road-panel');
+    const highwayPanel = document.getElementById('world-map-highway-panel');
+    const roadColorRow = document.getElementById('world-map-road-color-row');
+    const roadNote = document.getElementById('world-map-road-note');
     const brushPanel = document.getElementById('world-map-brush-panel');
     const areaPanel = document.getElementById('world-map-area-panel');
     const hasSettings = toolHasSettingsPanel(tool);
 
     if (riverPanel) riverPanel.hidden = tool !== 'dig' && tool !== 'water';
     if (groundPanel) groundPanel.hidden = tool !== 'ground';
-    if (roadPanel) roadPanel.hidden = tool !== 'road';
+    if (roadPanel) roadPanel.hidden = tool !== 'road' && tool !== 'highway';
+    if (highwayPanel) highwayPanel.hidden = tool !== 'highway';
+    if (roadColorRow) roadColorRow.hidden = tool !== 'road';
+    if (roadNote) roadNote.hidden = tool === 'highway';
     if (brushPanel) brushPanel.hidden = tool !== 'raise' && tool !== 'lower' && tool !== 'erase';
     if (areaPanel) areaPanel.hidden = tool !== 'area';
     if (titleEl) titleEl.textContent = TOOL_SETTINGS_TITLES[tool] || '詳細設定';
@@ -1417,7 +1581,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     const legendRiver = document.getElementById('world-map-river-scale-hint');
     const riverPanel = document.getElementById('world-map-river-brush');
     const mapToolActive =
-      (tool === 'dig' || tool === 'water' || tool === 'ground' || tool === 'road') && !readOnly;
+      (tool === 'dig' || tool === 'water' || tool === 'ground' || tool === 'road' || tool === 'highway') &&
+      !readOnly;
     const p = preset();
     const minM = p.riverWidthMinMeters ?? 2;
     const maxM = Math.min(RIVER_WIDTH_MAX, p.riverWidthMaxMeters ?? RIVER_WIDTH_MAX);
@@ -1496,6 +1661,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
           legendRiver.textContent = groundLegendText();
         } else if (tool === 'road') {
           legendRiver.textContent = roadLegendText();
+        } else if (tool === 'highway') {
+          legendRiver.textContent = highwayLegendText();
         } else {
           legendRiver.textContent = digLegendText();
         }
@@ -1780,21 +1947,21 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   function worldToNorm(x, z) {
     return {
-      x: (x + SIZE / 2) / SIZE,
-      z: (z + SIZE / 2) / SIZE,
+      x: (x + SIZE_X / 2) / SIZE_X,
+      z: (z - MAP_OFFSET_Z + SIZE_Z / 2) / SIZE_Z,
     };
   }
 
   function normToWorld(nx, nz) {
     return {
-      x: nx * SIZE - SIZE / 2,
-      z: nz * SIZE - SIZE / 2,
+      x: nx * SIZE_X - SIZE_X / 2,
+      z: nz * SIZE_Z - SIZE_Z / 2 + MAP_OFFSET_Z,
     };
   }
 
   function nearestIndex(x, z) {
-    const gx = Math.round(((x + SIZE / 2) / SIZE) * SEG);
-    const gz = Math.round(((z + SIZE / 2) / SIZE) * SEG);
+    const gx = Math.round(gridCoordX(x));
+    const gz = Math.round(gridCoordZ(z));
     const cx = Math.max(0, Math.min(SEG, gx));
     const cz = Math.max(0, Math.min(SEG, gz));
     return cz * (SEG + 1) + cx;
@@ -2077,6 +2244,10 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       paintRoadAt(p);
       return;
     }
+    if (dir === 'highway') {
+      paintHighwayAt(p);
+      return;
+    }
     if (dir === 'water') {
       paintWaterAt(p);
       return;
@@ -2129,8 +2300,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     const radius = riverSculptRadius();
     const cell = terrainCellSize();
     const cols = SEG + 1;
-    const gxCenter = (p.x + SIZE / 2) / cell;
-    const gzCenter = (p.z + SIZE / 2) / cell;
+    const gxCenter = gridCoordX(p.x);
+    const gzCenter = gridCoordZ(p.z);
     const cr = Math.ceil(radius / cell) + 1;
     const gxi0 = Math.max(0, Math.floor(gxCenter - cr));
     const gxi1 = Math.min(SEG, Math.ceil(gxCenter + cr));
@@ -2159,8 +2330,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     const radius = groundSculptRadius();
     const cell = terrainCellSize();
     const cols = SEG + 1;
-    const gxCenter = (p.x + SIZE / 2) / cell;
-    const gzCenter = (p.z + SIZE / 2) / cell;
+    const gxCenter = gridCoordX(p.x);
+    const gzCenter = gridCoordZ(p.z);
     const cr = Math.ceil(radius / cell) + 1;
     const gxi0 = Math.max(0, Math.floor(gxCenter - cr));
     const gxi1 = Math.min(SEG, Math.ceil(gxCenter + cr));
@@ -2199,14 +2370,27 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     }
   }
 
+  /** 「幹線道路」：高さは変えず幹線用マテリアルを敷く */
+  function paintHighwayAt(p) {
+    const radius = roadSculptRadius();
+    for (let i = 0; i < N; i++) {
+      const dx = pos.getX(i) - p.x;
+      const dz = pos.getZ(i) - p.z;
+      const d = Math.hypot(dx, dz);
+      if (d >= radius) continue;
+      const f = brushFalloff(d, radius);
+      if (f > 0.12) groundMat[i] = MAT_HIGHWAY;
+    }
+  }
+
   /** 「水を流す」：水平な水面を塗る（高さは地表からの下がり。セル毎に保存→川ごとに変えられる） */
   function paintWaterAt(p) {
     const radius = waterSculptRadius();
     const cell = terrainCellSize();
     const cols = SEG + 1;
     const surfaceY = flatWaterSurfaceY();
-    const gxCenter = (p.x + SIZE / 2) / cell;
-    const gzCenter = (p.z + SIZE / 2) / cell;
+    const gxCenter = gridCoordX(p.x);
+    const gzCenter = gridCoordZ(p.z);
     const cr = Math.ceil(radius / cell) + 1;
     const gxi0 = Math.max(0, Math.floor(gxCenter - cr));
     const gxi1 = Math.min(SEG, Math.ceil(gxCenter + cr));
@@ -2236,7 +2420,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   function sculptStroke(from, to, dir) {
     const isStrokeTool =
-      dir === 'dig' || dir === 'water' || dir === 'ground' || dir === 'road';
+      dir === 'dig' || dir === 'water' || dir === 'ground' || dir === 'road' || dir === 'highway';
     const radius =
       dir === 'water'
         ? waterSculptRadius()
@@ -2244,7 +2428,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
           ? riverSculptRadius()
           : dir === 'ground'
             ? groundSculptRadius()
-            : dir === 'road'
+            : dir === 'road' || dir === 'highway'
               ? roadSculptRadius()
               : brushRadius;
     const step = isStrokeTool
@@ -2367,7 +2551,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     dig: 'なぞると椀型の河床を掘ります（素材：土/草/コンクリ）',
     water: '掘った所をなぞると水平な水面が流れます（水幅・水位を調整）',
     ground: '高さを指定してなぞると、草の土台を一定の形で盛ります（加算しない）',
-    road: '盛った地面の上をなぞるとアスファルトの道を敷きます（高さは変えない）',
+    road: '盛った地面の上をなぞると道を敷きます（高さは変えない）',
+    highway: '播但連絡など幹線道路を敷きます（道幅は道路と共通）',
     spot: '空き地クリックで登録 · スポットをクリックで削除 · ドラッグで移動',
     area: 'ドラッグで町や区域を塗ってください（消しゴムで消せます）',
     look: 'ドラッグで視点を回す · 十字キーで移動 · Shift+ドラッグでも移動',
@@ -2379,7 +2564,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     dig: '平面モード：川のルートを掘ります',
     water: '平面モード：掘った所に水を流します',
     ground: '平面モード：草の地面を微妙に盛ります',
-    road: '平面モード：アスファルトの道を敷きます',
+    road: '平面モード：道を敷きます',
+    highway: '平面モード：幹線道路を敷きます',
     spot: '平面：クリックで置く/削除 · ドラッグで移動',
     area: '平面モード：なぞってエリアを塗ります',
     look: 'ドラッグで視点を回す · 十字キーで移動 · Shift+ドラッグでも移動',
@@ -2423,22 +2609,25 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   }
 
   function setupMinimapCamera() {
-    if (!SIZE) return;
-    const half = SIZE * 0.52;
+    if (!SIZE_X) return;
+    const span = Math.max(SIZE_X, SIZE_Z);
+    const half = span * 0.52;
     minimapCamera.left = -half;
     minimapCamera.right = half;
     minimapCamera.top = half;
     minimapCamera.bottom = -half;
-    minimapCamera.position.set(0, SIZE * 0.65, 0);
+    minimapCamera.position.set(0, span * 0.65, MAP_OFFSET_Z);
     minimapCamera.up.set(0, 0, -1);
-    minimapCamera.lookAt(0, 0, 0);
+    minimapCamera.lookAt(0, 0, MAP_OFFSET_Z);
     minimapCamera.updateProjectionMatrix();
   }
 
   function updateMinimapDot(dotEl) {
-    if (!dotEl || !SIZE) return;
-    dotEl.style.left = ((target.x + SIZE / 2) / SIZE) * 100 + '%';
-    dotEl.style.top = ((target.z + SIZE / 2) / SIZE) * 100 + '%';
+    if (!dotEl || !SIZE_X) return;
+    const bx = mapBoundX();
+    const bz = mapBoundZ();
+    dotEl.style.left = ((target.x - bx.min) / (bx.max - bx.min)) * 100 + '%';
+    dotEl.style.top = ((target.z - bz.min) / (bz.max - bz.min)) * 100 + '%';
   }
 
   function renderMinimapTo(miniRenderer, px) {
@@ -2774,6 +2963,34 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   if (roadMinus) roadMinus.addEventListener('click', () => setRoadWidth(roadWidthMeters - 1));
   if (roadPlus) roadPlus.addEventListener('click', () => setRoadWidth(roadWidthMeters + 1));
 
+  const roadColorInput = document.getElementById('world-map-road-color');
+  if (roadColorInput) {
+    roadColorInput.addEventListener('input', () => {
+      roadStyles.roadColor = roadColorInput.value;
+      applyHexToColor(roadStyles.roadColor, cMatAsphalt);
+      saveRoadStyles();
+      recolor();
+    });
+  }
+  const highwayColorInput = document.getElementById('world-map-highway-color');
+  if (highwayColorInput) {
+    highwayColorInput.addEventListener('input', () => {
+      roadStyles.highwayColor = highwayColorInput.value;
+      applyHexToColor(roadStyles.highwayColor, cMatHighway);
+      saveRoadStyles();
+      recolor();
+    });
+  }
+  const highwayOutlineInput = document.getElementById('world-map-highway-outline');
+  if (highwayOutlineInput) {
+    highwayOutlineInput.addEventListener('change', () => {
+      roadStyles.highwayOutline = highwayOutlineInput.checked;
+      saveRoadStyles();
+      recolor();
+    });
+  }
+  syncRoadStyleUI();
+
   // 水位（地表から水面までの下がり m）
   function setWaterLevel(v) {
     const snapped = Math.round(v / WATER_LEVEL_STEP) * WATER_LEVEL_STEP;
@@ -2843,9 +3060,10 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (hit.length) return hit[0].point;
     // 画面端でレイがメッシュ外に出ても、地面(Y=0)への交点をマップ内にクランプして編集できるようにする
     if (ray.ray.intersectPlane(_pickPlane, _pickFallback)) {
-      const half = SIZE / 2;
-      _pickFallback.x = Math.max(-half, Math.min(half, _pickFallback.x));
-      _pickFallback.z = Math.max(-half, Math.min(half, _pickFallback.z));
+      const bx = mapBoundX();
+      const bz = mapBoundZ();
+      _pickFallback.x = Math.max(bx.min, Math.min(bx.max, _pickFallback.x));
+      _pickFallback.z = Math.max(bz.min, Math.min(bz.max, _pickFallback.z));
       return _pickFallback.clone();
     }
     return null;
@@ -3308,6 +3526,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     return {
       seg: SEG,
       savedAt: Date.now(),
+      sizeX: SIZE_X,
+      sizeZ: SIZE_Z,
+      oz: MAP_OFFSET_Z,
       h: Array.from(heights),
       w: Array.from(water),
       wy: Array.from(waterY),
@@ -3397,10 +3618,12 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       .select('updated_at')
       .maybeSingle();
     // 新カラム(water_y/ground_mat)が未追加のDBでも保存できるようフォールバック
+    let groundMatCloudSaved = true;
     if (layerErr && /water_y|ground_mat|column/i.test(layerErr.message || '')) {
       const payload = terrainPayload();
       delete payload.water_y;
       delete payload.ground_mat;
+      groundMatCloudSaved = false;
       ({ data: savedLayer, error: layerErr } = await supabase
         .from('map_world_layers')
         .upsert(payload, { onConflict: 'world_id,layer_id' })
@@ -3415,7 +3638,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     // クラウド保存成功時刻をローカルにも記録（次回起動時の比較用）
     if (savedLayer?.updated_at) {
       try {
-        const d = readLocalData() || localPayload();
+        const d = localPayload();
         d.savedAt = Date.parse(savedLayer.updated_at) || Date.now();
         localStorage.setItem(localKey(), JSON.stringify(d));
       } catch {
@@ -3458,6 +3681,11 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       }
     }
     deletedSpotSlugs.length = 0;
+
+    if (!groundMatCloudSaved) {
+      setStatus('保存しました（地表素材・水位はローカルのみ。Supabase に ground_mat 列が必要です）', 7000);
+      return;
+    }
 
     setStatus('保存しました（Supabase + ローカル）');
   }
@@ -3584,28 +3812,73 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     }
   }
 
+  function resampleLocalArray(arr, mode) {
+    if (!arr) return null;
+    let a = arr;
+    if (arr.length !== N) {
+      const srcSeg = inferSeg(arr.length);
+      if (srcSeg < 1) return null;
+      a = resampleGrid(arr, srcSeg, mode);
+    }
+    return a;
+  }
+
   /**
-   * Supabase に ground_mat/water_y カラムが無い場合の保険。
-   * 同じブラウザのローカル保存から素材(gm)と水位(wy)だけを重ねて復元する。
+   * クラウド読込後にローカルの地表素材・水位をマージする。
+   * 幹線道路(MAT_HIGHWAY=5)など、クラウドに未反映の素材が消えるのを防ぐ。
    */
-  function overlayMatWaterYFromLocal() {
+  function mergeMatWaterYFromLocal(remoteUpdatedAt = 0) {
+    if (readOnly) return false;
     try {
       const d = readLocalData();
       if (!d || (!d.gm && !d.wy)) return false;
-      const apply = (arr, mode, target, asInt) => {
-        if (!arr) return false;
-        let a = arr;
-        if (arr.length !== N) {
-          const srcSeg = inferSeg(arr.length);
-          if (srcSeg < 1) return false;
-          a = resampleGrid(arr, srcSeg, mode);
-        }
-        for (let i = 0; i < N; i++) target[i] = asInt ? Math.round(a[i] || 0) : a[i] || 0;
-        return true;
-      };
+      const localAt = d.savedAt || 0;
+      const preferLocalFull = localAt > remoteUpdatedAt + 500;
       let changed = false;
-      if (d.gm) changed = apply(d.gm, 'nearest', groundMat, true) || changed;
-      if (d.wy) changed = apply(d.wy, 'bilinear', waterY, false) || changed;
+
+      const localGm = resampleLocalArray(d.gm, 'nearest');
+      if (localGm) {
+        for (let i = 0; i < N; i++) {
+          const lv = Math.round(localGm[i] || 0);
+          const rv = groundMat[i] || 0;
+          if (preferLocalFull) {
+            if (groundMat[i] !== lv) {
+              groundMat[i] = lv;
+              changed = true;
+            }
+            continue;
+          }
+          if (lv === 0) continue;
+          if (rv === 0 || localAt >= remoteUpdatedAt || lv > rv) {
+            if (groundMat[i] !== lv) {
+              groundMat[i] = lv;
+              changed = true;
+            }
+          }
+        }
+      }
+
+      const localWy = resampleLocalArray(d.wy, 'bilinear');
+      if (localWy) {
+        for (let i = 0; i < N; i++) {
+          const lv = localWy[i] || 0;
+          if (preferLocalFull) {
+            if (waterY[i] !== lv) {
+              waterY[i] = lv;
+              changed = true;
+            }
+            continue;
+          }
+          if (lv === 0) continue;
+          if (waterY[i] === 0 || localAt >= remoteUpdatedAt) {
+            if (waterY[i] !== lv) {
+              waterY[i] = lv;
+              changed = true;
+            }
+          }
+        }
+      }
+
       if (changed) {
         waterDirty = true;
         applyHeights();
@@ -3658,10 +3931,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       if (layer.area_defs || layer.area_grid) {
         loadAreasFromData(layer.area_defs, layer.area_grid);
       }
-      if (layer.ground_mat == null || layer.water_y == null) {
-        overlayMatWaterYFromLocal();
-      }
       updatedAt = layer.updated_at ? Date.parse(layer.updated_at) : 0;
+      mergeMatWaterYFromLocal(updatedAt);
       loaded = true;
     } else if (
       !loaded &&
@@ -3687,6 +3958,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
           loadAreasFromData(legacyLayer.area_defs, legacyLayer.area_grid);
         }
         updatedAt = legacyLayer.updated_at ? Date.parse(legacyLayer.updated_at) : 0;
+        mergeMatWaterYFromLocal(updatedAt);
         loaded = true;
       }
     }
@@ -3755,7 +4027,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     }
   }
 
-  const marginClamp = (v) => Math.max(-SIZE / 2 + margin, Math.min(SIZE / 2 - margin, v));
+  const marginClampX = (v) => clampMapX(v);
+  const marginClampZ = (v) => clampMapZ(v);
 
   let scaleLegendTick = 0;
 
@@ -3806,8 +4079,8 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       if (held.zoomOut) orbit = Math.min(orbitMax(), orbit / ZOOM_FACTOR_KEY);
     }
 
-    target.x = marginClamp(target.x);
-    target.z = marginClamp(target.z);
+    target.x = marginClampX(target.x);
+    target.z = marginClampZ(target.z);
     updateCam();
     updateScaleMarkerPosition();
     updateShirasagiShadow();

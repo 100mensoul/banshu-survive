@@ -5,4 +5,4 @@
 
 alter table public.map_world_layers
   add column if not exists water_y    jsonb,  -- セル毎の水面の高さ（ワールド単位の配列）
-  add column if not exists ground_mat jsonb;  -- セル毎の地表素材（0=自動 1=土 2=草 3=コンクリ）
+  add column if not exists ground_mat jsonb;  -- セル毎の地表素材（0=自動 1=土 2=草 3=コンクリ 4=道路 5=幹線道路）

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>世界地図エディタ｜播州サバイブ</title>
-  <link rel="stylesheet" href="../css/world-map.css?v=44">
+  <link rel="stylesheet" href="../css/world-map.css?v=45">
 </head>
 <body class="world-map-auth" id="world-map-body">
   <div id="world-map-auth-wrap">
@@ -63,6 +63,7 @@
             <button type="button" data-tool="water">🌊 水を流す</button>
             <button type="button" data-tool="ground">🌾 地面を盛る</button>
             <button type="button" data-tool="road">🛣 道路</button>
+            <button type="button" data-tool="highway">🛤 幹線</button>
             <button type="button" data-tool="spot">✦ スポット登録</button>
             <button type="button" data-tool="area">🖌 エリア塗る</button>
             <span class="sep"></span>
@@ -148,7 +149,22 @@
             <button type="button" class="world-map-step" id="world-map-road-width-plus" aria-label="広く">＋</button>
             <span class="world-map-river-width-meters" id="world-map-road-width-meters">道幅 約4m</span>
           </div>
-          <p class="world-map-levee-note">高さは変えずアスファルトを敷く · 先に地面を盛ってから</p>
+          <div class="world-map-river-row world-map-road-style-row" id="world-map-road-color-row" hidden>
+            <span class="world-map-river-row__name">道路色</span>
+            <input type="color" id="world-map-road-color" value="#858c94" aria-label="道路の色">
+          </div>
+          <p class="world-map-levee-note" id="world-map-road-note">高さは変えず道を敷く · 先に地面を盛ってから</p>
+        </div>
+        <div class="world-map-river-brush" id="world-map-highway-panel" hidden>
+          <div class="world-map-river-row world-map-road-style-row">
+            <span class="world-map-river-row__name">幹線色</span>
+            <input type="color" id="world-map-highway-color" value="#c9b07a" aria-label="幹線道路の色">
+          </div>
+          <label class="world-map-road-style-check">
+            <input type="checkbox" id="world-map-highway-outline" checked>
+            縁取り（平面のみ）
+          </label>
+          <p class="world-map-levee-note">道幅は上の設定と共通 · 播但連絡など有料道路向け</p>
         </div>
         <div class="world-map-river-brush" id="world-map-brush-panel" hidden>
           <div class="world-map-river-row">
@@ -296,7 +312,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=62';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=67';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
     const msg = document.getElementById('world-map-msg');

@@ -13,14 +13,14 @@ import {
   findFamilyChildIndex,
   coupleKey,
   isCoupleLabel,
-  hasManualEndpoints,
   hasManualLayout,
   shiftEdgeEndpointsForNode,
   snapEndpointNormForEdge,
-  shortenSegment,
+  applyPortDrag,
+  clearEdgeManualLayout,
   ARROW_TIP_LEN,
   snapAngleDeg,
-} from './chart-layout-geometry.js?v=19';
+} from './chart-layout-geometry.js?v=21';
 
 const LAYOUT_ID = 'main';
 const LOCAL_KEY = 'banshu_chart_layout_v1';
@@ -258,13 +258,33 @@ export function initChartLayoutEditor(options) {
   function nodeBySlug(slug) { return canvas.nodes.find(function (n) { return n.slug === slug; }); }
   function zoneById(id) { return canvas.zones.find(function (z) { return z.id === id; }); }
 
-  function ensureArrowDef(svg) {
-    if (svg.querySelector('#chart-layout-arrow')) return;
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    defs.innerHTML =
-      '<marker id="chart-layout-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">' +
-      '<path d="M 0 0 L 10 5 L 0 10 z" fill="#111"></path></marker>';
-    svg.appendChild(defs);
+  function appendArrowPolygon(group, arrow, cls) {
+    if (!arrow || !arrow.tip) return;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d',
+      'M ' + arrow.tip.x + ' ' + arrow.tip.y +
+      ' L ' + arrow.left.x + ' ' + arrow.left.y +
+      ' L ' + arrow.right.x + ' ' + arrow.right.y + ' Z'
+    );
+    path.setAttribute('class', cls || 'chart-layout-edge__arrow');
+    group.appendChild(path);
+  }
+
+  function appendSegment(group, seg, edgeStyle, selected, edgeIndex, interactive) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', String(seg.x1));
+    line.setAttribute('y1', String(seg.y1));
+    line.setAttribute('x2', String(seg.x2));
+    line.setAttribute('y2', String(seg.y2));
+    let cls = 'chart-layout-edge';
+    if (seg.dashed || edgeStyle === 'dashed') cls += ' chart-layout-edge--dashed';
+    if (selected) cls += ' chart-layout-edge--selected';
+    if (interactive && edgeIndex != null) {
+      cls += ' chart-layout-edge--interactive';
+      line.dataset.edgeIndex = String(edgeIndex);
+    }
+    line.setAttribute('class', cls);
+    group.appendChild(line);
   }
 
   function appendLabelButton(group, lb, edgeIndex, interactive, selected, dragging) {
@@ -311,47 +331,6 @@ export function initChartLayoutEditor(options) {
     }
     labelGroup.appendChild(text);
     group.appendChild(labelGroup);
-  }
-
-  function appendSegment(group, seg, edgeStyle, selected, edgeIndex, interactive, markerOpts) {
-    markerOpts = markerOpts || {};
-    let x1 = seg.x1;
-    let y1 = seg.y1;
-    let x2 = seg.x2;
-    let y2 = seg.y2;
-    if (markerOpts.trimStart || markerOpts.trimEnd) {
-      const trimmed = shortenSegment(
-        x1, y1, x2, y2,
-        markerOpts.trimStart ? ARROW_TIP_LEN : 0,
-        markerOpts.trimEnd ? ARROW_TIP_LEN : 0
-      );
-      x1 = trimmed.x1;
-      y1 = trimmed.y1;
-      x2 = trimmed.x2;
-      y2 = trimmed.y2;
-    }
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', String(x1));
-    line.setAttribute('y1', String(y1));
-    line.setAttribute('x2', String(x2));
-    line.setAttribute('y2', String(y2));
-    let cls = 'chart-layout-edge';
-    if (seg.dashed || edgeStyle === 'dashed') cls += ' chart-layout-edge--dashed';
-    if (selected) cls += ' chart-layout-edge--selected';
-    if (interactive && edgeIndex != null) {
-      cls += ' chart-layout-edge--interactive';
-      line.dataset.edgeIndex = String(edgeIndex);
-    }
-    line.setAttribute('class', cls);
-    if (seg.arrowBoth || (seg.arrowStart && seg.arrowEnd)) {
-      if (!markerOpts.hideStart) line.setAttribute('marker-start', 'url(#chart-layout-arrow)');
-      if (!markerOpts.hideEnd) line.setAttribute('marker-end', 'url(#chart-layout-arrow)');
-    } else if (seg.arrowStart) {
-      if (!markerOpts.hideStart) line.setAttribute('marker-start', 'url(#chart-layout-arrow)');
-    } else if (seg.arrowEnd || seg.arrow) {
-      if (!markerOpts.hideEnd) line.setAttribute('marker-end', 'url(#chart-layout-arrow)');
-    }
-    group.appendChild(line);
   }
 
   function appendArrowTipHandle(group, pt, edgeIndex, role, angleDeg, selected, dragging) {
@@ -410,7 +389,6 @@ export function initChartLayoutEditor(options) {
       const edgeIndex = parseInt(handle.dataset.edgeIndex, 10);
       const role = handle.dataset.endpoint;
       if (!role || edgeIndex < 0) return;
-      ensureEdgeEndpointDefaults(edgeIndex);
       selectedEdgeIndex = edgeIndex;
       pendingEndpointDrag = { edgeIndex, role, pointerId: e.pointerId };
       endpointDragMoved = false;
@@ -432,8 +410,11 @@ export function initChartLayoutEditor(options) {
         rect.width || 1,
         rect.height || 1
       );
-      if (pendingEndpointDrag.role === 'from') edge.fromPoint = { x: snapped.x, y: snapped.y };
-      else edge.toPoint = { x: snapped.x, y: snapped.y };
+      if (pendingEndpointDrag.role === 'from') {
+        applyPortDrag(edge, 'from', snapped.port);
+      } else {
+        applyPortDrag(edge, 'to', snapped.port);
+      }
       endpointDragMoved = true;
       renderEdges();
     });
@@ -467,11 +448,10 @@ export function initChartLayoutEditor(options) {
       e.stopPropagation();
       e.preventDefault();
       const edgeIndex = parseInt(handle.dataset.edgeIndex, 10);
+      const cornerIndex = parseInt(handle.dataset.cornerIndex, 10);
       if (edgeIndex < 0) return;
-      ensureEdgeEndpointDefaults(edgeIndex);
-      ensureEdgeElbowDefault(edgeIndex);
       selectedEdgeIndex = edgeIndex;
-      pendingElbowDrag = { edgeIndex, pointerId: e.pointerId };
+      pendingElbowDrag = { edgeIndex, waypointIndex: cornerIndex, pointerId: e.pointerId };
       elbowDragMoved = false;
       edgesSvg.setPointerCapture(e.pointerId);
       renderEdges();
@@ -482,7 +462,18 @@ export function initChartLayoutEditor(options) {
       const edge = canvas.edges[pendingElbowDrag.edgeIndex];
       if (!edge) return;
       const norm = pointerToNorm(e.clientX, e.clientY);
-      edge.elbowPoint = { x: norm.x, y: norm.y };
+      const wi = pendingElbowDrag.waypointIndex;
+      if (!edge.waypoints) edge.waypoints = [];
+      if (wi >= 0 && wi < edge.waypoints.length) {
+        edge.waypoints[wi] = { x: norm.x, y: norm.y };
+      } else {
+        edge.waypoints = [{ x: norm.x, y: norm.y }];
+      }
+      delete edge.jointMidX;
+      delete edge.jointMidY;
+      delete edge.elbowPoint;
+      delete edge.fromPoint;
+      delete edge.toPoint;
       elbowDragMoved = true;
       renderEdges();
     });
@@ -563,36 +554,6 @@ export function initChartLayoutEditor(options) {
     edgesSvg.addEventListener('pointercancel', finishLabelDrag);
   }
 
-  function ensureEdgeEndpointDefaults(index) {
-    const edge = canvas.edges[index];
-    if (!edge) return;
-    if (edge.fromPoint && edge.toPoint) return;
-    const rect = stage.getBoundingClientRect();
-    const w = rect.width || 1;
-    const h = rect.height || 1;
-    const savedFp = edge.fromPoint;
-    const savedTp = edge.toPoint;
-    delete edge.fromPoint;
-    delete edge.toPoint;
-    const plan = buildRenderPlan(canvas, w, h, personName);
-    const item = plan.edges.find(function (it) { return it.index === index; });
-    if (item && item.endpointFrom && item.endpointTo) {
-      edge.fromPoint = savedFp || { x: item.endpointFrom.x / w, y: item.endpointFrom.y / h };
-      edge.toPoint = savedTp || { x: item.endpointTo.x / w, y: item.endpointTo.y / h };
-      if (!savedFp) {
-        const sf = snapEndpointNormForEdge(edge, 'from', edge.fromPoint, canvas, w, h);
-        edge.fromPoint = { x: sf.x, y: sf.y };
-      }
-      if (!savedTp) {
-        const st = snapEndpointNormForEdge(edge, 'to', edge.toPoint, canvas, w, h);
-        edge.toPoint = { x: st.x, y: st.y };
-      }
-    } else {
-      if (savedFp) edge.fromPoint = savedFp;
-      if (savedTp) edge.toPoint = savedTp;
-    }
-  }
-
   function ensureEdgeLabelDefault(index) {
     const edge = canvas.edges[index];
     if (!edge || edge.labelPoint) return;
@@ -606,20 +567,6 @@ export function initChartLayoutEditor(options) {
     const lb = item && item.labels[0];
     if (lb) {
       edge.labelPoint = { x: lb.x / w, y: lb.y / h, vertical: !!lb.vertical };
-    }
-  }
-
-  function ensureEdgeElbowDefault(index) {
-    const edge = canvas.edges[index];
-    if (!edge || edge.elbowPoint) return;
-    const rect = stage.getBoundingClientRect();
-    const w = rect.width || 1;
-    const h = rect.height || 1;
-    const plan = buildRenderPlan(canvas, w, h, personName);
-    const item = plan.edges.find(function (it) { return it.index === index; });
-    const corner = item && item.elbowCorners && item.elbowCorners[0];
-    if (corner) {
-      edge.elbowPoint = { x: corner.x / w, y: corner.y / h };
     }
   }
 
@@ -643,10 +590,7 @@ export function initChartLayoutEditor(options) {
     if (selectedEdgeIndex < 0) return;
     const edge = canvas.edges[selectedEdgeIndex];
     if (!edge) return;
-    delete edge.fromPoint;
-    delete edge.toPoint;
-    delete edge.labelPoint;
-    delete edge.elbowPoint;
+    clearEdgeManualLayout(edge);
     canvas = normalizeCanvas(canvas);
     pushHistory();
     saveLocal();
@@ -711,7 +655,6 @@ export function initChartLayoutEditor(options) {
     const h = rect.height || 1;
     edgesSvg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
     edgesSvg.innerHTML = '';
-    ensureArrowDef(edgesSvg);
     const plan = buildRenderPlan(canvas, w, h, personName);
     const edgesInteractive = !readOnly && tool === 'move';
     edgesSvg.classList.toggle('chart-layout-edges--edit', edgesInteractive);
@@ -723,26 +666,17 @@ export function initChartLayoutEditor(options) {
       group.dataset.edgeIndex = String(item.index);
 
       const showTips = edgesInteractive && item.draggableEndpoints && item.endpointFrom && item.endpointTo;
-      const segCount = item.segments.length;
 
-      item.segments.forEach(function (seg, segIdx) {
-        const trimStart = showTips && segIdx === 0 && (seg.arrowStart || seg.arrowBoth);
-        const trimEnd = showTips && segIdx === segCount - 1 && (seg.arrowEnd || seg.arrowBoth || seg.arrow);
-        appendSegment(
-          group,
-          seg,
-          canvas.edges[item.index]?.style,
-          selected,
-          item.index,
-          edgesInteractive,
-          showTips ? {
-            hideStart: segIdx === 0 && trimStart,
-            hideEnd: segIdx === segCount - 1 && trimEnd,
-            trimStart: trimStart,
-            trimEnd: trimEnd,
-          } : null
-        );
+      item.segments.forEach(function (seg) {
+        appendSegment(group, seg, canvas.edges[item.index]?.style, selected, item.index, edgesInteractive);
       });
+
+      if (item.bidirectional !== false) {
+        appendArrowPolygon(group, item.arrowFrom, 'chart-layout-edge__arrow');
+        appendArrowPolygon(group, item.arrowTo, 'chart-layout-edge__arrow');
+      } else if (item.directed) {
+        appendArrowPolygon(group, item.arrowTo, 'chart-layout-edge__arrow');
+      }
 
       if (edgesInteractive) {
         const hits = item.hitTargets || item.hitSegments.map(function (s) {
@@ -789,14 +723,14 @@ export function initChartLayoutEditor(options) {
         );
       }
 
-      if (edgesInteractive && selected && item.elbowCorners && item.elbowCorners.length) {
+      if (edgesInteractive && selected && item.waypointHandles && item.waypointHandles.length) {
         const elbowDragIdx = pendingElbowDrag ? pendingElbowDrag.edgeIndex : -1;
-        item.elbowCorners.forEach(function (corner, ci) {
+        item.waypointHandles.forEach(function (corner) {
           appendElbowHandle(
             group,
             corner,
             item.index,
-            ci,
+            corner.index != null ? corner.index : -1,
             selected || item.index === selectedEdgeIndex,
             elbowDragIdx === item.index && elbowDragMoved
           );

@@ -308,6 +308,12 @@
   cursor: pointer;
 }
 
+.chart-layout-edge__arrow {
+  fill: #111;
+  stroke: none;
+  pointer-events: none;
+}
+
 .chart-layout-edge-tip {
   pointer-events: all;
   cursor: grab;
