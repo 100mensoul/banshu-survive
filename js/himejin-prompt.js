@@ -2,10 +2,16 @@
  * ひめじん AI 肖像 — プロンプト自動組み立て（フェーズB）
  * real_name は使わない。種族ラベルでスタイルは変えない。
  * gen_* が入力されていれば {人物描写} に優先反映する。
+ * 外見メモは Appearance: 行として独立配置（日本語のまま）。
  */
 
+/** 公開情報フォールバック用（従来テンプレート・変更しない） */
 export const HIMEJIN_PROMPT_TEMPLATE =
   'Candid film still from a modern Japanese TV drama, {人物描写}, in the middle of a conversation, turned in three-quarter profile, looking at another person beside them off-frame, {表情}, gesturing naturally, full attention on the person they talk to, unaware of the camera. Entirely original face, not resembling any real individual. Soft warm daylight, gentle golden ambient light, natural skin tones, subtle muted green accents in the background. Shallow depth of field, contemporary Harima/Himeji street setting. Observational documentary framing, subject off-center.';
+
+/** gen_* 使用時: {表情} の直後から末尾まで（構図・視線・色・安全指定は変更しない） */
+const HIMEJIN_PROMPT_TAIL =
+  ', in the middle of a conversation, turned in three-quarter profile, looking at another person beside them off-frame, gesturing naturally, full attention on the person they talk to, unaware of the camera. Entirely original face, not resembling any real individual. Soft warm daylight, gentle golden ambient light, natural skin tones, subtle muted green accents in the background. Shallow depth of field, contemporary Harima/Himeji street setting. Observational documentary framing, subject off-center.';
 
 const DARK_TONE_KEYWORDS = [
   '重い',
@@ -43,28 +49,6 @@ const AGE_RANGE_MAP = [
   { pattern: /70代|七十代|70s/, en: 'in their 70s' },
 ];
 
-const APPEARANCE_TERM_MAP = [
-  ['ショートヘア', 'short hair'],
-  ['短髪', 'short hair'],
-  ['ロングヘア', 'long hair'],
-  ['長髪', 'long hair'],
-  ['細身', 'slim build'],
-  ['がっしり', 'sturdy build'],
-  ['小柄', 'petite stature'],
-  ['背が高い', 'tall stature'],
-  ['明るい雰囲気', 'bright and approachable'],
-  ['落ち着いた雰囲気', 'calm and composed demeanor'],
-  ['穏やか', 'gentle demeanor'],
-  ['物静か', 'quiet demeanor'],
-  ['活発', 'energetic demeanor'],
-  ['知的', 'intellectual appearance'],
-  ['上品', 'refined appearance'],
-  ['カジュアル', 'casual appearance'],
-  ['眼鏡', 'wearing glasses'],
-  ['ひげ', 'with facial hair'],
-  ['白髪', 'gray hair'],
-];
-
 export function summarizeIntro(intro, maxLen) {
   if (maxLen == null) maxLen = 100;
   return String(intro || '').trim().slice(0, maxLen);
@@ -100,40 +84,14 @@ export function mapAgeRangeToEnglish(ageRange) {
   return 'around ' + raw;
 }
 
-export function translateAppearanceNotes(notes) {
-  const raw = String(notes || '').trim();
-  if (!raw) return '';
-
-  const chunks = raw.split(/[、,]/).map((s) => s.trim()).filter(Boolean);
-  const translated = [];
-  const used = new Set();
-
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    let matched = false;
-    for (let j = 0; j < APPEARANCE_TERM_MAP.length; j++) {
-      if (chunk.indexOf(APPEARANCE_TERM_MAP[j][0]) !== -1) {
-        const en = APPEARANCE_TERM_MAP[j][1];
-        if (!used.has(en)) {
-          translated.push(en);
-          used.add(en);
-        }
-        matched = true;
-        break;
-      }
-    }
-    if (!matched && chunk) {
-      translated.push(chunk);
-    }
-  }
-
-  return translated.join(', ');
+/** 外見メモは日本語のまま Appearance 行へ（翻訳・埋め込みしない） */
+export function formatAppearanceNotes(notes) {
+  return String(notes || '').trim();
 }
 
 export function buildCharacterDescriptionFromGen(fields) {
   const genderJa = String(fields.gen_gender || '').trim();
   const ageJa = String(fields.gen_age_range || '').trim();
-  const notesJa = String(fields.gen_appearance_notes || '').trim();
 
   let genderPhrase = 'a fictional person';
   if (genderJa === '男性') genderPhrase = 'a fictional man';
@@ -141,9 +99,7 @@ export function buildCharacterDescriptionFromGen(fields) {
 
   const parts = [genderPhrase];
   const ageEn = mapAgeRangeToEnglish(ageJa);
-  const appearanceEn = translateAppearanceNotes(notesJa);
   if (ageEn) parts.push(ageEn);
-  if (appearanceEn) parts.push(appearanceEn);
 
   return parts.join(', ');
 }
@@ -190,10 +146,19 @@ export function buildHimejinPrompt(fields) {
   const intro = fields && fields.intro != null ? fields.intro : '';
 
   const introSummary = summarizeIntro(intro, 100);
-  const charDesc = hasGenAttributes(fields)
-    ? buildCharacterDescriptionFromGen(fields)
-    : buildCharacterDescription(name, tagline, introSummary);
   const expression = pickExpression(intro, tagline);
 
+  if (hasGenAttributes(fields)) {
+    const charDesc = buildCharacterDescriptionFromGen(fields);
+    const appearanceNotes = formatAppearanceNotes(fields.gen_appearance_notes);
+    let prompt = 'Candid film still from a modern Japanese TV drama, ' + charDesc + '.';
+    if (appearanceNotes) {
+      prompt += ' Appearance: ' + appearanceNotes + '.';
+    }
+    prompt += ' ' + expression + HIMEJIN_PROMPT_TAIL;
+    return prompt;
+  }
+
+  const charDesc = buildCharacterDescription(name, tagline, introSummary);
   return HIMEJIN_PROMPT_TEMPLATE.replace('{人物描写}', charDesc).replace('{表情}', expression);
 }
