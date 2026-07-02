@@ -51,6 +51,9 @@ create table if not exists public.himejin_profiles (
   image_prompt text,
   image_generated_at timestamptz,
   image_source text check (image_source is null or image_source in ('upload', 'ai')),
+  gen_gender text check (gen_gender is null or gen_gender in ('男性', '女性', '指定なし')),
+  gen_age_range text,
+  gen_appearance_notes text,
   sort_order integer not null default 100,
   status text not null default 'draft' check (status in ('draft', 'published')),
   created_at timestamptz not null default now(),
@@ -100,6 +103,31 @@ comment on column public.himejin_profiles.image_generated_at is
 
 comment on column public.himejin_profiles.image_source is
   '肖像の由来: upload（手動）または ai（将来）。';
+
+alter table public.himejin_profiles
+  add column if not exists gen_gender text;
+
+alter table public.himejin_profiles
+  add column if not exists gen_age_range text;
+
+alter table public.himejin_profiles
+  add column if not exists gen_appearance_notes text;
+
+alter table public.himejin_profiles
+  drop constraint if exists himejin_profiles_gen_gender_check;
+
+alter table public.himejin_profiles
+  add constraint himejin_profiles_gen_gender_check
+  check (gen_gender is null or gen_gender in ('男性', '女性', '指定なし'));
+
+comment on column public.himejin_profiles.gen_gender is
+  'AI肖像生成用の性別（非公開）。男性 / 女性 / 指定なし。';
+
+comment on column public.himejin_profiles.gen_age_range is
+  'AI肖像生成用の年齢層（非公開）。例: 20代後半。';
+
+comment on column public.himejin_profiles.gen_appearance_notes is
+  'AI肖像生成用の外見メモ（非公開）。髪型・体格・雰囲気など短文。';
 
 do $$
 begin
@@ -217,7 +245,7 @@ to authenticated
 using (true)
 with check (true);
 
--- 実名（real_name）は anon から読めないよう列単位で制限
+-- 非公開列（real_name / image_* / gen_*）は anon から読めないよう列単位で制限
 revoke select on public.himejin_profiles from anon;
 grant select (
   id,

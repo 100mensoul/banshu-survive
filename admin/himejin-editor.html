@@ -98,6 +98,28 @@
       font-size: 12px;
       cursor: pointer;
     }
+    .gen-attrs-box {
+      margin: 10px 0 12px;
+      padding: 12px;
+      border: 1px dashed #9ab09a;
+      border-radius: 8px;
+      background: #f8fbf8;
+    }
+    .gen-attrs-box__title {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #2d4a35;
+    }
+    .gen-attrs-privacy {
+      font-size: 12px;
+      color: #5a6a5a;
+      margin: 8px 0 0;
+      line-height: 1.55;
+    }
+    #gen_appearance_notes {
+      min-height: 72px;
+    }
   </style>
 </head>
 <body>
@@ -170,6 +192,36 @@
         </div>
         <div class="portrait-box portrait-box--ai">
           <label>AI肖像生成</label>
+          <div class="gen-attrs-box">
+            <p class="gen-attrs-box__title">生成用の人物設定（非公開・生成にのみ使用）</p>
+            <label>性別
+              <select id="gen_gender">
+                <option value="">（未設定）</option>
+                <option value="男性">男性</option>
+                <option value="女性">女性</option>
+                <option value="指定なし">指定なし</option>
+              </select>
+            </label>
+            <label>年齢層
+              <input id="gen_age_range" list="gen-age-list" placeholder="例: 20代後半">
+            </label>
+            <datalist id="gen-age-list">
+              <option value="10代後半"></option>
+              <option value="20代前半"></option>
+              <option value="20代後半"></option>
+              <option value="30代前半"></option>
+              <option value="30代後半"></option>
+              <option value="40代前半"></option>
+              <option value="40代後半"></option>
+              <option value="50代前半"></option>
+              <option value="50代後半"></option>
+              <option value="60代"></option>
+            </datalist>
+            <label>外見メモ
+              <textarea id="gen_appearance_notes" rows="3" placeholder="例: 短髪、細身、落ち着いた雰囲気"></textarea>
+            </label>
+            <p class="gen-attrs-privacy">この項目は肖像生成にのみ使われ、サイトには公開されません。</p>
+          </div>
           <label>プロンプト
             <button type="button" class="btn-linkish" id="btn-rebuild-prompt">プロンプトを再組み立て</button>
             <textarea id="ai-prompt" rows="7" placeholder="人物を保存すると自動組み立てされます"></textarea>
@@ -255,6 +307,9 @@
         name: document.getElementById('name').value.trim(),
         tagline: document.getElementById('tagline').value.trim(),
         intro: document.getElementById('intro').value.trim(),
+        gen_gender: document.getElementById('gen_gender').value.trim(),
+        gen_age_range: document.getElementById('gen_age_range').value.trim(),
+        gen_appearance_notes: document.getElementById('gen_appearance_notes').value.trim(),
       };
     }
 
@@ -537,12 +592,19 @@
       document.getElementById('photo_url').value = row.photo_url || '';
       document.getElementById('sort_order').value = row.sort_order ?? 100;
       document.getElementById('status').value = row.status || 'draft';
+      document.getElementById('gen_gender').value = row.gen_gender || '';
+      document.getElementById('gen_age_range').value = row.gen_age_range || '';
+      document.getElementById('gen_appearance_notes').value = row.gen_appearance_notes || '';
       updatePhotoPreview(row.photo_url || '');
       clearAiCandidate();
       rebuildAiPrompt();
     }
     function clearForm() {
-      fillForm({ id: '', slug: '', name: '', tribe_code: 'unknown', tribe_label: '', clan_code: '', tagline: '', intro: '', photo_url: '', sort_order: 100, status: 'draft' });
+      fillForm({
+        id: '', slug: '', name: '', tribe_code: 'unknown', tribe_label: '', clan_code: '',
+        tagline: '', intro: '', photo_url: '', sort_order: 100, status: 'draft',
+        gen_gender: '', gen_age_range: '', gen_appearance_notes: '',
+      });
       aiPromptEl.value = '';
       clearAiCandidate();
       list.querySelectorAll('li').forEach((li) => li.classList.remove('active'));
@@ -628,6 +690,7 @@
       e.preventDefault();
       const id = document.getElementById('row-id').value;
       const clanVal = document.getElementById('clan_code').value.trim();
+      const genGenderVal = document.getElementById('gen_gender').value.trim();
       const payload = {
         slug: document.getElementById('slug').value.trim(),
         name: document.getElementById('name').value.trim(),
@@ -637,6 +700,9 @@
         tagline: document.getElementById('tagline').value.trim() || null,
         intro: document.getElementById('intro').value.trim() || null,
         photo_url: document.getElementById('photo_url').value.trim() || null,
+        gen_gender: genGenderVal === '' ? null : genGenderVal,
+        gen_age_range: document.getElementById('gen_age_range').value.trim() || null,
+        gen_appearance_notes: document.getElementById('gen_appearance_notes').value.trim() || null,
         sort_order: parseInt(document.getElementById('sort_order').value || '100', 10),
         status: document.getElementById('status').value,
       };
