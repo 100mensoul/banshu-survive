@@ -41,12 +41,16 @@ create table if not exists public.himejin_profiles (
   id uuid primary key default gen_random_uuid(),
   slug text unique not null,
   name text not null,
+  real_name text,
   tribe_code text not null default 'unknown',
   tribe_label text not null,
   clan_code text references public.clan_descriptions(code) on delete set null,
   tagline text,
   intro text,
   photo_url text,
+  image_prompt text,
+  image_generated_at timestamptz,
+  image_source text check (image_source is null or image_source in ('upload', 'ai')),
   sort_order integer not null default 100,
   status text not null default 'draft' check (status in ('draft', 'published')),
   created_at timestamptz not null default now(),
@@ -65,6 +69,37 @@ alter table public.himejin_profiles
 
 alter table public.himejin_profiles
   add column if not exists clan_code text;
+
+alter table public.himejin_profiles
+  add column if not exists real_name text;
+
+comment on column public.himejin_profiles.real_name is
+  '管理用の実名。公開サイト・anon API からは読めない。';
+
+alter table public.himejin_profiles
+  add column if not exists image_prompt text;
+
+alter table public.himejin_profiles
+  add column if not exists image_generated_at timestamptz;
+
+alter table public.himejin_profiles
+  add column if not exists image_source text;
+
+alter table public.himejin_profiles
+  drop constraint if exists himejin_profiles_image_source_check;
+
+alter table public.himejin_profiles
+  add constraint himejin_profiles_image_source_check
+  check (image_source is null or image_source in ('upload', 'ai'));
+
+comment on column public.himejin_profiles.image_prompt is
+  '採用時に使ったプロンプト（監査・再生成用）。手動アップロード時は null。';
+
+comment on column public.himejin_profiles.image_generated_at is
+  '肖像画像が確定した日時。';
+
+comment on column public.himejin_profiles.image_source is
+  '肖像の由来: upload（手動）または ai（将来）。';
 
 do $$
 begin
@@ -181,6 +216,24 @@ for all
 to authenticated
 using (true)
 with check (true);
+
+-- 実名（real_name）は anon から読めないよう列単位で制限
+revoke select on public.himejin_profiles from anon;
+grant select (
+  id,
+  slug,
+  name,
+  tribe_code,
+  tribe_label,
+  clan_code,
+  tagline,
+  intro,
+  photo_url,
+  sort_order,
+  status,
+  created_at,
+  updated_at
+) on public.himejin_profiles to anon;
 
 create policy "tribes auth all"
 on public.tribe_descriptions

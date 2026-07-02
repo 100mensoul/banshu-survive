@@ -20,6 +20,50 @@
     input, textarea, select { width: 100%; box-sizing: border-box; padding: 8px; margin-top: 4px; }
     textarea { min-height: 160px; }
     button { padding: 8px 12px; cursor: pointer; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .portrait-box {
+      margin-top: 10px;
+      padding: 12px;
+      border: 1px solid #d9ddd9;
+      border-radius: 8px;
+      background: #fafbfa;
+    }
+    .portrait-preview {
+      width: 160px;
+      height: 160px;
+      border: 1px dashed #bbb;
+      border-radius: 8px;
+      background: #eef1ee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .portrait-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .portrait-preview__placeholder {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: #888;
+    }
+    .portrait-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .portrait-hint {
+      font-weight: 400;
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+      line-height: 1.55;
+    }
   </style>
 </head>
 <body>
@@ -75,6 +119,21 @@
         </label>
         <label>タグライン<input id="tagline"></label>
         <label>紹介文<textarea id="intro"></textarea></label>
+        <div class="portrait-box">
+          <label>肖像写真</label>
+          <div class="portrait-preview" id="portrait-preview" aria-live="polite">
+            <span class="portrait-preview__placeholder">PHOTO</span>
+          </div>
+          <div class="portrait-actions">
+            <input type="file" id="portrait-file" accept="image/*" hidden>
+            <button type="button" id="btn-portrait-upload">画像をアップロード</button>
+          </div>
+          <p class="portrait-hint">
+            保存済みの人物のみアップロードできます（先に「保存」で登録）。<br>
+            Storage バケット <code>himejin-portraits</code> が未作成の場合は
+            <code>admin/sql/himejin-portraits-storage.sql</code> を Supabase で実行してください。
+          </p>
+        </div>
         <label>写真URL<input id="photo_url" type="url" placeholder="https://..."></label>
         <label>並び順（小さいほど上）<input id="sort_order" type="number" min="0" step="1" value="100"></label>
         <label>公開状態
@@ -94,16 +153,137 @@
   <script src="../js/supabase-public-config.js"></script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { resizeImageForUpload } from '../js/harema-image-resize.js';
+
+    const STORAGE_BUCKET = 'himejin-portraits';
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
     const msg = document.getElementById('msg');
     const authPanel = document.getElementById('auth-panel');
     const app = document.getElementById('app');
     const list = document.getElementById('rows-list');
+    const portraitPreview = document.getElementById('portrait-preview');
+    const btnPortraitUpload = document.getElementById('btn-portrait-upload');
+    const portraitFileInput = document.getElementById('portrait-file');
+    let portraitUploading = false;
 
     function showMsg(text, ok) {
       msg.hidden = false;
       msg.className = ok ? 'ok' : 'err';
       msg.textContent = text;
+    }
+
+    function portraitStoragePath(profileId) {
+      return 'portraits/' + profileId + '/current.webp';
+    }
+
+    function updatePhotoPreview(url) {
+      const trimmed = String(url || '').trim();
+      portraitPreview.innerHTML = '';
+      if (!trimmed) {
+        const span = document.createElement('span');
+        span.className = 'portrait-preview__placeholder';
+        span.textContent = 'PHOTO';
+        portraitPreview.appendChild(span);
+        return;
+      }
+      const img = document.createElement('img');
+      img.alt = '肖像プレビュー';
+      img.src = trimmed + (trimmed.includes('?') ? '&' : '?') + 'preview=' + Date.now();
+      img.addEventListener('error', () => {
+        portraitPreview.innerHTML = '';
+        const span = document.createElement('span');
+        span.className = 'portrait-preview__placeholder';
+        span.textContent = '読込失敗';
+        portraitPreview.appendChild(span);
+      });
+      portraitPreview.appendChild(img);
+    }
+
+    function setPortraitUploadBusy(busy) {
+      portraitUploading = busy;
+      btnPortraitUpload.disabled = busy;
+      btnPortraitUpload.textContent = busy ? 'アップロード中…' : '画像をアップロード';
+    }
+
+    async function convertToWebp(file) {
+      if (file.type === 'image/webp') {
+        return new File([file], 'current.webp', { type: 'image/webp', lastModified: Date.now() });
+      }
+      let bitmap;
+      try {
+        bitmap = await createImageBitmap(file);
+      } catch (_e) {
+        return file;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      canvas.getContext('2d', { alpha: false }).drawImage(bitmap, 0, 0);
+      bitmap.close();
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.85));
+      if (!blob) return file;
+      return new File([blob], 'current.webp', { type: 'image/webp', lastModified: Date.now() });
+    }
+
+    async function uploadPortrait(file) {
+      const profileId = document.getElementById('row-id').value.trim();
+      if (!profileId) {
+        showMsg('肖像のアップロード前に、人物を一度「保存」して ID を確定してください', false);
+        return;
+      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        showMsg('アップロードにはログインが必要です', false);
+        return;
+      }
+
+      setPortraitUploadBusy(true);
+      try {
+        showMsg('画像を最適化しています…', true);
+        let uploadFile = file;
+        try {
+          uploadFile = await resizeImageForUpload(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.88 });
+          uploadFile = await convertToWebp(uploadFile);
+        } catch (err) {
+          console.warn('portrait resize skipped', err);
+          uploadFile = await convertToWebp(file);
+        }
+
+        const path = portraitStoragePath(profileId);
+        const { error: upErr } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .upload(path, uploadFile, { contentType: 'image/webp', upsert: true });
+        if (upErr) {
+          showMsg('アップロード失敗: ' + upErr.message, false);
+          return;
+        }
+
+        const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+        const versionedUrl = pub.publicUrl + '?v=' + Date.now();
+        const generatedAt = new Date().toISOString();
+        const { error: dbErr } = await supabase
+          .from('himejin_profiles')
+          .update({
+            photo_url: versionedUrl,
+            image_source: 'upload',
+            image_generated_at: generatedAt,
+            image_prompt: null,
+          })
+          .eq('id', profileId);
+        if (dbErr) {
+          showMsg('DB更新失敗: ' + dbErr.message, false);
+          return;
+        }
+
+        document.getElementById('photo_url').value = versionedUrl;
+        updatePhotoPreview(versionedUrl);
+        showMsg('肖像をアップロードしました', true);
+        await loadList();
+        highlightListItem(profileId);
+      } finally {
+        setPortraitUploadBusy(false);
+        portraitFileInput.value = '';
+      }
     }
     async function loadClanSelect() {
       const sel = document.getElementById('clan_code');
@@ -138,6 +318,7 @@
       document.getElementById('photo_url').value = row.photo_url || '';
       document.getElementById('sort_order').value = row.sort_order ?? 100;
       document.getElementById('status').value = row.status || 'draft';
+      updatePhotoPreview(row.photo_url || '');
     }
     function clearForm() {
       fillForm({ id: '', slug: '', name: '', tribe_code: 'unknown', tribe_label: '', clan_code: '', tagline: '', intro: '', photo_url: '', sort_order: 100, status: 'draft' });
@@ -156,6 +337,7 @@
       list.innerHTML = '';
       for (const row of data || []) {
         const li = document.createElement('li');
+        li.dataset.profileId = row.id || '';
         li.innerHTML = '<strong>' + (row.name || '-') + '</strong><br><small>' + (row.slug || '') + ' / ' + (row.status || '') + '</small>';
         li.addEventListener('click', () => {
           list.querySelectorAll('li').forEach((x) => x.classList.remove('active'));
@@ -166,7 +348,38 @@
       }
     }
 
+    function highlightListItem(profileId) {
+      list.querySelectorAll('li').forEach((li) => {
+        li.classList.toggle('active', li.dataset.profileId === profileId);
+      });
+    }
+
     document.getElementById('btn-new').addEventListener('click', clearForm);
+
+    btnPortraitUpload.addEventListener('click', () => {
+      if (portraitUploading) return;
+      const profileId = document.getElementById('row-id').value.trim();
+      if (!profileId) {
+        showMsg('肖像のアップロード前に、人物を一度「保存」して ID を確定してください', false);
+        return;
+      }
+      portraitFileInput.click();
+    });
+
+    portraitFileInput.addEventListener('change', async (e) => {
+      const file = (e.target.files || [])[0];
+      if (!file) return;
+      if (!file.type || file.type.indexOf('image/') !== 0) {
+        showMsg('画像ファイルを選んでください', false);
+        e.target.value = '';
+        return;
+      }
+      await uploadPortrait(file);
+    });
+
+    document.getElementById('photo_url').addEventListener('input', (e) => {
+      updatePhotoPreview(e.target.value);
+    });
 
     document.getElementById('form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -189,18 +402,29 @@
         return;
       }
       let error;
+      let savedRow = null;
       if (id) {
         ({ error } = await supabase.from('himejin_profiles').update(payload).eq('id', id));
+        if (!error) {
+          const res = await supabase.from('himejin_profiles').select('*').eq('id', id).single();
+          savedRow = res.data;
+          error = res.error;
+        }
       } else {
-        ({ error } = await supabase.from('himejin_profiles').insert(payload));
+        const res = await supabase.from('himejin_profiles').insert(payload).select('*').single();
+        savedRow = res.data;
+        error = res.error;
       }
       if (error) {
         showMsg('保存エラー: ' + error.message, false);
         return;
       }
       showMsg('保存しました', true);
-      clearForm();
       await loadList();
+      if (savedRow) {
+        fillForm(savedRow);
+        highlightListItem(savedRow.id);
+      }
     });
 
     document.getElementById('btn-delete').addEventListener('click', async () => {
