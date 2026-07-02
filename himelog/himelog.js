@@ -330,7 +330,7 @@ function focusEntryCard(entryId) {
   card.classList.add('is-highlight');
   window.setTimeout(() => card.classList.remove('is-highlight'), 2200);
 
-  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   return true;
 }
 
