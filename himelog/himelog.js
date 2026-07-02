@@ -250,7 +250,7 @@ function cardHtml(entry) {
     : '';
 
   return `
-    <article class="${cardClass}" data-collapsible="${collapsible ? '1' : '0'}">
+    <article id="himelog-${esc(entry.id)}" class="${cardClass}" data-entry-id="${esc(entry.id)}" data-collapsible="${collapsible ? '1' : '0'}">
       <div class="himelog-card-header">
         <div class="himelog-card-head-main">
           ${topLineHtml}
@@ -309,6 +309,48 @@ function renderList() {
   listEl.innerHTML = entries.map(cardHtml).join('');
 }
 
+function getEntryIdFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const id = (params.get('entry') || '').trim();
+  if (id) return id;
+  const hash = (window.location.hash || '').replace(/^#/, '').trim();
+  if (hash.startsWith('himelog-')) return hash.slice('himelog-'.length);
+  return '';
+}
+
+function focusEntryCard(entryId) {
+  if (!entryId) return false;
+  const card = document.getElementById(`himelog-${entryId}`);
+  if (!card) return false;
+
+  if (card.dataset.collapsible === '1') {
+    setCardExpanded(card, true);
+  }
+
+  card.classList.add('is-highlight');
+  window.setTimeout(() => card.classList.remove('is-highlight'), 2200);
+
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  return true;
+}
+
+function openEntryFromUrl() {
+  const entryId = getEntryIdFromUrl();
+  if (!entryId) return;
+
+  if (!allEntries.some((e) => e.id === entryId)) return;
+
+  if (!getFilteredEntries().some((e) => e.id === entryId)) {
+    clearAllFilters();
+  }
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      focusEntryCard(entryId);
+    });
+  });
+}
+
 async function init() {
   const url = window.__SB_URL;
   const key = window.__SB_ANON_KEY;
@@ -338,6 +380,7 @@ async function init() {
     renderTagFilters();
     renderList();
     updateSearchUi();
+    openEntryFromUrl();
   } catch (e) {
     listEl.innerHTML = `<p class="himelog-error">読み込みエラー: ${esc(e.message)}</p>`;
   }

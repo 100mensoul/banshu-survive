@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>歳時記管理｜播州サバイブ</title>
+  <style>
+    :root {
+      font-family: 'Hiragino Kaku Gothic ProN', system-ui, sans-serif;
+      line-height: 1.6;
+      color: #222;
+    }
+    body { margin: 0; padding: 1rem; background: #f3fce9; }
+    h1 { font-size: 1.2rem; margin: 0 0 1rem; color: #557a2e; }
+    .err { background: #ffe8e8; border: 1px solid #e66; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
+    .ok { background: #e8f5e9; border: 1px solid #4a7c59; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1rem; font-size: 0.9rem; }
+    .toolbar a { color: #1a5fb4; }
+    button {
+      padding: 0.55rem 1rem; cursor: pointer; border-radius: 8px; border: 1px solid #333;
+      background: #ffeb3b; font-weight: 600; font-size: 0.95rem;
+    }
+    button.secondary { background: #e8e8e8; }
+    button.danger { background: #ffcccc; border-color: #a44; }
+    button.block { width: 100%; }
+    label { display: block; margin-top: 0.75rem; font-size: 0.85rem; font-weight: 600; }
+    input[type="text"], input[type="date"], input[type="time"], input[type="email"], input[type="password"], select, textarea {
+      width: 100%; max-width: 100%; padding: 0.6rem; margin-top: 0.25rem; box-sizing: border-box;
+      border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;
+    }
+    textarea#note {
+      display: block;
+      min-height: 120px;
+      resize: vertical;
+      line-height: 1.7;
+    }
+    .layout { display: grid; gap: 1rem; max-width: 1100px; margin: 0 auto; }
+    @media (min-width: 860px) {
+      .layout { grid-template-columns: 300px minmax(280px, 1fr); align-items: start; }
+    }
+    .panel {
+      background: #fff; border: 1px solid #dbe6cd; border-radius: 12px; padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    #entry-list { list-style: none; padding: 0; margin: 0.5rem 0 0; max-height: 60vh; overflow-y: auto; }
+    #entry-list li {
+      margin: 0 0 0.4rem; padding: 0.55rem 0.65rem; border-radius: 8px; cursor: pointer;
+      border: 1px solid #e3ead8; font-size: 0.85rem;
+    }
+    #entry-list li:hover { background: #f5fbe9; }
+    #entry-list li.active { background: #fff8c4; border-color: #c9b400; }
+    .badge { font-size: 0.68rem; padding: 0.12rem 0.4rem; border-radius: 5px; margin-left: 0.3rem; white-space: nowrap; }
+    .badge-draft { background: #eee; color: #555; }
+    .badge-published { background: #c8e6c9; color: #2e6b34; }
+    .badge-weight-major { background: #fff8c4; color: #6b5a00; }
+    .badge-weight-minor { background: #f0f0f0; color: #777; }
+    .row-inline { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .row-inline > label { flex: 1 1 200px; margin-top: 0.75rem; }
+    .hint { font-size: 0.78rem; color: #6b7a55; margin: 0.2rem 0 0; }
+    .meta-line { font-size: 0.75rem; color: #888; margin-top: 0.5rem; }
+    .himelog-picker {
+      margin-top: 0.35rem; padding: 0.75rem; background: #f8faf5;
+      border: 1px dashed #9abf9a; border-radius: 10px; font-size: 0.82rem;
+    }
+    .himelog-selected {
+      display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.65rem; min-height: 1.5rem;
+    }
+    .himelog-chip {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      padding: 0.2rem 0.45rem; border-radius: 999px;
+      background: #eef4e6; border: 1px solid #c5d8b0; font-size: 0.78rem;
+    }
+    .himelog-chip button {
+      padding: 0 0.25rem; border: none; background: transparent; font-size: 0.85rem;
+      cursor: pointer; color: #666; line-height: 1;
+    }
+    .himelog-candidates {
+      max-height: 220px; overflow-y: auto; border: 1px solid #e3ead8;
+      border-radius: 8px; background: #fff; padding: 0.35rem;
+    }
+    .himelog-candidate {
+      display: flex; align-items: flex-start; gap: 0.45rem;
+      padding: 0.35rem 0.4rem; border-radius: 6px; font-size: 0.82rem;
+    }
+    .himelog-candidate:hover { background: #f5fbe9; }
+    .himelog-candidate input { margin-top: 0.2rem; flex: none; }
+    .himelog-candidate-meta { font-size: 0.72rem; color: #888; }
+  </style>
+</head>
+<body>
+
+  <h1>歳時記管理（姫事記）</h1>
+
+  <div class="err" id="config-missing" hidden>
+    <strong>Supabase 接続設定</strong>がありません。<code>js/supabase-public-config.js</code> に Project URL と anon キーを設定してください。
+  </div>
+
+  <div class="toolbar">
+    <a href="../html/saijiki.html" target="_blank" rel="noopener">公開ページを開く</a>
+    <span>·</span>
+    <a href="../index.html">サイトトップ</a>
+    <span>·</span>
+    <a href="himelog-editor.html">ヒメログ管理</a>
+    <span>·</span>
+    <a href="episodes-editor.html">エピソード管理</a>
+  </div>
+
+  <div id="msg" class="ok" hidden></div>
+
+  <div class="panel" id="auth-panel">
+    <strong>ログイン</strong>（編集者アカウント）
+    <label>メール<input type="email" id="email" autocomplete="username"></label>
+    <label>パスワード<input type="password" id="password" autocomplete="current-password"></label>
+    <div style="margin-top:0.75rem;display:flex;gap:0.5rem;">
+      <button type="button" id="btn-signin">ログイン</button>
+      <button type="button" class="secondary" id="btn-signout">ログアウト</button>
+    </div>
+  </div>
+
+  <div id="app" class="layout" hidden>
+
+    <div class="panel">
+      <strong>一覧</strong>
+      <button type="button" id="btn-new" class="block" style="margin-top:0.5rem;">＋ 新規</button>
+      <ul id="entry-list"></ul>
+    </div>
+
+    <div class="panel">
+      <strong>編集</strong>
+      <form id="form" spellcheck="true">
+        <input type="hidden" id="row-id" value="">
+
+        <div class="row-inline">
+          <label>日付（必須）<input type="date" id="event_date" required></label>
+          <label>終了日（任意）<input type="date" id="event_date_end"></label>
+        </div>
+
+        <div class="row-inline">
+          <label>開始時刻（任意・空なら終日）<input type="time" id="start_time"></label>
+          <label>終了時刻（任意）<input type="time" id="end_time"></label>
+        </div>
+
+        <label>出来事（必須）<input type="text" id="title" required placeholder="例：播州事変が始まる"></label>
+
+        <label>備考<textarea id="note" placeholder="補足・メモ（公開ページにも小さく表示）"></textarea></label>
+
+        <div class="row-inline">
+          <label>重要度
+            <select id="weight">
+              <option value="major">重要</option>
+              <option value="normal" selected>通常</option>
+              <option value="minor">小</option>
+            </select>
+          </label>
+          <label>公開状態
+            <select id="status">
+              <option value="draft">下書き</option>
+              <option value="published">公開</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row-inline">
+          <label>関連エピソード slug（任意）<input type="text" id="related_episode_slug" placeholder="ep-11"></label>
+          <label>関連ダイジェスト slug（任意）<input type="text" id="digest_slug" placeholder="（後日実装）"></label>
+        </div>
+
+        <label>関連ひめろぐ</label>
+        <div class="himelog-picker">
+          <p class="hint" style="margin:0 0 0.5rem;">複数選べます。公開イベントに下書き・非公開メモを紐付けると警告します。</p>
+          <div class="himelog-selected" id="himelog-selected"></div>
+          <div class="himelog-candidates" id="himelog-candidates">
+            <p class="hint" style="margin:0.35rem;">読み込み中…</p>
+          </div>
+        </div>
+
+        <div class="meta-line" id="meta-line"></div>
+
+        <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.5rem;">
+          <button type="submit">保存</button>
+          <button type="button" class="secondary" id="btn-reload">再読込</button>
+          <button type="button" class="danger" id="btn-delete">削除…</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const url = window.__SB_URL;
+    const key = window.__SB_ANON_KEY;
+    const keyOk = key && String(key).trim().length > 0;
+    const urlOk = url && String(url).trim().length > 0 && !String(url).includes('あなたのプロジェクトID');
+    const configOk = urlOk && keyOk;
+
+    document.getElementById('config-missing').hidden = configOk;
+
+    if (configOk) {
+      const supabase = createClient(url, key);
+
+      const authPanel = document.getElementById('auth-panel');
+      const app = document.getElementById('app');
+      const msg = document.getElementById('msg');
+      const listEl = document.getElementById('entry-list');
+      const form = document.getElementById('form');
+      const himelogSelectedEl = document.getElementById('himelog-selected');
+      const himelogCandidatesEl = document.getElementById('himelog-candidates');
+
+      let allRows = [];
+      let himelogCandidates = [];
+      let selectedHimelogIds = [];
+
+      function showMsg(text, ok) {
+        msg.textContent = text;
+        msg.className = ok ? 'ok' : 'err';
+        msg.hidden = false;
+        clearTimeout(showMsg._t);
+        showMsg._t = setTimeout(() => { msg.hidden = true; }, 6000);
+      }
+
+      function escapeHtml(s) {
+        return String(s ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function statusBadge(status) {
+        if (status === 'published') return '<span class="badge badge-published">公開</span>';
+        return '<span class="badge badge-draft">下書き</span>';
+      }
+
+      function weightBadge(weight) {
+        if (weight === 'major') return '<span class="badge badge-weight-major">重要</span>';
+        if (weight === 'minor') return '<span class="badge badge-weight-minor">小</span>';
+        return '';
+      }
+
+      function fmtDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso + 'T12:00:00');
+        if (Number.isNaN(d.getTime())) return iso;
+        return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+      }
+
+      function fmt(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('ja-JP');
+      }
+
+      function himelogLabel(entry) {
+        if (entry.title && entry.title.trim()) return entry.title.trim();
+        if (entry.body && entry.body.trim()) {
+          const t = entry.body.trim();
+          return t.length > 30 ? t.slice(0, 30) + '…' : t;
+        }
+        return '（無題）';
+      }
+
+      function himelogDateLabel(entry) {
+        const iso = entry.written_at || entry.created_at;
+        return iso ? fmt(iso) : '';
+      }
+
+      function renderHimelogSelected() {
+        himelogSelectedEl.innerHTML = '';
+        if (!selectedHimelogIds.length) {
+          himelogSelectedEl.innerHTML = '<span class="hint">まだ選択されていません</span>';
+          return;
+        }
+        selectedHimelogIds.forEach((id) => {
+          const entry = himelogCandidates.find((e) => e.id === id);
+          const label = entry ? himelogLabel(entry) : id.slice(0, 8) + '…';
+          const chip = document.createElement('span');
+          chip.className = 'himelog-chip';
+          chip.innerHTML = escapeHtml(label) +
+            '<button type="button" aria-label="削除">×</button>';
+          chip.querySelector('button').addEventListener('click', () => {
+            selectedHimelogIds = selectedHimelogIds.filter((x) => x !== id);
+            renderHimelogPicker();
+          });
+          himelogSelectedEl.appendChild(chip);
+        });
+      }
+
+      function renderHimelogCandidates() {
+        if (!himelogCandidates.length) {
+          himelogCandidatesEl.innerHTML = '<p class="hint" style="margin:0.35rem;">ひめろぐがありません</p>';
+          return;
+        }
+        himelogCandidatesEl.innerHTML = '';
+        himelogCandidates.forEach((entry) => {
+          const row = document.createElement('label');
+          row.className = 'himelog-candidate';
+          const checked = selectedHimelogIds.includes(entry.id);
+          const statusText = entry.status === 'published' ? '公開' : (entry.status === 'private' ? '非公開' : '下書き');
+          row.innerHTML =
+            `<input type="checkbox" value="${escapeHtml(entry.id)}"${checked ? ' checked' : ''}>` +
+            `<span><strong>${escapeHtml(himelogLabel(entry))}</strong>` +
+            `<span class="himelog-candidate-meta"> ${escapeHtml(statusText)} · ${escapeHtml(himelogDateLabel(entry))}</span></span>`;
+          row.querySelector('input').addEventListener('change', (e) => {
+            const id = entry.id;
+            if (e.target.checked) {
+              if (!selectedHimelogIds.includes(id)) selectedHimelogIds.push(id);
+            } else {
+              selectedHimelogIds = selectedHimelogIds.filter((x) => x !== id);
+            }
+            renderHimelogSelected();
+          });
+          himelogCandidatesEl.appendChild(row);
+        });
+      }
+
+      function renderHimelogPicker() {
+        renderHimelogSelected();
+        renderHimelogCandidates();
+      }
+
+      async function loadHimelogCandidates() {
+        const { data, error } = await supabase
+          .from('himelog_entries')
+          .select('id, title, body, written_at, created_at, status')
+          .order('created_at', { ascending: false });
+        if (error) {
+          himelogCandidatesEl.innerHTML =
+            '<p class="hint" style="margin:0.35rem;color:#a44;">ひめろぐ取得エラー: ' + escapeHtml(error.message) + '</p>';
+          return;
+        }
+        himelogCandidates = data || [];
+        renderHimelogPicker();
+      }
+
+      function timeInputValue(t) {
+        if (!t) return '';
+        const s = String(t);
+        return s.length >= 5 ? s.slice(0, 5) : s;
+      }
+
+      function clearForm() {
+        document.getElementById('row-id').value = '';
+        document.getElementById('event_date').value = '';
+        document.getElementById('event_date_end').value = '';
+        document.getElementById('start_time').value = '';
+        document.getElementById('end_time').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('note').value = '';
+        document.getElementById('weight').value = 'normal';
+        document.getElementById('status').value = 'draft';
+        document.getElementById('related_episode_slug').value = '';
+        document.getElementById('digest_slug').value = '';
+        selectedHimelogIds = [];
+        document.getElementById('meta-line').textContent = '';
+        renderHimelogPicker();
+        listEl.querySelectorAll('li').forEach((li) => li.classList.remove('active'));
+      }
+
+      function fillForm(row) {
+        document.getElementById('row-id').value = row.id;
+        document.getElementById('event_date').value = row.event_date || '';
+        document.getElementById('event_date_end').value = row.event_date_end || '';
+        document.getElementById('start_time').value = timeInputValue(row.start_time);
+        document.getElementById('end_time').value = timeInputValue(row.end_time);
+        document.getElementById('title').value = row.title || '';
+        document.getElementById('note').value = row.note || '';
+        document.getElementById('weight').value = row.weight || 'normal';
+        document.getElementById('status').value = row.status || 'draft';
+        document.getElementById('related_episode_slug').value = row.related_episode_slug || '';
+        document.getElementById('digest_slug').value = row.digest_slug || '';
+        selectedHimelogIds = Array.isArray(row.himelog_entry_ids) ? [...row.himelog_entry_ids] : [];
+        const created = fmt(row.created_at);
+        const updated = fmt(row.updated_at);
+        document.getElementById('meta-line').textContent =
+          (created ? '作成: ' + created : '') + (updated ? ' ／ 更新: ' + updated : '');
+        renderHimelogPicker();
+      }
+
+      function renderList() {
+        listEl.innerHTML = '';
+        if (!allRows.length) {
+          listEl.innerHTML = '<li style="cursor:default;border:none;color:#888;">（出来事はまだありません）</li>';
+          return;
+        }
+        allRows.forEach((row) => {
+          const li = document.createElement('li');
+          li.dataset.id = row.id;
+          li.innerHTML =
+            '<strong>' + escapeHtml(fmtDate(row.event_date)) + '</strong>' +
+            weightBadge(row.weight) + statusBadge(row.status) +
+            '<br><span style="opacity:.85">' + escapeHtml(row.title || '') + '</span>';
+          li.addEventListener('click', () => {
+            listEl.querySelectorAll('li').forEach((x) => x.classList.remove('active'));
+            li.classList.add('active');
+            fillForm(row);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+          listEl.appendChild(li);
+        });
+      }
+
+      async function loadList() {
+        const { data, error } = await supabase
+          .from('hime_events')
+          .select('*')
+          .order('event_date', { ascending: false });
+
+        if (error) {
+          showMsg('一覧取得エラー: ' + error.message, false);
+          return;
+        }
+        allRows = data || [];
+        renderList();
+      }
+
+      document.getElementById('btn-new').addEventListener('click', () => {
+        clearForm();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      document.getElementById('btn-reload').addEventListener('click', async () => {
+        await loadList();
+        await loadHimelogCandidates();
+        showMsg('再読込しました', true);
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const status = document.getElementById('status').value;
+        const id = document.getElementById('row-id').value.trim();
+        const eventDate = document.getElementById('event_date').value;
+        const title = document.getElementById('title').value.trim();
+
+        if (!eventDate || !title) {
+          showMsg('日付と出来事は必須です', false);
+          return;
+        }
+
+        const startTime = document.getElementById('start_time').value || null;
+        const endTime = document.getElementById('end_time').value || null;
+        if (endTime && !startTime) {
+          if (!confirm('終了時刻だけが入力されています。このまま保存しますか？')) return;
+        } else if (startTime && endTime && endTime < startTime) {
+          if (!confirm('終了時刻が開始時刻より早いです。このまま保存しますか？')) return;
+        }
+
+        if (status === 'published') {
+          const unpublished = selectedHimelogIds.filter((hid) => {
+            const entry = himelogCandidates.find((x) => x.id === hid);
+            return entry && entry.status !== 'published';
+          });
+          if (unpublished.length > 0) {
+            const ok = confirm(
+              '公開イベントに、下書きまたは非公開のひめろぐが ' + unpublished.length +
+              ' 件含まれています。このまま保存しますか？'
+            );
+            if (!ok) return;
+          }
+        }
+
+        const payload = {
+          event_date: eventDate,
+          event_date_end: document.getElementById('event_date_end').value || null,
+          start_time: startTime,
+          end_time: endTime,
+          title,
+          note: document.getElementById('note').value.trim() || null,
+          weight: document.getElementById('weight').value,
+          status,
+          related_episode_slug: document.getElementById('related_episode_slug').value.trim() || null,
+          digest_slug: document.getElementById('digest_slug').value.trim() || null,
+          himelog_entry_ids: selectedHimelogIds,
+        };
+
+        let result;
+        if (id) {
+          result = await supabase.from('hime_events').update(payload).eq('id', id).select('id').single();
+        } else {
+          result = await supabase.from('hime_events').insert(payload).select('id').single();
+        }
+
+        if (result.error) {
+          showMsg('保存エラー: ' + result.error.message, false);
+          return;
+        }
+        if (result.data?.id) {
+          document.getElementById('row-id').value = result.data.id;
+        }
+        await loadList();
+        showMsg('保存しました', true);
+      });
+
+      document.getElementById('btn-delete').addEventListener('click', async () => {
+        const id = document.getElementById('row-id').value.trim();
+        if (!id) {
+          showMsg('削除できるのは保存済みの行だけです', false);
+          return;
+        }
+        if (!confirm('この出来事を削除しますか？（元に戻せません）')) return;
+        const { error } = await supabase.from('hime_events').delete().eq('id', id);
+        if (error) {
+          showMsg('削除エラー: ' + error.message, false);
+          return;
+        }
+        clearForm();
+        await loadList();
+        showMsg('削除しました', true);
+      });
+
+      document.getElementById('btn-signin').addEventListener('click', async () => {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          showMsg('ログイン失敗: ' + error.message, false);
+          return;
+        }
+        showMsg('ログインしました', true);
+      });
+
+      document.getElementById('btn-signout').addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        showMsg('ログアウトしました', true);
+      });
+
+      function setUiSession(session) {
+        if (session) {
+          authPanel.hidden = true;
+          app.hidden = false;
+          loadList();
+          loadHimelogCandidates();
+        } else {
+          authPanel.hidden = false;
+          app.hidden = true;
+          listEl.innerHTML = '';
+        }
+      }
+
+      supabase.auth.onAuthStateChange((_e, session) => setUiSession(session));
+      const { data: { session } } = await supabase.auth.getSession();
+      setUiSession(session);
+    }
+  </script>
+</body>
+</html>

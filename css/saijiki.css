@@ -1,0 +1,405 @@
+:root {
+  --saijiki-green: #557a2e;
+  --saijiki-green-soft: #7fa34d;
+  --saijiki-bg: #f3fce9;
+  --saijiki-card: #ffffff;
+  --saijiki-ink: #333333;
+  --saijiki-sub: #6b7a55;
+  --saijiki-line: #e3ead8;
+  --saijiki-hour-h: 48px;
+  --saijiki-gutter-w: 3rem;
+  --saijiki-col-min: 5.5rem;
+  --saijiki-col-max: 320px;
+  --saijiki-page-pad: 1.25rem;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", system-ui, sans-serif;
+  background-color: var(--saijiki-bg);
+  color: var(--saijiki-ink);
+  line-height: 1.6;
+}
+
+.saijiki-header {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1.15rem var(--saijiki-page-pad) 0.65rem;
+  text-align: center;
+}
+
+.saijiki-kicker {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  color: var(--saijiki-green-soft);
+}
+
+.saijiki-title {
+  margin: 0.25rem 0 0.45rem;
+  font-size: 1.75rem;
+  color: var(--saijiki-green);
+  letter-spacing: 0.05em;
+}
+
+.saijiki-lead {
+  margin: 0 auto;
+  max-width: 480px;
+  font-size: 0.92rem;
+  color: var(--saijiki-sub);
+}
+
+.saijiki-nav {
+  margin-top: 0.65rem;
+  font-size: 0.85rem;
+}
+
+.saijiki-nav a {
+  color: var(--saijiki-green);
+  text-decoration: none;
+}
+
+.saijiki-nav a:hover { text-decoration: underline; }
+
+.saijiki-main {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 var(--saijiki-page-pad) 1.25rem;
+}
+
+.saijiki-month {
+  margin: 1rem 0 0.45rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--saijiki-green);
+  letter-spacing: 0.04em;
+}
+
+.saijiki-month-section:first-child .saijiki-month { margin-top: 0.15rem; }
+
+.saijiki-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.65rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.saijiki-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--saijiki-card);
+  border: 1px solid var(--saijiki-line);
+}
+
+.saijiki-legend-swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.saijiki-grid-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--saijiki-line);
+  border-radius: 12px;
+  background: var(--saijiki-card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.saijiki-grid {
+  display: grid;
+  grid-template-columns: var(--saijiki-gutter-w) repeat(var(--saijiki-cols, 1), minmax(var(--saijiki-col-min), var(--saijiki-col-max)));
+  width: max-content;
+  min-width: min-content;
+}
+
+.saijiki-grid-corner {
+  grid-column: 1;
+  grid-row: 1;
+  border-bottom: 1px solid var(--saijiki-line);
+  border-right: 1px solid var(--saijiki-line);
+  background: #fafdf7;
+  min-height: 2rem;
+}
+
+.saijiki-date-header {
+  grid-row: 1;
+  padding: 0.35rem 0.25rem;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--saijiki-green);
+  border-bottom: 1px solid var(--saijiki-line);
+  border-right: 1px solid var(--saijiki-line);
+  background: #fafdf7;
+}
+
+.saijiki-allday-label {
+  grid-column: 1;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--saijiki-sub);
+  border-right: 1px solid var(--saijiki-line);
+  border-bottom: 1px solid var(--saijiki-line);
+  background: #f8faf5;
+  min-height: 2.5rem;
+  padding: 0.25rem;
+}
+
+.saijiki-allday-col {
+  grid-row: 2;
+  border-right: 1px solid var(--saijiki-line);
+  border-bottom: 1px solid var(--saijiki-line);
+  background: #f8faf5;
+  padding: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-height: 2.5rem;
+}
+
+.saijiki-time-gutter {
+  grid-column: 1;
+  grid-row: 3;
+  position: relative;
+  border-right: 1px solid var(--saijiki-line);
+  background: #fafdf7;
+}
+
+.saijiki-hour-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--saijiki-hour-h);
+  font-size: 0.68rem;
+  color: var(--saijiki-sub);
+  text-align: center;
+  padding-top: 0.15rem;
+  border-top: 1px dashed #e8efe0;
+  line-height: 1.2;
+}
+
+.saijiki-hour-label:first-child { border-top: none; }
+
+.saijiki-day-col {
+  grid-row: 3;
+  position: relative;
+  border-right: 1px solid var(--saijiki-line);
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent calc(var(--saijiki-hour-h) - 1px),
+    #eef4e6 calc(var(--saijiki-hour-h) - 1px),
+    #eef4e6 var(--saijiki-hour-h)
+  );
+}
+
+.saijiki-day-col > div {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.saijiki-day-col > div > .saijiki-block {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  right: 2px;
+  height: auto;
+}
+
+.saijiki-block {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  border-radius: 6px;
+  padding: 0.2rem 0.3rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 1;
+  min-height: 1.75rem;
+}
+
+.saijiki-block:hover { filter: brightness(0.97); z-index: 2; }
+
+.saijiki-block.is-selected {
+  outline: 2px solid var(--saijiki-green);
+  outline-offset: 1px;
+  z-index: 3;
+}
+
+.saijiki-block--allday {
+  position: relative;
+  left: auto;
+  right: auto;
+  width: 100%;
+  min-height: 1.6rem;
+}
+
+.saijiki-block-time {
+  display: block;
+  font-size: 0.65rem;
+  opacity: 0.85;
+  margin-bottom: 0.1rem;
+}
+
+.saijiki-block-title {
+  display: block;
+  font-weight: 700;
+  font-size: 0.72rem;
+  word-break: break-word;
+}
+
+.saijiki-block--major .saijiki-block-title { font-weight: 800; }
+
+/* 詳細モーダル */
+.saijiki-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.saijiki-modal[hidden] { display: none; }
+
+.saijiki-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.saijiki-modal-box {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: min(85vh, 640px);
+  overflow-y: auto;
+  background: var(--saijiki-card);
+  border: 1px solid var(--saijiki-line);
+  border-radius: 14px;
+  padding: 1.1rem 1.15rem 1.15rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+  outline: none;
+}
+
+.saijiki-modal-close {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--saijiki-sub);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.saijiki-modal-close:hover {
+  background: #f0f5ea;
+  color: var(--saijiki-green);
+}
+
+.saijiki-detail-title {
+  margin: 0 2rem 0.35rem 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--saijiki-green);
+}
+
+.saijiki-detail-meta {
+  font-size: 0.78rem;
+  color: var(--saijiki-sub);
+  margin-bottom: 0.5rem;
+}
+
+.saijiki-detail-note {
+  margin: 0 0 0.65rem;
+  font-size: 0.88rem;
+  color: var(--saijiki-ink);
+  white-space: pre-wrap;
+}
+
+.saijiki-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.saijiki-chip {
+  display: inline-block;
+  font-size: 0.78rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background: #eef4e6;
+  color: var(--saijiki-green);
+  text-decoration: none;
+  border: 1px solid #d5e3c8;
+}
+
+.saijiki-chip:hover {
+  background: #e3f0d8;
+  text-decoration: none;
+}
+
+.saijiki-empty,
+.saijiki-loading,
+.saijiki-error {
+  text-align: center;
+  color: var(--saijiki-sub);
+  padding: 2rem 1rem;
+  font-size: 0.92rem;
+}
+
+.saijiki-error { color: #a44; }
+
+.saijiki-footer {
+  text-align: center;
+  padding: 0.75rem 1rem 1.25rem;
+  font-size: 0.78rem;
+  color: var(--saijiki-sub);
+}
+
+@media (max-width: 640px) {
+  :root {
+    --saijiki-col-min: 4.75rem;
+    --saijiki-gutter-w: 2.5rem;
+    --saijiki-page-pad: 1rem;
+  }
+
+  .saijiki-block-title,
+  .saijiki-block {
+    font-size: 0.69rem;
+  }
+
+  .saijiki-block-time {
+    font-size: 0.65rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .saijiki-block { transition: none; }
+}
