@@ -37,6 +37,7 @@ let flapAnimationStarted = false;
 
 let allEvents = [];
 let episodeTitleBySlug = new Map();
+let himelogTitleById = new Map();
 let selectedEventId = null;
 let lastFocusedBlock = null;
 
@@ -180,25 +181,38 @@ function himelogEntryLink(entryId) {
   return `../himelog/index.html?entry=${encodeURIComponent(entryId)}`;
 }
 
+function episodeLinkLabel(slug) {
+  const title = episodeTitleBySlug.get(slug);
+  return title || slug;
+}
+
+function himelogLinkLabel(entryId) {
+  const title = himelogTitleById.get(entryId);
+  return title && String(title).trim() ? title : '（無題のメモ）';
+}
+
+function digestLinkLabel(slug) {
+  return slug ? `ダイジェスト（${slug}）` : 'ダイジェスト';
+}
+
 function linkChipsHtml(ev) {
   const chips = [];
   if (ev.related_episode_slug) {
     chips.push(
-      `<a class="saijiki-chip" href="episode.html?slug=${encodeURIComponent(ev.related_episode_slug)}">📖 本編</a>`
+      `<a class="saijiki-chip" href="episode.html?slug=${encodeURIComponent(ev.related_episode_slug)}">${esc(episodeLinkLabel(ev.related_episode_slug))}</a>`
     );
   }
   if (ev.digest_slug) {
     chips.push(
-      `<a class="saijiki-chip" href="digest.html?slug=${encodeURIComponent(ev.digest_slug)}">📷 ダイジェスト</a>`
+      `<a class="saijiki-chip" href="digest.html?slug=${encodeURIComponent(ev.digest_slug)}">${esc(digestLinkLabel(ev.digest_slug))}</a>`
     );
   }
   const himelogIds = Array.isArray(ev.himelog_entry_ids)
     ? ev.himelog_entry_ids.filter(Boolean)
     : [];
-  himelogIds.forEach((id, index) => {
-    const label = himelogIds.length === 1 ? '📝 メモ' : `📝 メモ${index + 1}`;
+  himelogIds.forEach((id) => {
     chips.push(
-      `<a class="saijiki-chip" href="${esc(himelogEntryLink(id))}">${label}</a>`
+      `<a class="saijiki-chip" href="${esc(himelogEntryLink(id))}">${esc(himelogLinkLabel(id))}</a>`
     );
   });
   return chips.length ? `<div class="saijiki-links">${chips.join('')}</div>` : '';
@@ -215,9 +229,6 @@ function detailMeta(ev) {
     parts.push(`${t}${te}`);
   } else {
     parts.push('終日');
-  }
-  if (ev.related_episode_slug) {
-    parts.push(`本編: ${ev.related_episode_slug}`);
   }
   return parts.join(' · ');
 }
@@ -367,6 +378,7 @@ function renderGrids(events) {
   });
 
   runSplitFlapOnce();
+  openEventFromUrl();
 }
 
 const FLAP_CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワ';
@@ -409,6 +421,48 @@ function runSplitFlapOnce() {
       }
       requestAnimationFrame(tick);
     }, delay);
+  });
+}
+
+async function loadHimelogTitles(supabase, events) {
+  const ids = [
+    ...new Set(
+      events.flatMap((e) =>
+        Array.isArray(e.himelog_entry_ids) ? e.himelog_entry_ids.filter(Boolean) : []
+      )
+    ),
+  ];
+  if (!ids.length) {
+    himelogTitleById = new Map();
+    return;
+  }
+  const { data } = await supabase.from('himelog_entries').select('id, title').in('id', ids);
+  himelogTitleById = new Map(
+    (data || []).map((r) => [r.id, r.title && String(r.title).trim() ? r.title : ''])
+  );
+}
+
+function getEventIdFromUrl() {
+  return (new URLSearchParams(window.location.search).get('event') || '').trim();
+}
+
+function openEventFromUrl() {
+  const eventId = getEventIdFromUrl();
+  if (!eventId) return;
+
+  const ev = allEvents.find((e) => e.id === eventId);
+  if (!ev) return;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const btn = root.querySelector(`.saijiki-block[data-event-id="${eventId}"]`);
+      if (btn) {
+        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        showDetail(ev, btn);
+      } else {
+        showDetail(ev, null);
+      }
+    });
   });
 }
 
@@ -469,6 +523,7 @@ if (!root) {
     } else {
       allEvents = data || [];
       await loadEpisodeTitles(supabase, allEvents);
+      await loadHimelogTitles(supabase, allEvents);
       renderGrids(allEvents);
     }
   } catch (err) {

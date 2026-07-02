@@ -36,6 +36,7 @@ const tagSearchWrap = document.getElementById('tag-search-wrap');
 let allEntries = [];
 let activeTag = null;
 let tagSearchQuery = '';
+let eventsByHimelogId = new Map();
 
 function esc(s) {
   return String(s ?? '')
@@ -220,6 +221,14 @@ function cardHtml(entry) {
     ? `<a class="himelog-card-episode" href="../html/episode.html?slug=${encodeURIComponent(entry.related_episode_slug)}">関連エピソードへ →</a>`
     : '';
 
+  const saijikiEvents = eventsByHimelogId.get(entry.id) || [];
+  const saijikiHtml = saijikiEvents
+    .map(
+      (ev) =>
+        `<a class="himelog-card-saijiki" href="../html/saijiki.html?event=${encodeURIComponent(ev.id)}">歳時記：${esc(ev.title || '')} →</a>`
+    )
+    .join('');
+
   const dateStr = formatDate(entryDateIso(entry));
   const dateHtml = dateStr ? `<span class="himelog-card-date">${esc(dateStr)}</span>` : '';
   const topLineHtml =
@@ -244,7 +253,7 @@ function cardHtml(entry) {
     ? (startsCollapsed ? 'himelog-card is-collapsed' : 'himelog-card is-expanded')
     : 'himelog-card is-expanded';
 
-  const footerInner = `${tagsHtml}${epHtml}`;
+  const footerInner = `${tagsHtml}${epHtml}${saijikiHtml}`;
   const footerHtml = footerInner
     ? `<div class="himelog-card-footer"><div class="himelog-card-meta">${footerInner}</div></div>`
     : '';
@@ -351,6 +360,28 @@ function openEntryFromUrl() {
   });
 }
 
+async function loadLinkedSaijikiEvents(supabase) {
+  const { data, error } = await supabase
+    .from('hime_events')
+    .select('id, title, himelog_entry_ids')
+    .eq('status', 'published');
+
+  if (error) {
+    eventsByHimelogId = new Map();
+    return;
+  }
+
+  const map = new Map();
+  (data || []).forEach((ev) => {
+    (ev.himelog_entry_ids || []).forEach((id) => {
+      if (!id) return;
+      if (!map.has(id)) map.set(id, []);
+      map.get(id).push(ev);
+    });
+  });
+  eventsByHimelogId = map;
+}
+
 async function init() {
   const url = window.__SB_URL;
   const key = window.__SB_ANON_KEY;
@@ -377,6 +408,7 @@ async function init() {
     }
 
     allEntries = data || [];
+    await loadLinkedSaijikiEvents(supabase);
     renderTagFilters();
     renderList();
     updateSearchUi();

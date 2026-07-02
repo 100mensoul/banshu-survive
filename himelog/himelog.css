@@ -362,6 +362,16 @@ body {
 
 .himelog-card-episode:hover { text-decoration: underline; }
 
+.himelog-card-saijiki {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--himelog-green);
+  text-decoration: none;
+}
+
+.himelog-card-saijiki:hover { text-decoration: underline; }
+
 /* 状態表示 */
 .himelog-loading,
 .himelog-empty,

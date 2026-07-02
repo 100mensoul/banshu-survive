@@ -134,6 +134,29 @@ img {
 .episode-md p { margin-bottom: 1rem; }
 .episode-md img { width: 100%; margin: 1rem 0; border-radius: 0; }
 .episode-md strong { font-weight: bold; color: #4a7c59; }
+.episode-saijiki-links {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  background: #eef6f2;
+  border-radius: 8px;
+  border: 1px solid #d4e5d9;
+}
+.episode-saijiki-links__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #4a6b4a;
+  margin-bottom: 0.45rem;
+}
+.episode-saijiki-links a {
+  display: inline-block;
+  margin: 0.2rem 0.45rem 0.2rem 0;
+  font-size: 0.85rem;
+  color: #2d5f73;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(45, 95, 115, 0.35);
+}
+.episode-saijiki-links a:hover { color: #1a3a4a; }
 .episode-loading {
   display: none;
   text-align: center;
@@ -160,6 +183,8 @@ html.episode-fetching #episode-content {
       <div class="episode-top-bar__right" aria-hidden="true"></div>
     </div>
 
+    <div id="episode-saijiki-links" class="episode-saijiki-links" hidden></div>
+
     <div class="nav" id="episode-series-nav-top"></div>
 
     <p id="episode-loading" class="episode-loading" role="status" aria-live="polite">読み込み中…</p>
@@ -173,6 +198,6 @@ html.episode-fetching #episode-content {
     <div class="nav" id="episode-series-nav-bottom"></div>
   </div>
   <script src="../js/supabase-public-config.js"></script>
-  <script type="module" src="../js/episode-public.js"></script>
+  <script type="module" src="../js/episode-public.js?v=2"></script>
 </body>
 </html>

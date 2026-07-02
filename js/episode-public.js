@@ -89,6 +89,34 @@ async function fillSeriesNav(supabase, current) {
   if (bottom) bottom.innerHTML = inner;
 }
 
+async function fillSaijikiLinks(supabase, episodeSlug) {
+  const slot = document.getElementById('episode-saijiki-links');
+  if (!slot || !episodeSlug) return;
+
+  const { data, error } = await supabase
+    .from('hime_events')
+    .select('id, title, event_date')
+    .eq('related_episode_slug', episodeSlug)
+    .eq('status', 'published')
+    .order('event_date', { ascending: true });
+
+  if (error || !data?.length) {
+    slot.hidden = true;
+    slot.innerHTML = '';
+    return;
+  }
+
+  slot.hidden = false;
+  slot.innerHTML =
+    '<div class="episode-saijiki-links__label">歳時記</div>' +
+    data
+      .map(
+        (ev) =>
+          `<a href="saijiki.html?event=${encodeURIComponent(ev.id)}">${esc(ev.title || '出来事')}</a>`
+      )
+      .join('');
+}
+
 if (!slug || !root) {
   endEpisodeFetching();
 } else if (!urlOk || !keyOk) {
@@ -129,6 +157,7 @@ if (!slug || !root) {
     `;
 
       await fillSeriesNav(supabase, data);
+      await fillSaijikiLinks(supabase, slug);
     } else if (!error && !data) {
       document.title = 'エピソード｜播州サバイブ';
       if (seasonSlot) seasonSlot.textContent = '';
