@@ -1,0 +1,10 @@
+# Supabase ローカル開発・Edge Functions 設定
+# 詳細: https://supabase.com/docs/guides/cli/config
+
+project_id = "banshu-survive"
+
+[api]
+enabled = true
+
+[functions.generate-himejin-portrait]
+verify_jwt = true
