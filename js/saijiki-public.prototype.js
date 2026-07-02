@@ -1,5 +1,5 @@
 /**
- * 歳時記（hime_events）公開ページ — 水の流れ・一本横スクロール
+ * 歳時記 — 水の流れプロトタイプ（一本横スクロール）
  */
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 

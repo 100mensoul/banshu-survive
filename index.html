@@ -59,14 +59,23 @@
             </div>
           </div>
 
-          <!-- あらすじ（めくり） -->
-          <div class="stone-nav-slot stone-nav-slot--flip">
-            <a href="html/arasuji.html" class="stone-flip-anchor" aria-label="あらすじへ（ストーリー／あらすじ）">
+          <!-- あらすじ（めくり + プルダウン） -->
+          <div class="stone-nav-slot stone-nav-slot--dd">
+            <div class="stone-dd-flip" aria-hidden="true">
               <div class="flip-inner">
-                <span class="flip-face flip-front">ストーリー</span>
-                <span class="flip-face flip-back" aria-hidden="true">あらすじ</span>
+                <div class="flip-face flip-front">ストーリー</div>
+                <div class="flip-face flip-back">あらすじ</div>
               </div>
-            </a>
+            </div>
+            <div class="stone-dd-ui">
+              <div class="dropdown">
+                <div class="dropbtn" tabindex="0" aria-haspopup="true" aria-label="ストーリー（あらすじ）、サブメニューを開く"></div>
+                <div class="dropdown-content">
+                  <a href="html/arasuji.html" class="stone-arasuji-link">あらすじ</a>
+                  <a href="html/saijiki.html">歳時記</a>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- キャスト -->
@@ -468,7 +477,7 @@
     });
 
     // あらすじへ：トップを黒く暗転してから遷移
-    var arasujiAnchor = document.querySelector('a.stone-flip-anchor[href="html/arasuji.html"]');
+    var arasujiAnchor = document.querySelector('a.stone-arasuji-link[href="html/arasuji.html"]');
     var fadeOverlay = document.getElementById('page-transition-overlay');
     if (arasujiAnchor && fadeOverlay) {
       arasujiAnchor.addEventListener('click', function (e) {
