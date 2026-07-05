@@ -6,8 +6,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const EVENT_SORT_ASC = true;
 const GRID_START_HOUR = 9;
 const GRID_END_HOUR = 22;
-const HOUR_HEIGHT_PX = 48;
-const MIN_BLOCK_HEIGHT_PX = 28;
+const MIN_BLOCK_HEIGHT_PX = 22;
+const LOOKBACK_DAYS = 60;
 
 const SLUG_PALETTE = [
   '#7ec8e3',
@@ -127,15 +127,51 @@ function parseTimeToMinutes(t) {
   return h * 60 + m;
 }
 
+function localDateStr(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function todayLocalDateStr() {
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  return localDateStr(today);
+}
+
+function parseLocalDate(dateStr) {
+  const d = new Date(`${dateStr}T12:00:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function computeHourHeightPx() {
+  const hours = GRID_END_HOUR - GRID_START_HOUR;
+  const reserved = 120;
+  const fromViewport = Math.floor((window.innerHeight - reserved) / hours);
+  return Math.max(22, Math.min(30, fromViewport));
+}
+
+function hourHeightPx() {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--saijiki-hour-h').trim();
+  const parsed = parseFloat(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : computeHourHeightPx();
+}
+
+function applyViewportGridMetrics() {
+  const hourH = computeHourHeightPx();
+  document.documentElement.style.setProperty('--saijiki-hour-h', `${hourH}px`);
+}
+
 function gridBodyHeightPx() {
-  return (GRID_END_HOUR - GRID_START_HOUR) * HOUR_HEIGHT_PX;
+  return (GRID_END_HOUR - GRID_START_HOUR) * hourHeightPx();
 }
 
 function minutesToTop(minutes) {
   const start = GRID_START_HOUR * 60;
   const end = GRID_END_HOUR * 60;
   const clamped = Math.max(start, Math.min(end, minutes));
-  return ((clamped - start) / 60) * HOUR_HEIGHT_PX;
+  return ((clamped - start) / 60) * hourHeightPx();
 }
 
 function minutesToHeight(startMin, endMin) {
@@ -144,8 +180,41 @@ function minutesToHeight(startMin, endMin) {
   const gridEnd = GRID_END_HOUR * 60;
   const s = Math.max(gridStart, startMin);
   const e = Math.min(gridEnd, endMin);
-  const h = ((e - s) / 60) * HOUR_HEIGHT_PX;
+  const h = ((e - s) / 60) * hourHeightPx();
   return Math.max(MIN_BLOCK_HEIGHT_PX, h);
+}
+
+function buildDateRange(events) {
+  const today = parseLocalDate(todayLocalDateStr());
+  if (!today) return [];
+
+  const start = new Date(today);
+  start.setDate(start.getDate() - LOOKBACK_DAYS);
+
+  events.forEach((ev) => {
+    [ev.event_date, ev.event_date_end].filter(Boolean).forEach((dateStr) => {
+      const d = parseLocalDate(dateStr);
+      if (d && d < start) start.setTime(d.getTime());
+    });
+  });
+
+  const dates = [];
+  const cursor = new Date(start);
+  while (cursor <= today) {
+    dates.push(localDateStr(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dates;
+}
+
+function scrollToToday() {
+  const scrollEl = root?.querySelector('.saijiki-river-scroll');
+  const todayHeader = root?.querySelector('.saijiki-date-header--today');
+  if (!scrollEl || !todayHeader) return;
+
+  const scrollRect = scrollEl.getBoundingClientRect();
+  const todayRect = todayHeader.getBoundingClientRect();
+  scrollEl.scrollLeft += todayRect.right - scrollRect.right;
 }
 
 function isAllDay(ev) {
@@ -239,7 +308,9 @@ function blockHtml(ev, slugColorMap, options) {
   const majorClass = ev.weight === 'major' ? ' saijiki-block--major' : '';
   const alldayClass = allday ? ' saijiki-block--allday' : '';
   let timeHtml = '';
-  if (!allday && ev.start_time) {
+  if (allday) {
+    timeHtml = '<span class="saijiki-block-time">終日</span>';
+  } else if (ev.start_time) {
     const te = ev.end_time ? `〜${formatTimeLabel(ev.end_time)}` : '';
     timeHtml = `<span class="saijiki-block-time">${esc(formatTimeLabel(ev.start_time))}${esc(te)}</span>`;
   }
@@ -278,11 +349,11 @@ function dateHeaderHtml(dateStr, prevDateStr) {
 }
 
 function renderRiverGrid(events, slugColorMap) {
-  const dates = [...new Set(events.map((e) => e.event_date).filter(Boolean))].sort((a, b) =>
-    EVENT_SORT_ASC ? a.localeCompare(b) : b.localeCompare(a)
-  );
+  const dates = buildDateRange(events);
   if (!dates.length) return '';
 
+  const todayStr = todayLocalDateStr();
+  const eventDates = new Set(events.map((e) => e.event_date).filter(Boolean));
   const colCount = dates.length;
   const bodyH = gridBodyHeightPx();
   let gridHtml = `<div class="saijiki-grid" style="--saijiki-cols:${colCount}">`;
@@ -296,32 +367,41 @@ function renderRiverGrid(events, slugColorMap) {
         : i === 0
           ? ' saijiki-date-header--month-start'
           : '';
+    const todayClass = d === todayStr ? ' saijiki-date-header--today' : '';
+    const emptyClass = !eventDates.has(d) ? ' saijiki-date-header--empty' : '';
     gridHtml +=
-      `<div class="saijiki-date-header${monthStartClass}" style="grid-row:1;grid-column:${i + 2}">` +
+      `<div class="saijiki-date-header${monthStartClass}${todayClass}${emptyClass}" style="grid-row:1;grid-column:${i + 2}">` +
       dateHeaderHtml(d, prev) +
       `</div>`;
   });
 
-  gridHtml += '<div class="saijiki-allday-label" style="grid-row:2;grid-column:1">終日</div>';
-  dates.forEach((d, i) => {
-    const alldayEvents = events.filter((e) => e.event_date === d && isAllDay(e));
-    let colHtml = '';
-    alldayEvents.forEach((ev) => {
-      colHtml += blockHtml(ev, slugColorMap, { allday: true });
-    });
-    gridHtml += `<div class="saijiki-allday-col" style="grid-row:2;grid-column:${i + 2}">${colHtml}</div>`;
-  });
-
-  gridHtml += `<div class="saijiki-time-gutter" style="grid-row:3;grid-column:1;height:${bodyH}px">`;
+  gridHtml += `<div class="saijiki-time-gutter" style="grid-row:2;grid-column:1;height:${bodyH}px">`;
   gridHtml += '<div class="saijiki-flow-line" aria-hidden="true"></div>';
   for (let h = GRID_START_HOUR; h < GRID_END_HOUR; h += 1) {
-    const top = (h - GRID_START_HOUR) * HOUR_HEIGHT_PX;
+    const top = (h - GRID_START_HOUR) * hourHeightPx();
     gridHtml += `<div class="saijiki-hour-label" style="top:${top}px">${h}:00</div>`;
   }
   gridHtml += '</div>';
 
   dates.forEach((d, i) => {
-    gridHtml += `<div class="saijiki-day-col" style="grid-row:3;grid-column:${i + 2};height:${bodyH}px">`;
+    const dayClasses = [
+      'saijiki-day-col',
+      d === todayStr ? 'saijiki-day-col--today' : '',
+      !eventDates.has(d) ? 'saijiki-day-col--empty' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    gridHtml += `<div class="${dayClasses}" style="grid-row:2;grid-column:${i + 2};height:${bodyH}px">`;
+    const alldayEvents = events.filter((e) => e.event_date === d && isAllDay(e));
+    const alldayCount = alldayEvents.length;
+    alldayEvents.forEach((ev, alldayIdx) => {
+      const segH = alldayCount > 0 ? bodyH / alldayCount : bodyH;
+      const top = alldayIdx * segH;
+      gridHtml +=
+        `<div class="saijiki-block-slot saijiki-block-slot--allday" style="position:absolute;top:${top}px;left:0;right:0;height:${segH}px">` +
+        blockHtml(ev, slugColorMap, { allday: true }) +
+        '</div>';
+    });
     events
       .filter((e) => e.event_date === d && !isAllDay(e))
       .forEach((ev) => {
@@ -331,7 +411,7 @@ function renderRiverGrid(events, slugColorMap) {
         const top = minutesToTop(startMin);
         const height = minutesToHeight(startMin, endMin);
         gridHtml +=
-          `<div style="position:absolute;top:${top}px;left:0;right:0;height:${height}px">` +
+          `<div class="saijiki-block-slot" style="position:absolute;top:${top}px;left:0;right:0;height:${height}px">` +
           blockHtml(ev, slugColorMap, { allday: false }) +
           '</div>';
       });
@@ -351,10 +431,7 @@ function renderRiverGrid(events, slugColorMap) {
 }
 
 function renderGrids(events) {
-  if (!events.length) {
-    root.innerHTML = '<p class="saijiki-empty">まだ公開された出来事はありません。</p>';
-    return;
-  }
+  applyViewportGridMetrics();
 
   const sorted = [...events].sort((a, b) => {
     const da = a.event_date || '';
@@ -367,7 +444,12 @@ function renderGrids(events) {
   });
 
   const slugColorMap = buildSlugColorMap(sorted);
-  root.innerHTML = renderRiverGrid(sorted, slugColorMap);
+  const gridHtml = renderRiverGrid(sorted, slugColorMap);
+  if (!gridHtml) {
+    root.innerHTML = '<p class="saijiki-empty">カレンダーを表示できませんでした。</p>';
+    return;
+  }
+  root.innerHTML = gridHtml;
 
   root.querySelectorAll('.saijiki-block').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -378,8 +460,28 @@ function renderGrids(events) {
   });
 
   runSplitFlapOnce();
-  openEventFromUrl();
+
+  const hasEventDeepLink = Boolean(getEventIdFromUrl());
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (!hasEventDeepLink) scrollToToday();
+      openEventFromUrl();
+    });
+  });
 }
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  if (!root?.querySelector('.saijiki-grid')) return;
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const scrollEl = root.querySelector('.saijiki-river-scroll');
+    const prevScroll = scrollEl?.scrollLeft ?? 0;
+    renderGrids(allEvents);
+    const nextScroll = root.querySelector('.saijiki-river-scroll');
+    if (nextScroll) nextScroll.scrollLeft = prevScroll;
+  }, 150);
+});
 
 const FLAP_CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワ';
 
