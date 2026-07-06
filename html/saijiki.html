@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>歳時記｜播州サバイブ</title>
   <meta name="description" content="播州サバイブの出来事を、水の流れのように時系列で辿る歳時記（姫事記）。" />
-  <link rel="stylesheet" href="../css/saijiki.css?v=11" />
+  <link rel="stylesheet" href="../css/saijiki.css?v=18" />
 </head>
 <body class="saijiki-proto">
 
@@ -44,20 +44,24 @@
 
   <div id="saijiki-modal" class="saijiki-modal" hidden>
     <div class="saijiki-modal-backdrop" id="saijiki-modal-backdrop"></div>
-    <div
-      class="saijiki-modal-box"
-      id="saijiki-modal-box"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="saijiki-modal-title"
-      tabindex="-1"
-    >
-      <button type="button" class="saijiki-modal-close" id="saijiki-modal-close" aria-label="閉じる">×</button>
-      <div id="saijiki-modal-body"></div>
+    <div class="saijiki-modal-stage">
+      <button type="button" class="saijiki-modal-nav-btn" id="saijiki-modal-prev" aria-label="前のイベント">＜</button>
+      <div
+        class="saijiki-modal-box"
+        id="saijiki-modal-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="saijiki-modal-title"
+        tabindex="-1"
+      >
+        <button type="button" class="saijiki-modal-close" id="saijiki-modal-close" aria-label="閉じる">×</button>
+        <div id="saijiki-modal-body"></div>
+      </div>
+      <button type="button" class="saijiki-modal-nav-btn" id="saijiki-modal-next" aria-label="次のイベント">＞</button>
     </div>
   </div>
 
   <script src="../js/supabase-public-config.js"></script>
-  <script type="module" src="../js/saijiki-public.js?v=8"></script>
+  <script type="module" src="../js/saijiki-public.js?v=18"></script>
 </body>
 </html>

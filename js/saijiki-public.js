@@ -36,6 +36,7 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 let flapAnimationStarted = false;
 
 let allEvents = [];
+let navEvents = [];
 let episodeTitleBySlug = new Map();
 let himelogTitleById = new Map();
 let selectedEventId = null;
@@ -46,15 +47,78 @@ const modalBox = document.getElementById('saijiki-modal-box');
 const modalBody = document.getElementById('saijiki-modal-body');
 const modalBackdrop = document.getElementById('saijiki-modal-backdrop');
 const modalCloseBtn = document.getElementById('saijiki-modal-close');
+const modalPrevBtn = document.getElementById('saijiki-modal-prev');
+const modalNextBtn = document.getElementById('saijiki-modal-next');
+
+function sortEvents(events) {
+  return [...events].sort((a, b) => {
+    const da = a.event_date || '';
+    const db = b.event_date || '';
+    if (da !== db) return EVENT_SORT_ASC ? da.localeCompare(db) : db.localeCompare(da);
+    const ta = parseTimeToMinutes(a.start_time) ?? -1;
+    const tb = parseTimeToMinutes(b.start_time) ?? -1;
+    if (ta !== tb) return ta - tb;
+    return String(a.title || '').localeCompare(String(b.title || ''), 'ja');
+  });
+}
+
+function setEventUrl(eventId) {
+  const nextUrl = new URL(window.location.href);
+  if (eventId) {
+    nextUrl.searchParams.set('event', eventId);
+  } else {
+    nextUrl.searchParams.delete('event');
+  }
+  history.replaceState(null, '', nextUrl);
+}
+
+function focusEventInGrid(eventId) {
+  const btn = root?.querySelector(`.saijiki-block[data-event-id="${eventId}"]`);
+  if (btn) {
+    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+  root?.querySelectorAll('.saijiki-block').forEach((el) => {
+    el.classList.toggle('is-selected', el.dataset.eventId === eventId);
+  });
+}
+
+function updateModalNav() {
+  if (!modalPrevBtn || !modalNextBtn) return;
+  const idx = navEvents.findIndex((e) => e.id === selectedEventId);
+  modalPrevBtn.disabled = idx <= 0;
+  modalNextBtn.disabled = idx < 0 || idx >= navEvents.length - 1;
+}
+
+function navigateEvent(delta) {
+  if (!selectedEventId || !navEvents.length) return;
+  const idx = navEvents.findIndex((e) => e.id === selectedEventId);
+  if (idx < 0) return;
+  const nextIdx = idx + delta;
+  if (nextIdx < 0 || nextIdx >= navEvents.length) return;
+  showDetail(navEvents[nextIdx], null, { fromNav: true });
+}
 
 function initModal() {
   if (!modalEl) return;
   modalBackdrop?.addEventListener('click', closeDetail);
   modalCloseBtn?.addEventListener('click', closeDetail);
+  modalPrevBtn?.addEventListener('click', () => navigateEvent(-1));
+  modalNextBtn?.addEventListener('click', () => navigateEvent(1));
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modalEl && !modalEl.hidden) {
+    if (!modalEl || modalEl.hidden) return;
+    if (e.key === 'Escape') {
       e.preventDefault();
       closeDetail();
+      return;
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      navigateEvent(-1);
+      return;
+    }
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      navigateEvent(1);
     }
   });
 }
@@ -64,6 +128,7 @@ function closeDetail() {
   modalEl.hidden = true;
   document.body.style.overflow = '';
   selectedEventId = null;
+  setEventUrl(null);
   root?.querySelectorAll('.saijiki-block').forEach((el) => el.classList.remove('is-selected'));
   if (lastFocusedBlock && typeof lastFocusedBlock.focus === 'function') {
     lastFocusedBlock.focus();
@@ -71,22 +136,30 @@ function closeDetail() {
   lastFocusedBlock = null;
 }
 
-function showDetail(ev, triggerBtn) {
-  if (!modalEl || !modalBody) return;
-  selectedEventId = ev.id;
-  lastFocusedBlock = triggerBtn || document.activeElement;
-  root.querySelectorAll('.saijiki-block').forEach((el) => {
-    el.classList.toggle('is-selected', el.dataset.eventId === ev.id);
-  });
-  modalBody.innerHTML =
+function renderDetailBody(ev) {
+  return (
     `<h3 class="saijiki-detail-title" id="saijiki-modal-title">${esc(ev.title || '')}</h3>` +
     `<p class="saijiki-detail-meta">${esc(detailMeta(ev))}</p>` +
     (ev.note && String(ev.note).trim()
       ? `<p class="saijiki-detail-note">${esc(ev.note)}</p>`
       : '') +
-    linkChipsHtml(ev);
+    linkChipsHtml(ev)
+  );
+}
+
+function showDetail(ev, triggerBtn, options = {}) {
+  const { fromNav = false } = options;
+  if (!modalEl || !modalBody) return;
+  selectedEventId = ev.id;
+  if (!fromNav && triggerBtn) {
+    lastFocusedBlock = triggerBtn;
+  }
+  modalBody.innerHTML = renderDetailBody(ev);
   modalEl.hidden = false;
   document.body.style.overflow = 'hidden';
+  updateModalNav();
+  focusEventInGrid(ev.id);
+  setEventUrl(ev.id);
   modalBox?.focus();
 }
 
@@ -302,23 +375,50 @@ function detailMeta(ev) {
   return parts.join(' · ');
 }
 
+function eventDurationMinutes(ev) {
+  if (isAllDay(ev)) return (GRID_END_HOUR - GRID_START_HOUR) * 60;
+  const startMin = parseTimeToMinutes(ev.start_time);
+  if (startMin == null) return 60;
+  const endMin = parseTimeToMinutes(ev.end_time);
+  if (endMin == null) return 60;
+  return Math.max(15, endMin - startMin);
+}
+
+const SHORT_EVENT_MAX_MINUTES = 150;
+
+function blockSizeClass(ev, slotHeightPx, allday) {
+  const parts = [' saijiki-block--vertical'];
+  if (allday) {
+    parts.push(' saijiki-block--allday');
+    return parts.join('');
+  }
+  const durationMin = eventDurationMinutes(ev);
+  const hourH = hourHeightPx();
+  const isShort = durationMin <= SHORT_EVENT_MAX_MINUTES || slotHeightPx <= hourH * 3;
+  parts.push(isShort ? ' saijiki-block--short' : ' saijiki-block--tall');
+  return parts.join('');
+}
+
+function blockTimeHtml(ev, allday, sizeClass) {
+  if (allday) return '<span class="saijiki-block-time">終日</span>';
+  if (!ev.start_time) return '';
+  if (sizeClass.includes('saijiki-block--short')) return '';
+
+  const te = ev.end_time ? `〜${formatTimeLabel(ev.end_time)}` : '';
+  return `<span class="saijiki-block-time">${esc(formatTimeLabel(ev.start_time))}${esc(te)}</span>`;
+}
+
 function blockHtml(ev, slugColorMap, options) {
-  const { allday = false } = options || {};
+  const { allday = false, slotHeightPx = 0 } = options || {};
   const accent = slugColor(slugColorMap, ev.related_episode_slug);
   const majorClass = ev.weight === 'major' ? ' saijiki-block--major' : '';
-  const alldayClass = allday ? ' saijiki-block--allday' : '';
-  let timeHtml = '';
-  if (allday) {
-    timeHtml = '<span class="saijiki-block-time">終日</span>';
-  } else if (ev.start_time) {
-    const te = ev.end_time ? `〜${formatTimeLabel(ev.end_time)}` : '';
-    timeHtml = `<span class="saijiki-block-time">${esc(formatTimeLabel(ev.start_time))}${esc(te)}</span>`;
-  }
+  const sizeClass = blockSizeClass(ev, slotHeightPx, allday);
+  const timeHtml = blockTimeHtml(ev, allday, sizeClass);
   return (
-    `<button type="button" class="saijiki-block${majorClass}${alldayClass}" data-event-id="${esc(ev.id)}"` +
+    `<button type="button" class="saijiki-block${majorClass}${sizeClass}" data-event-id="${esc(ev.id)}"` +
     ` style="--block-accent:${esc(accent)}" aria-label="${esc(ev.title || '')}">` +
     timeHtml +
-    `<span class="saijiki-block-title" data-flap="${esc(ev.title || '')}">${esc(ev.title || '')}</span>` +
+    `<span class="saijiki-block-title" title="${esc(ev.title || '')}" data-flap="${esc(ev.title || '')}">${esc(ev.title || '')}</span>` +
     `</button>`
   );
 }
@@ -399,7 +499,7 @@ function renderRiverGrid(events, slugColorMap) {
       const top = alldayIdx * segH;
       gridHtml +=
         `<div class="saijiki-block-slot saijiki-block-slot--allday" style="position:absolute;top:${top}px;left:0;right:0;height:${segH}px">` +
-        blockHtml(ev, slugColorMap, { allday: true }) +
+        blockHtml(ev, slugColorMap, { allday: true, slotHeightPx: segH }) +
         '</div>';
     });
     events
@@ -412,7 +512,7 @@ function renderRiverGrid(events, slugColorMap) {
         const height = minutesToHeight(startMin, endMin);
         gridHtml +=
           `<div class="saijiki-block-slot" style="position:absolute;top:${top}px;left:0;right:0;height:${height}px">` +
-          blockHtml(ev, slugColorMap, { allday: false }) +
+          blockHtml(ev, slugColorMap, { allday: false, slotHeightPx: height }) +
           '</div>';
       });
     gridHtml += '</div>';
@@ -433,15 +533,8 @@ function renderRiverGrid(events, slugColorMap) {
 function renderGrids(events) {
   applyViewportGridMetrics();
 
-  const sorted = [...events].sort((a, b) => {
-    const da = a.event_date || '';
-    const db = b.event_date || '';
-    if (da !== db) return EVENT_SORT_ASC ? da.localeCompare(db) : db.localeCompare(da);
-    const ta = parseTimeToMinutes(a.start_time) ?? -1;
-    const tb = parseTimeToMinutes(b.start_time) ?? -1;
-    if (ta !== tb) return ta - tb;
-    return String(a.title || '').localeCompare(String(b.title || ''), 'ja');
-  });
+  navEvents = sortEvents(events);
+  const sorted = navEvents;
 
   const slugColorMap = buildSlugColorMap(sorted);
   const gridHtml = renderRiverGrid(sorted, slugColorMap);
@@ -480,6 +573,10 @@ window.addEventListener('resize', () => {
     renderGrids(allEvents);
     const nextScroll = root.querySelector('.saijiki-river-scroll');
     if (nextScroll) nextScroll.scrollLeft = prevScroll;
+    if (selectedEventId && modalEl && !modalEl.hidden) {
+      focusEventInGrid(selectedEventId);
+      updateModalNav();
+    }
   }, 150);
 });
 

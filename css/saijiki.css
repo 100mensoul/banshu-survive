@@ -337,12 +337,92 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: clamp(1px, 3cqh, 5px);
-  padding: clamp(3px, 6cqh, 8px) clamp(4px, 8cqw, 7px) clamp(3px, 6cqh, 8px) clamp(5px, 10cqw, 8px);
+  align-items: stretch;
+  gap: clamp(1px, 2cqh, 4px);
+  padding: clamp(2px, 4cqh, 6px) clamp(3px, 6cqw, 5px);
+}
+
+/* すべて縦書き。短い枠は上から途中まで表示（モーダルで全文） */
+.saijiki-block--vertical {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: clamp(2px, 4cqh, 6px) clamp(2px, 4cqw, 4px);
+}
+
+.saijiki-day-col > .saijiki-block-slot > .saijiki-block.saijiki-block--vertical {
+  align-items: center;
+  justify-content: center;
+}
+
+.saijiki-day-col > .saijiki-block-slot > .saijiki-block.saijiki-block--vertical.saijiki-block--tall {
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.saijiki-block--vertical .saijiki-block-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-family: var(--saijiki-font-serif);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1.12;
+  max-height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  word-break: normal;
+  text-align: center;
+  align-self: center;
+  margin-inline: auto;
+}
+
+.saijiki-block--short .saijiki-block-time {
+  display: none;
+}
+
+.saijiki-block--short .saijiki-block-title {
+  flex: 0 1 auto;
+  font-size: clamp(0.5rem, 7.5cqh, 0.66rem);
+}
+
+.saijiki-block--tall {
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: clamp(2px, 3cqh, 5px);
+  padding: clamp(3px, 5cqh, 7px) clamp(3px, 5cqw, 5px);
+}
+
+.saijiki-block--tall .saijiki-block-title {
+  flex: 1 1 auto;
+  align-self: center;
+  font-size: clamp(0.62rem, 11cqh, 1.2rem);
+}
+
+.saijiki-block--tall .saijiki-block-time {
+  writing-mode: horizontal-tb;
+  align-self: flex-start;
+  flex-shrink: 0;
+  font-size: clamp(0.48rem, 5cqh, 0.68rem);
+  opacity: 0.8;
+}
+
+.saijiki-block--vertical.saijiki-block--allday {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.saijiki-block--allday .saijiki-block-time {
+  writing-mode: vertical-rl;
+  font-size: clamp(0.48rem, 5cqh, 0.62rem);
+  opacity: 0.75;
+  flex-shrink: 0;
 }
 
 .saijiki-block-slot--allday > .saijiki-block--allday {
-  justify-content: flex-start;
+  justify-content: center;
   background: rgba(255, 255, 255, 0.82);
   z-index: 0;
 }
@@ -394,19 +474,19 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
 .saijiki-block-time {
   display: block;
   flex-shrink: 0;
-  font-size: clamp(0.58rem, 9cqh, 0.88rem);
+  font-size: clamp(0.5rem, 6cqh, 0.72rem);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
   color: var(--saijiki-sub);
   margin: 0;
-  line-height: 1.1;
+  line-height: 1.05;
 }
 
 .saijiki-block-title {
   display: block;
   flex: 1 1 auto;
   font-weight: 600;
-  font-size: clamp(0.68rem, 13cqh, 1.28rem);
+  font-size: clamp(0.62rem, 11cqh, 1.2rem);
   line-height: 1.12;
   word-break: break-word;
   overflow: hidden;
@@ -436,8 +516,21 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
   background: rgba(26, 58, 74, 0.4);
 }
 
+.saijiki-modal-stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.35rem, 2vw, 0.85rem);
+  max-width: min(640px, 100%);
+  width: 100%;
+}
+
 .saijiki-modal-box {
   position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
   width: min(520px, 100%);
   max-height: min(85vh, 640px);
   overflow-y: auto;
@@ -468,6 +561,31 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
 .saijiki-modal-close:hover {
   background: rgba(255, 255, 255, 0.5);
   color: var(--saijiki-water-deep);
+}
+
+.saijiki-modal-nav-btn {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 2.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.saijiki-modal-nav-btn:hover:not(:disabled) {
+  color: rgba(255, 255, 255, 0.95);
+  opacity: 1;
+}
+
+.saijiki-modal-nav-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
 }
 
 .saijiki-detail-title {
@@ -550,12 +668,12 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
 
   .saijiki-title { letter-spacing: 0.08em; }
 
-  .saijiki-block-title {
-    font-size: clamp(0.64rem, 12cqh, 1.15rem);
+  .saijiki-block--vertical .saijiki-block-title {
+    font-size: clamp(0.58rem, 10cqh, 1.05rem);
   }
 
   .saijiki-block-time {
-    font-size: clamp(0.55rem, 8cqh, 0.82rem);
+    font-size: clamp(0.45rem, 5cqh, 0.65rem);
   }
 }
 
