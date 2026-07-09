@@ -126,13 +126,51 @@ function normalizeSide(raw) {
   return SIDES.indexOf(s) >= 0 ? s : null;
 }
 
-function normalizePort(raw) {
+/** Endpoint: node ポート or 参照エッジ上の点 */
+function normalizeEndpoint(raw) {
   if (!raw || typeof raw !== 'object') return null;
+  const kind = raw.kind === 'edge' ? 'edge' : 'node';
+  if (kind === 'edge') {
+    const edgeId = String(raw.edgeId || '').trim();
+    const t = Number(raw.t);
+    if (!edgeId || !Number.isFinite(t)) return null;
+    return { kind: 'edge', edgeId, t: Math.max(0.02, Math.min(0.98, t)) };
+  }
   const nodeId = String(raw.nodeId || raw.slug || '').trim();
   const side = normalizeSide(raw.side);
   const t = Number(raw.t);
   if (!nodeId || !side || !Number.isFinite(t)) return null;
-  return { nodeId, side, t: Math.max(0.08, Math.min(0.92, t)) };
+  return { kind: 'node', nodeId, side, t: Math.max(0.08, Math.min(0.92, t)) };
+}
+
+function ensureEndpointKind(ep) {
+  if (!ep || ep.kind) return ep;
+  if (ep.edgeId) return { kind: 'edge', edgeId: String(ep.edgeId), t: Number(ep.t) || 0.5 };
+  return { kind: 'node', nodeId: ep.nodeId, side: ep.side, t: ep.t };
+}
+
+export function assignEdgeId(edge, index) {
+  if (edge.id) return String(edge.id);
+  if (edge.kind === 'marriage') return 'marriage:' + coupleKey(edge.from, edge.to);
+  if (edge.kind === 'family-child') {
+    return 'fc:' + coupleKey(edge.parents[0], edge.parents[1] || edge.parents[0]) + ':' + edge.child;
+  }
+  return 'rel:' + edge.from + ':' + edge.to + ':' + index;
+}
+
+function edgeUsesEdgeEndpoint(edge) {
+  const src = edge.source ? ensureEndpointKind(edge.source) : null;
+  const tgt = edge.target ? ensureEndpointKind(edge.target) : null;
+  return (src && src.kind === 'edge') || (tgt && tgt.kind === 'edge');
+}
+
+function referencedEdgeIds(edge) {
+  const ids = [];
+  const src = edge.source ? ensureEndpointKind(edge.source) : null;
+  const tgt = edge.target ? ensureEndpointKind(edge.target) : null;
+  if (src && src.kind === 'edge') ids.push(src.edgeId);
+  if (tgt && tgt.kind === 'edge') ids.push(tgt.edgeId);
+  return ids;
 }
 
 function normalizeWaypoint(raw) {
@@ -144,8 +182,8 @@ function normalizeWaypoint(raw) {
 }
 
 function attachPortLayoutFields(edge, raw) {
-  const source = normalizePort(raw?.source);
-  const target = normalizePort(raw?.target);
+  const source = normalizeEndpoint(raw?.source);
+  const target = normalizeEndpoint(raw?.target);
   if (source) edge.source = source;
   if (target) edge.target = target;
   if (Array.isArray(raw?.waypoints)) {
@@ -169,12 +207,12 @@ function migrateLegacyLayoutFields(edge, raw) {
   if (fp && !edge.source) {
     const side = normalizeSide(fp.side) || guessSideFromNormPoint(fp) || 'right';
     const t = (side === 'top' || side === 'bottom') ? clamp01(Number(fp.x)) : clamp01(Number(fp.y));
-    edge.source = { nodeId: fromSlug, side, t };
+    edge.source = { kind: 'node', nodeId: fromSlug, side, t };
   }
   if (tp && !edge.target) {
     const side = normalizeSide(tp.side) || guessSideFromNormPoint(tp) || 'left';
     const t = (side === 'top' || side === 'bottom') ? clamp01(Number(tp.x)) : clamp01(Number(tp.y));
-    edge.target = { nodeId: toSlug, side, t };
+    edge.target = { kind: 'node', nodeId: toSlug, side, t };
   }
   if (!edge.waypoints || !edge.waypoints.length) {
     const wps = [];
@@ -265,6 +303,12 @@ export function normalizeCanvas(raw) {
     const norm = normalizeEdge(e);
     if (norm) edges.push(norm);
   });
+  edges.forEach(function (e, i) {
+    e.id = assignEdgeId(e, i);
+    if (e.source) e.source = ensureEndpointKind(e.source);
+    if (e.target) e.target = ensureEndpointKind(e.target);
+  });
+  migrateFamilyChildTargetsToEdge(edges);
   assignAutoLanes(edges);
   const zones = [];
   (raw.zones || []).forEach(function (z) {
@@ -317,7 +361,7 @@ export function assignAutoLanes(edges) {
 
 export const EDGE_MARKER_INSET = 14;
 export const ARROW_TIP_LEN = 10;
-export const ARROW_STUB_LEN = 20;
+export const ARROW_STUB_LEN = 24;
 export const ARROW_HEAD_WIDTH = 6;
 
 export function snapPx(v) {
@@ -400,6 +444,151 @@ export function nearestPortOnBounds(bounds, slug, px, py) {
   return { nodeId: slug, side: best.side, t: Math.max(0.08, Math.min(0.92, t)) };
 }
 
+/** パス上の弧長 t (0..1) → 点と接線 */
+export function pointAtArcLength(pts, t) {
+  if (!pts || pts.length < 2) return null;
+  t = Math.max(0, Math.min(1, Number(t) || 0));
+  let total = 0;
+  const segLens = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const len = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+    segLens.push(len);
+    total += len;
+  }
+  if (total < 1) {
+    return { point: { x: snapPx(pts[0].x), y: snapPx(pts[0].y) }, tangent: { x: 1, y: 0 } };
+  }
+  let target = t * total;
+  for (let i = 0; i < segLens.length; i++) {
+    if (target <= segLens[i] + 0.001 || i === segLens.length - 1) {
+      const localT = segLens[i] ? Math.min(1, target / segLens[i]) : 0;
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const point = {
+        x: snapPx(p1.x + (p2.x - p1.x) * localT),
+        y: snapPx(p1.y + (p2.y - p1.y) * localT),
+      };
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const len = Math.hypot(dx, dy) || 1;
+      return { point, tangent: { x: dx / len, y: dy / len } };
+    }
+    target -= segLens[i];
+  }
+  const p1 = pts[pts.length - 2];
+  const p2 = pts[pts.length - 1];
+  return {
+    point: { x: snapPx(p2.x), y: snapPx(p2.y) },
+    tangent: { x: p2.x - p1.x, y: p2.y - p1.y },
+  };
+}
+
+/** 画面上の点 → 参照パス上の最寄り弧長 t */
+export function snapArcLengthFromPoint(pts, px, py) {
+  if (!pts || pts.length < 2) return 0.5;
+  let bestT = 0;
+  let bestD = Infinity;
+  let total = 0;
+  const segLens = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    segLens.push(Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y));
+    total += segLens[i];
+  }
+  if (total < 1) return 0.5;
+  let acc = 0;
+  for (let i = 0; i < segLens.length; i++) {
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const len2 = dx * dx + dy * dy;
+    let localT = len2 ? ((px - p1.x) * dx + (py - p1.y) * dy) / len2 : 0;
+    localT = Math.max(0, Math.min(1, localT));
+    const cx = p1.x + dx * localT;
+    const cy = p1.y + dy * localT;
+    const d = Math.hypot(px - cx, py - cy);
+    if (d < bestD) {
+      bestD = d;
+      bestT = (acc + segLens[i] * localT) / total;
+    }
+    acc += segLens[i];
+  }
+  return Math.max(0.02, Math.min(0.98, bestT));
+}
+
+function vecNormalize(v) {
+  const len = Math.hypot(v.x, v.y) || 1;
+  return { x: v.x / len, y: v.y / len };
+}
+
+function normalFromTangent(tangent, towardPoint, atPoint) {
+  const perpA = vecNormalize({ x: -tangent.y, y: tangent.x });
+  const perpB = vecNormalize({ x: tangent.y, y: -tangent.x });
+  const to = { x: towardPoint.x - atPoint.x, y: towardPoint.y - atPoint.y };
+  const dotA = perpA.x * to.x + perpA.y * to.y;
+  return dotA >= 0 ? perpA : perpB;
+}
+
+function nodeCenter(node, w, h, boundsMap) {
+  const b = nodePixelBounds(node, w, h, boundsMap);
+  return { x: b.cx, y: b.cy };
+}
+
+/** Endpoint 解決: node → resolvePort / edge → 参照パス上の弧長 t */
+export function resolveEndpoint(ep, ctx, towardPoint) {
+  if (!ep) return null;
+  ep = ensureEndpointKind(ep);
+  if (ep.kind === 'node') {
+    const node = ctx.nodeMap.get(ep.nodeId);
+    if (!node) return null;
+    const bounds = nodePixelBounds(node, ctx.w, ctx.h, ctx.boundsMap);
+    const resolved = resolvePort(bounds, ep);
+    return {
+      point: resolved.point,
+      normal: resolved.normal,
+      side: resolved.side,
+      kind: 'node',
+      endpoint: ep,
+    };
+  }
+  const ref = ctx.edgePaths && ctx.edgePaths.get(ep.edgeId);
+  if (!ref || !ref.pts || ref.pts.length < 2) return null;
+  const at = pointAtArcLength(ref.pts, ep.t);
+  if (!at) return null;
+  let toward = towardPoint;
+  if (!toward) toward = at.point;
+  const normal = normalFromTangent(at.tangent, toward, at.point);
+  return {
+    point: at.point,
+    normal,
+    tangent: at.tangent,
+    kind: 'edge',
+    endpoint: ep,
+  };
+}
+
+function migrateFamilyChildTargetsToEdge(edges) {
+  const marriageByCouple = new Map();
+  edges.forEach(function (e) {
+    if (e.kind === 'marriage') marriageByCouple.set(coupleKey(e.from, e.to), e);
+  });
+  edges.forEach(function (edge) {
+    if (edge.kind !== 'family-child') return;
+    if (edge.target && edge.target.kind === 'edge') return;
+    const key = coupleKey(edge.parents[0], edge.parents[1] || edge.parents[0]);
+    const marriage = marriageByCouple.get(key);
+    if (!marriage || !marriage.id) return;
+    let t = 0.5;
+    if (edge.target && edge.target.kind === 'node') t = edge.target.t;
+    edge.target = { kind: 'edge', edgeId: marriage.id, t: Math.max(0.02, Math.min(0.98, t)) };
+  });
+}
+
+function findMarriageEdgeByParents(edges, parents) {
+  const idx = findMarriageEdgeIndex(edges, parents[0], parents[1] || parents[0]);
+  return idx >= 0 ? edges[idx] : null;
+}
+
 function defaultPortsBetweenBounds(bFrom, bTo, fromSlug, toSlug) {
   const dy = bTo.cy - bFrom.cy;
   const dx = bTo.cx - bFrom.cx;
@@ -449,56 +638,57 @@ function defaultPortsBetweenBounds(bFrom, bTo, fromSlug, toSlug) {
   };
 }
 
-export function defaultPortsForEdge(edge, nodeMap, w, h) {
+export function defaultPortsForEdge(edge, nodeMap, w, h, boundsMap, canvasEdges) {
   if (edge.kind === 'marriage' || (edge.kind === 'relation' && isCoupleLabel(edge.label))) {
     const p1 = nodeMap.get(edge.from);
     const p2 = nodeMap.get(edge.to);
     if (!p1 || !p2) return null;
-    const b1 = nodePixelBounds(p1, w, h);
-    const b2 = nodePixelBounds(p2, w, h);
+    const b1 = nodePixelBounds(p1, w, h, boundsMap);
+    const b2 = nodePixelBounds(p2, w, h, boundsMap);
     const leftSlug = b1.cx <= b2.cx ? edge.from : edge.to;
     const rightSlug = b1.cx <= b2.cx ? edge.to : edge.from;
     return {
-      source: { nodeId: leftSlug, side: 'right', t: 0.5 },
-      target: { nodeId: rightSlug, side: 'left', t: 0.5 },
+      source: { kind: 'node', nodeId: leftSlug, side: 'right', t: 0.5 },
+      target: { kind: 'node', nodeId: rightSlug, side: 'left', t: 0.5 },
     };
   }
   if (edge.kind === 'family-child') {
     const child = nodeMap.get(edge.child);
     const parent = nodeMap.get(edge.parents[0]);
     if (!child || !parent) return null;
-    const cb = nodePixelBounds(child, w, h);
-    const pb = nodePixelBounds(parent, w, h);
-    const p2 = nodeMap.get(edge.parents[1]);
+    const cb = nodePixelBounds(child, w, h, boundsMap);
+    const pb = nodePixelBounds(parent, w, h, boundsMap);
     const childBelow = cb.cy > pb.cy;
-    let targetPort = {
-      nodeId: edge.parents[0],
-      side: childBelow ? 'bottom' : 'top',
-      t: 0.5,
-    };
-    if (p2 && p2.slug !== parent.slug) {
-      const g = computeCoupleGeometry(parent, p2, w, h);
-      const tOnBar = (g.midX - pb.left) / pb.nw;
-      targetPort = {
+    const marriage = canvasEdges ? findMarriageEdgeByParents(canvasEdges, edge.parents) : null;
+    let targetEp;
+    if (marriage && marriage.id) {
+      targetEp = { kind: 'edge', edgeId: marriage.id, t: 0.5 };
+    } else {
+      targetEp = {
+        kind: 'node',
         nodeId: edge.parents[0],
         side: childBelow ? 'bottom' : 'top',
-        t: Math.max(0.08, Math.min(0.92, tOnBar)),
+        t: 0.5,
       };
     }
     return {
-      source: { nodeId: edge.child, side: childBelow ? 'top' : 'bottom', t: 0.5 },
-      target: targetPort,
+      source: { kind: 'node', nodeId: edge.child, side: childBelow ? 'top' : 'bottom', t: 0.5 },
+      target: targetEp,
     };
   }
   const fromNode = nodeMap.get(edge.from);
   const toNode = nodeMap.get(edge.to);
   if (!fromNode || !toNode) return null;
-  return defaultPortsBetweenBounds(
-    nodePixelBounds(fromNode, w, h),
-    nodePixelBounds(toNode, w, h),
+  const ports = defaultPortsBetweenBounds(
+    nodePixelBounds(fromNode, w, h, boundsMap),
+    nodePixelBounds(toNode, w, h, boundsMap),
     edge.from,
     edge.to
   );
+  return {
+    source: { kind: 'node', nodeId: ports.source.nodeId, side: ports.source.side, t: ports.source.t },
+    target: { kind: 'node', nodeId: ports.target.nodeId, side: ports.target.side, t: ports.target.t },
+  };
 }
 
 function autoWaypointsBetweenStubs(srcStub, tgtStub, srcNormal, tgtNormal) {
@@ -534,7 +724,24 @@ function dedupePoints(pts) {
   return out;
 }
 
-/** 隣接点間を水平/垂直のみに直交化 */
+/** 同一直線上の冗長な中間点を除去し、曲げ回数を最小化 */
+function simplifyCollinear(pts) {
+  if (pts.length < 3) return pts.slice();
+  const out = [pts[0]];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const a = out[out.length - 1];
+    const b = pts[i];
+    const c = pts[i + 1];
+    const collinearH = a.y === b.y && b.y === c.y;
+    const collinearV = a.x === b.x && b.x === c.x;
+    if (collinearH || collinearV) continue;
+    out.push(b);
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+
+/** 隣接点間を水平/垂直のみに直交化（冗長点は除去） */
 export function orthogonalizePath(pts) {
   if (pts.length < 2) return pts.slice();
   const out = [{ x: snapPx(pts[0].x), y: snapPx(pts[0].y) }];
@@ -548,7 +755,7 @@ export function orthogonalizePath(pts) {
       out.push(cur);
     }
   }
-  return dedupePoints(out);
+  return simplifyCollinear(dedupePoints(out));
 }
 
 /**
@@ -598,10 +805,14 @@ function pathToSegments(pts, opts) {
   return { segments, hitTargets };
 }
 
+/**
+ * 矢頭ポリゴン。tip は辺上の点、矢頭は辺の外側（normal方向）に置き、
+ * 尖りが辺＝カードに向かって刺さる。カードへの食い込みを防ぐ。
+ */
 export function arrowPolygonPoints(tip, normal, tipLen, halfWidth) {
   tipLen = tipLen == null ? ARROW_TIP_LEN : tipLen;
   halfWidth = halfWidth == null ? ARROW_HEAD_WIDTH : halfWidth;
-  const back = vecAdd(tip, vecScale(normal, -tipLen));
+  const back = vecAdd(tip, vecScale(normal, tipLen));
   const ortho = { x: -normal.y, y: normal.x };
   return {
     tip,
@@ -642,22 +853,71 @@ function buildAutoLabel(pts, text, preferVertical) {
   return null;
 }
 
+/** パス上の曲がり角ハンドル（手動 waypoint + 自動コーナー） */
+export function extractPathCornerHandles(pts, waypointsPx) {
+  if (!pts || pts.length < 3) return [];
+  const manualByKey = new Map();
+  (waypointsPx || []).forEach(function (wp, idx) {
+    manualByKey.set(snapPx(wp.x) + ',' + snapPx(wp.y), idx);
+  });
+  const handles = [];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const prev = pts[i - 1];
+    const cur = pts[i];
+    const next = pts[i + 1];
+    const collinearH = prev.y === cur.y && cur.y === next.y;
+    const collinearV = prev.x === cur.x && cur.x === next.x;
+    if (collinearH || collinearV) continue;
+    const key = snapPx(cur.x) + ',' + snapPx(cur.y);
+    if (manualByKey.has(key)) {
+      handles.push({ x: cur.x, y: cur.y, index: manualByKey.get(key), auto: false });
+      manualByKey.delete(key);
+    } else {
+      handles.push({ x: cur.x, y: cur.y, index: -1, auto: true });
+    }
+  }
+  manualByKey.forEach(function (idx, key) {
+    const parts = key.split(',');
+    handles.push({ x: Number(parts[0]), y: Number(parts[1]), index: idx, auto: false });
+  });
+  return handles;
+}
+
 /** エッジ1本のジオメトリ（単一入口） */
 export function computeEdgeGeometry(edge, nodeMap, w, h, options) {
   options = options || {};
-  const defaults = defaultPortsForEdge(edge, nodeMap, w, h);
+  const boundsMap = options.boundsMap || null;
+  const edgePaths = options.edgePaths || null;
+  const canvasEdges = options.canvas || null;
+  const defaults = defaultPortsForEdge(edge, nodeMap, w, h, boundsMap, canvasEdges);
   if (!defaults) return null;
 
-  const sourcePort = edge.source || defaults.source;
-  const targetPort = edge.target || defaults.target;
-  const srcNode = nodeMap.get(sourcePort.nodeId);
-  const tgtNode = nodeMap.get(targetPort.nodeId);
-  if (!srcNode || !tgtNode) return null;
+  const sourceEp = ensureEndpointKind(edge.source || defaults.source);
+  const targetEp = ensureEndpointKind(edge.target || defaults.target);
+  const ctx = { nodeMap, w, h, boundsMap, edgePaths };
 
-  const srcBounds = nodePixelBounds(srcNode, w, h);
-  const tgtBounds = nodePixelBounds(tgtNode, w, h);
-  const srcResolved = resolvePort(srcBounds, sourcePort);
-  const tgtResolved = resolvePort(tgtBounds, targetPort);
+  const childNode = edge.kind === 'family-child' ? nodeMap.get(edge.child) : null;
+  const childCenter = childNode ? nodeCenter(childNode, w, h, boundsMap) : null;
+  const towardForTarget = childCenter;
+  let towardForSource = null;
+  if (targetEp.kind === 'node') {
+    const tn = nodeMap.get(targetEp.nodeId);
+    if (tn) towardForSource = nodeCenter(tn, w, h, boundsMap);
+  } else if (targetEp.kind === 'edge' && edgePaths) {
+    const ref = edgePaths.get(targetEp.edgeId);
+    if (ref && ref.pts) {
+      const at = pointAtArcLength(ref.pts, targetEp.t);
+      if (at) towardForSource = at.point;
+    }
+  }
+  if (sourceEp.kind === 'node') {
+    const sn = nodeMap.get(sourceEp.nodeId);
+    if (sn && !towardForTarget) towardForSource = nodeCenter(sn, w, h, boundsMap);
+  }
+
+  const tgtResolved = resolveEndpoint(targetEp, ctx, towardForTarget || childCenter);
+  const srcResolved = resolveEndpoint(sourceEp, ctx, towardForSource || (tgtResolved && tgtResolved.point));
+  if (!srcResolved || !tgtResolved) return null;
 
   const waypointsPx = (edge.waypoints || []).map(function (wp) {
     return { x: wp.x * w, y: wp.y * h };
@@ -688,30 +948,36 @@ export function computeEdgeGeometry(edge, nodeMap, w, h, options) {
   }
 
   const waypointHandles = (edge.waypoints || []).map(function (wp, idx) {
-    return { x: wp.x * w, y: wp.y * h, index: idx };
+    return { x: wp.x * w, y: wp.y * h, index: idx, auto: false };
   });
-  if (!waypointHandles.length && pts.length > 4) {
-    for (let i = 2; i < pts.length - 2; i++) {
-      waypointHandles.push({ x: pts[i].x, y: pts[i].y, index: -1, auto: true });
-    }
-  }
+  const cornerHandles = extractPathCornerHandles(pts, waypointsPx);
+
+  const srcAngle = srcResolved.side != null
+    ? inwardAngleForSide(srcResolved.side)
+    : snapAngleDeg(Math.atan2(-srcResolved.normal.y, -srcResolved.normal.x) * 180 / Math.PI);
+  const tgtAngle = tgtResolved.side != null
+    ? inwardAngleForSide(tgtResolved.side)
+    : snapAngleDeg(Math.atan2(-tgtResolved.normal.y, -tgtResolved.normal.x) * 180 / Math.PI);
 
   return {
     segments,
     hitTargets,
     labels,
     pts,
-    sourcePort,
-    targetPort,
+    sourceEp,
+    targetEp,
     sourceResolved: srcResolved,
     targetResolved: tgtResolved,
     endpointFrom: srcResolved.point,
     endpointTo: tgtResolved.point,
-    endpointFromAngle: inwardAngleForSide(srcResolved.side),
-    endpointToAngle: inwardAngleForSide(tgtResolved.side),
+    endpointFromKind: srcResolved.kind,
+    endpointToKind: tgtResolved.kind,
+    endpointFromAngle: srcAngle,
+    endpointToAngle: tgtAngle,
     arrowFrom: arrowPolygonPoints(srcResolved.point, srcResolved.normal),
     arrowTo: arrowPolygonPoints(tgtResolved.point, tgtResolved.normal),
     waypointHandles,
+    cornerHandles,
     bidirectional,
     directed,
   };
@@ -803,7 +1069,15 @@ export function segmentBetweenBounds(bA, bB, inset) {
   return { x1: pA.x, y1: pA.y, x2: pB.x, y2: pB.y };
 }
 
-export function nodePixelBounds(node, w, h) {
+/**
+ * ノードのカード外枠（px）。boundsMap があれば DOM 計測値を優先。
+ * フォールバックは BASE_CARD_W/H の理論値（getBoundingClientRect は使わない）。
+ */
+export function nodePixelBounds(node, w, h, boundsMap) {
+  if (boundsMap && typeof boundsMap.get === 'function') {
+    const dom = boundsMap.get(node.slug);
+    if (dom) return dom;
+  }
   const scale = nodeScale(node.size);
   const cx = node.x * w;
   const cy = node.y * h;
@@ -821,9 +1095,20 @@ export function nodePixelBounds(node, w, h) {
   };
 }
 
-export function computeCoupleGeometry(p1, p2, w, h) {
-  const b1 = nodePixelBounds(p1, w, h);
-  const b2 = nodePixelBounds(p2, w, h);
+/** stage 相対の DOM 矩形 → カード外枠 bounds */
+export function boundsFromDomRect(elRect, stageRect) {
+  const left = snapPx(elRect.left - stageRect.left);
+  const top = snapPx(elRect.top - stageRect.top);
+  const right = snapPx(elRect.right - stageRect.left);
+  const bottom = snapPx(elRect.bottom - stageRect.top);
+  const nw = right - left;
+  const nh = bottom - top;
+  return { left, right, top, bottom, nw, nh, cx: left + nw / 2, cy: top + nh / 2 };
+}
+
+export function computeCoupleGeometry(p1, p2, w, h, boundsMap) {
+  const b1 = nodePixelBounds(p1, w, h, boundsMap);
+  const b2 = nodePixelBounds(p2, w, h, boundsMap);
   const leftBounds = b1.cx <= b2.cx ? b1 : b2;
   const rightBounds = b1.cx <= b2.cx ? b2 : b1;
   const barY = (leftBounds.cy + rightBounds.cy) / 2;
@@ -1336,20 +1621,44 @@ export function shiftEdgeEndpointsForNode(edges, slug, dx, dy) {
 
 export function resolveEndpointNodeSlug(edge, role) {
   if (edge.kind === 'family-child') {
-    return role === 'from' ? edge.child : (edge.parents && edge.parents[0]);
+    if (role === 'from') return edge.child;
+    const tgt = edge.target ? ensureEndpointKind(edge.target) : null;
+    if (tgt && tgt.kind === 'node') return tgt.nodeId;
+    return edge.parents && edge.parents[0];
   }
   if (role === 'from') {
-    return (edge.source && edge.source.nodeId) || edge.from;
+    const src = edge.source ? ensureEndpointKind(edge.source) : null;
+    if (src && src.kind === 'node') return src.nodeId;
+    return edge.from;
   }
-  return (edge.target && edge.target.nodeId) || edge.to;
+  const tgt = edge.target ? ensureEndpointKind(edge.target) : null;
+  if (tgt && tgt.kind === 'node') return tgt.nodeId;
+  return edge.to;
 }
 
-/** 端点ドラッグ → 最寄りポートへ写像 */
-export function snapEndpointNormForEdge(edge, role, norm, canvas, w, h) {
+/** 端点ドラッグ → 最寄りポート or 参照エッジ上の弧長 t */
+export function snapEndpointNormForEdge(edge, role, norm, canvas, w, h, boundsMap, edgePaths) {
+  const epRaw = role === 'from' ? edge.source : edge.target;
+  const ep = epRaw ? ensureEndpointKind(epRaw) : null;
+  if (ep && ep.kind === 'edge') {
+    const ref = edgePaths && edgePaths.get(ep.edgeId);
+    if (!ref || !ref.pts) return { x: norm.x, y: norm.y, endpoint: ep };
+    const px = norm.x * w;
+    const py = norm.y * h;
+    const t = snapArcLengthFromPoint(ref.pts, px, py);
+    const endpoint = { kind: 'edge', edgeId: ep.edgeId, t };
+    const at = pointAtArcLength(ref.pts, t);
+    if (!at) return { x: norm.x, y: norm.y, endpoint };
+    return {
+      x: clamp01(at.point.x / w),
+      y: clamp01(at.point.y / h),
+      endpoint,
+    };
+  }
   const slug = resolveEndpointNodeSlug(edge, role);
   const node = canvas.nodes.find(function (n) { return n.slug === slug; });
-  if (!node) return norm;
-  const bounds = nodePixelBounds(node, w, h);
+  if (!node) return { x: norm.x, y: norm.y, endpoint: ep };
+  const bounds = nodePixelBounds(node, w, h, boundsMap);
   const port = nearestPortOnBounds(bounds, slug, norm.x * w, norm.y * h);
   const resolved = resolvePort(bounds, port);
   return {
@@ -1357,18 +1666,25 @@ export function snapEndpointNormForEdge(edge, role, norm, canvas, w, h) {
     y: clamp01(resolved.point.y / h),
     side: port.side,
     port,
+    endpoint: { kind: 'node', nodeId: port.nodeId, side: port.side, t: port.t },
   };
 }
 
-export function applyPortDrag(edge, role, port) {
-  if (!port) return;
-  if (role === 'from') edge.source = { nodeId: port.nodeId, side: port.side, t: port.t };
-  else edge.target = { nodeId: port.nodeId, side: port.side, t: port.t };
+export function applyEndpointDrag(edge, role, endpoint) {
+  if (!endpoint) return;
+  const ep = ensureEndpointKind(endpoint);
+  if (role === 'from') edge.source = ep;
+  else edge.target = ep;
   delete edge.fromPoint;
   delete edge.toPoint;
   delete edge.jointMidX;
   delete edge.jointMidY;
   delete edge.elbowPoint;
+}
+
+export function applyPortDrag(edge, role, port) {
+  if (!port) return;
+  applyEndpointDrag(edge, role, { kind: 'node', nodeId: port.nodeId, side: port.side, t: port.t });
 }
 
 export function clearEdgeManualLayout(edge) {
@@ -1395,10 +1711,70 @@ function edgeTitle(edge, personName) {
   return personName(edge.from) + ' → ' + personName(edge.to);
 }
 
+function shouldSkipEdgeInPlan(edge, marriageByCouple) {
+  if (edge.kind === 'relation' && isCoupleLabel(edge.label)) {
+    const pairKey = coupleKey(edge.from, edge.to);
+    if (marriageByCouple.has(pairKey)) return true;
+  }
+  if (edge.kind === 'relation' && marriageByCouple.has(coupleKey(edge.from, edge.to))) return true;
+  return false;
+}
+
+function referencesReach(fromId, toId, edgeById, visited) {
+  if (fromId === toId) return true;
+  if (visited.has(fromId)) return false;
+  visited.add(fromId);
+  const e = edgeById.get(fromId);
+  if (!e) return false;
+  const refs = referencedEdgeIds(e);
+  for (let i = 0; i < refs.length; i++) {
+    if (referencesReach(refs[i], toId, edgeById, visited)) return true;
+  }
+  return false;
+}
+
+function makeEdgePlanItem(index, edge, geom, nameFn) {
+  return {
+    index,
+    zIndex: edge.zIndex || 0,
+    kind: edge.kind,
+    segments: geom.segments,
+    labels: geom.labels,
+    pts: geom.pts,
+    hitSegments: geom.segments.slice(),
+    hitTargets: geom.hitTargets.map(function (hit) {
+      return {
+        edgeIndex: index,
+        x1: hit.x1,
+        y1: hit.y1,
+        x2: hit.x2,
+        y2: hit.y2,
+      };
+    }),
+    title: edgeTitle(edge, nameFn),
+    selected: false,
+    endpointFrom: geom.endpointFrom,
+    endpointTo: geom.endpointTo,
+    endpointFromKind: geom.endpointFromKind,
+    endpointToKind: geom.endpointToKind,
+    endpointFromAngle: geom.endpointFromAngle,
+    endpointToAngle: geom.endpointToAngle,
+    arrowFrom: geom.arrowFrom,
+    arrowTo: geom.arrowTo,
+    waypointHandles: geom.waypointHandles,
+    cornerHandles: geom.cornerHandles,
+    bidirectional: geom.bidirectional,
+    directed: geom.directed,
+    draggableEndpoints: true,
+  };
+}
+
 /**
- * 描画プリミティブを生成（単一ルータ経由）
+ * 描画プリミティブを生成（2パス: node-node → edge参照）
  */
-export function buildRenderPlan(canvas, w, h, personName) {
+export function buildRenderPlan(canvas, w, h, personName, options) {
+  options = options || {};
+  const boundsMap = options.boundsMap || null;
   const nodeMap = new Map(canvas.nodes.map(function (n) { return [n.slug, n]; }));
   const nameFn = personName || function (s) { return s; };
 
@@ -1407,48 +1783,77 @@ export function buildRenderPlan(canvas, w, h, personName) {
     if (e.kind === 'marriage') marriageByCouple.set(coupleKey(e.from, e.to), index);
   });
 
+  const edgePaths = new Map();
+  const edgeById = new Map();
+  canvas.edges.forEach(function (e) {
+    if (e.id) edgeById.set(e.id, e);
+  });
+
   const edgeItems = [];
+  const itemByIndex = new Map();
+
+  function storeGeom(index, edge, geom) {
+    if (geom && edge.id) edgePaths.set(edge.id, { pts: geom.pts, index, geom });
+    if (geom) {
+      const item = makeEdgePlanItem(index, edge, geom, nameFn);
+      itemByIndex.set(index, item);
+    }
+  }
+
+  // パス1: source/target とも kind:'node'
+  canvas.edges.forEach(function (edge, index) {
+    if (shouldSkipEdgeInPlan(edge, marriageByCouple)) return;
+    if (edgeUsesEdgeEndpoint(edge)) return;
+    const geom = computeEdgeGeometry(edge, nodeMap, w, h, {
+      boundsMap,
+      edgePaths,
+      canvas: canvas.edges,
+    });
+    storeGeom(index, edge, geom);
+  });
+
+  // パス2: kind:'edge' を含むエッジ（参照先が揃うまで反復）
+  const pass2Indices = [];
+  canvas.edges.forEach(function (edge, index) {
+    if (shouldSkipEdgeInPlan(edge, marriageByCouple)) return;
+    if (!edgeUsesEdgeEndpoint(edge)) return;
+    pass2Indices.push(index);
+  });
+
+  let progress = true;
+  let guard = pass2Indices.length + 2;
+  while (progress && guard-- > 0) {
+    progress = false;
+    pass2Indices.forEach(function (index) {
+      if (itemByIndex.has(index)) return;
+      const edge = canvas.edges[index];
+      const refs = referencedEdgeIds(edge);
+      for (let i = 0; i < refs.length; i++) {
+        if (!edgePaths.has(refs[i])) return;
+        if (referencesReach(refs[i], edge.id, edgeById, new Set())) {
+          console.warn('[chart-layout] 循環参照を検出、エッジをスキップ:', edge.id, '→', refs[i]);
+          itemByIndex.set(index, null);
+          return;
+        }
+      }
+      const geom = computeEdgeGeometry(edge, nodeMap, w, h, {
+        boundsMap,
+        edgePaths,
+        canvas: canvas.edges,
+      });
+      if (!geom) {
+        console.warn('[chart-layout] 参照先未計算、エッジをスキップ:', edge.id);
+        return;
+      }
+      storeGeom(index, edge, geom);
+      progress = true;
+    });
+  }
 
   canvas.edges.forEach(function (edge, index) {
-    if (edge.kind === 'relation' && isCoupleLabel(edge.label)) {
-      const pairKey = coupleKey(edge.from, edge.to);
-      if (marriageByCouple.has(pairKey)) return;
-    }
-    if (edge.kind === 'relation' && marriageByCouple.has(coupleKey(edge.from, edge.to))) return;
-
-    const geom = computeEdgeGeometry(edge, nodeMap, w, h);
-    if (!geom) return;
-
-    const item = {
-      index,
-      zIndex: edge.zIndex || 0,
-      kind: edge.kind,
-      segments: geom.segments,
-      labels: geom.labels,
-      hitSegments: geom.segments.slice(),
-      hitTargets: geom.hitTargets.map(function (hit) {
-        return {
-          edgeIndex: index,
-          x1: hit.x1,
-          y1: hit.y1,
-          x2: hit.x2,
-          y2: hit.y2,
-        };
-      }),
-      title: edgeTitle(edge, nameFn),
-      selected: false,
-      endpointFrom: geom.endpointFrom,
-      endpointTo: geom.endpointTo,
-      endpointFromAngle: geom.endpointFromAngle,
-      endpointToAngle: geom.endpointToAngle,
-      arrowFrom: geom.arrowFrom,
-      arrowTo: geom.arrowTo,
-      waypointHandles: geom.waypointHandles,
-      bidirectional: geom.bidirectional,
-      directed: geom.directed,
-      draggableEndpoints: true,
-    };
-    edgeItems.push(item);
+    if (shouldSkipEdgeInPlan(edge, marriageByCouple)) return;
+    const item = itemByIndex.get(index);
+    if (item) edgeItems.push(item);
   });
 
   edgeItems.sort(function (a, b) { return a.zIndex - b.zIndex; });
@@ -1469,7 +1874,7 @@ export function buildRenderPlan(canvas, w, h, personName) {
       };
     });
 
-  return { zones, edges: edgeItems };
+  return { zones, edges: edgeItems, edgePaths };
 }
 
 export function findRelationEdgeIndex(edges, from, to, directed) {

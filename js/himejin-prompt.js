@@ -2,7 +2,7 @@
  * ひめじん AI 肖像 — プロンプト自動組み立て（フェーズB）
  * real_name は使わない。種族ラベルでスタイルは変えない。
  * gen_* が入力されていれば {人物描写} に優先反映する。
- * 外見メモは Appearance: 行として独立配置（日本語のまま）。
+ * 外見メモは Appearance: 行として独立配置し、英語に変換して反映する。
  */
 
 /** 公開情報フォールバック用（従来テンプレート・変更しない） */
@@ -49,6 +49,101 @@ const AGE_RANGE_MAP = [
   { pattern: /70代|七十代|70s/, en: 'in their 70s' },
 ];
 
+/** 長い語句から優先マッチ（服装・小物・雰囲気） */
+const APPEARANCE_PHRASE_MAP = [
+  ['ハンチング帽', 'hunting cap'],
+  ['ハンチング', 'hunting cap'],
+  ['白シャツ', 'white shirt'],
+  ['黒シャツ', 'black shirt'],
+  ['青シャツ', 'blue shirt'],
+  ['チェックシャツ', 'checkered shirt'],
+  ['オックスフォードシャツ', 'oxford shirt'],
+  ['ショートヘア', 'short hair'],
+  ['短髪', 'short hair'],
+  ['ロングヘア', 'long hair'],
+  ['長髪', 'long hair'],
+  ['ボブヘア', 'bob haircut'],
+  ['ミディアムヘア', 'medium-length hair'],
+  ['丸眼鏡', 'round glasses'],
+  ['眼鏡', 'glasses'],
+  ['メガネ', 'glasses'],
+  ['ひげ', 'facial hair'],
+  ['髭', 'facial hair'],
+  ['白髪', 'gray hair'],
+  ['細身', 'slim build'],
+  ['がっしり', 'sturdy build'],
+  ['小柄', 'petite stature'],
+  ['背が高い', 'tall stature'],
+  ['明るい雰囲気', 'bright and approachable demeanor'],
+  ['落ち着いた雰囲気', 'calm and composed demeanor'],
+  ['穏やかな雰囲気', 'gentle demeanor'],
+  ['穏やか', 'gentle demeanor'],
+  ['物静か', 'quiet demeanor'],
+  ['活発', 'energetic demeanor'],
+  ['知的', 'intellectual look'],
+  ['上品', 'refined look'],
+  ['カジュアル', 'casual style'],
+  ['ジャケット', 'jacket'],
+  ['ブレザー', 'blazer'],
+  ['コート', 'coat'],
+  ['トレンチコート', 'trench coat'],
+  ['セーター', 'sweater'],
+  ['ニット', 'knit sweater'],
+  ['パーカー', 'hoodie'],
+  ['ジーンズ', 'jeans'],
+  ['ズボン', 'trousers'],
+  ['パンツ', 'pants'],
+  ['スカート', 'skirt'],
+  ['ワンピース', 'dress'],
+  ['スーツ', 'suit'],
+  ['ネクタイ', 'necktie'],
+  ['マフラー', 'scarf'],
+  ['バッグ', 'bag'],
+  ['腕時計', 'wristwatch'],
+  ['帽子', 'hat'],
+  ['キャップ', 'cap'],
+  ['麦わら帽子', 'straw hat'],
+  ['ベレー帽', 'beret'],
+  ['マスク', 'face mask'],
+];
+
+const APPEARANCE_COLOR_MAP = [
+  ['ベージュ', 'beige'],
+  ['グレー', 'gray'],
+  ['灰色', 'gray'],
+  ['白', 'white'],
+  ['黒', 'black'],
+  ['紺', 'navy'],
+  ['青', 'blue'],
+  ['赤', 'red'],
+  ['緑', 'green'],
+  ['茶', 'brown'],
+  ['黄', 'yellow'],
+  ['ピンク', 'pink'],
+];
+
+const APPEARANCE_ITEM_MAP = [
+  ['シャツ', 'shirt'],
+  ['Tシャツ', 't-shirt'],
+  ['ティーシャツ', 't-shirt'],
+  ['帽', 'cap'],
+  ['ズ', ''], // avoid partial - skip
+];
+
+/** 色＋品詞の分解用（帽は cap） */
+const APPEARANCE_SUFFIX_MAP = [
+  ['シャツ', 'shirt'],
+  ['帽', 'cap'],
+  ['コート', 'coat'],
+  ['ジャケット', 'jacket'],
+  ['セーター', 'sweater'],
+  ['パンツ', 'pants'],
+  ['ズボン', 'trousers'],
+  ['スカート', 'skirt'],
+  ['ネクタイ', 'necktie'],
+  ['帽子', 'hat'],
+];
+
 export function summarizeIntro(intro, maxLen) {
   if (maxLen == null) maxLen = 100;
   return String(intro || '').trim().slice(0, maxLen);
@@ -84,9 +179,90 @@ export function mapAgeRangeToEnglish(ageRange) {
   return 'around ' + raw;
 }
 
-/** 外見メモは日本語のまま Appearance 行へ（翻訳・埋め込みしない） */
-export function formatAppearanceNotes(notes) {
-  return String(notes || '').trim();
+function isMostlyEnglish(text) {
+  return /^[\x20-\x7E\s.,'"-]+$/.test(text);
+}
+
+function translateAppearanceChunk(chunk) {
+  const raw = String(chunk || '').trim();
+  if (!raw) return '';
+
+  if (isMostlyEnglish(raw)) return raw;
+
+  for (let i = 0; i < APPEARANCE_PHRASE_MAP.length; i++) {
+    if (raw === APPEARANCE_PHRASE_MAP[i][0] || raw.indexOf(APPEARANCE_PHRASE_MAP[i][0]) !== -1) {
+      if (raw === APPEARANCE_PHRASE_MAP[i][0]) {
+        return APPEARANCE_PHRASE_MAP[i][1];
+      }
+    }
+  }
+
+  for (let i = 0; i < APPEARANCE_PHRASE_MAP.length; i++) {
+    if (raw.indexOf(APPEARANCE_PHRASE_MAP[i][0]) !== -1) {
+      return APPEARANCE_PHRASE_MAP[i][1];
+    }
+  }
+
+  let colorEn = '';
+  let rest = raw;
+  for (let i = 0; i < APPEARANCE_COLOR_MAP.length; i++) {
+    if (rest.indexOf(APPEARANCE_COLOR_MAP[i][0]) === 0) {
+      colorEn = APPEARANCE_COLOR_MAP[i][1];
+      rest = rest.slice(APPEARANCE_COLOR_MAP[i][0].length);
+      break;
+    }
+  }
+
+  let itemEn = '';
+  for (let i = 0; i < APPEARANCE_SUFFIX_MAP.length; i++) {
+    if (rest === APPEARANCE_SUFFIX_MAP[i][0] || rest.endsWith(APPEARANCE_SUFFIX_MAP[i][0])) {
+      itemEn = APPEARANCE_SUFFIX_MAP[i][1];
+      if (rest !== APPEARANCE_SUFFIX_MAP[i][0]) {
+        const prefix = rest.slice(0, rest.length - APPEARANCE_SUFFIX_MAP[i][0].length);
+        if (prefix) {
+          const prefixEn = translateAppearanceChunk(prefix);
+          if (prefixEn && prefixEn !== prefix) {
+            return prefixEn + ' ' + itemEn;
+          }
+        }
+      }
+      break;
+    }
+  }
+
+  if (colorEn && itemEn) {
+    return colorEn + ' ' + itemEn;
+  }
+  if (itemEn) {
+    return (colorEn ? colorEn + ' ' : '') + itemEn;
+  }
+  if (colorEn && rest) {
+    return colorEn + ' ' + rest;
+  }
+
+  return raw;
+}
+
+/** 外見メモを英語に変換して Appearance 行へ */
+export function translateAppearanceNotes(notes) {
+  const raw = String(notes || '').trim();
+  if (!raw) return '';
+
+  if (isMostlyEnglish(raw)) return raw;
+
+  const chunks = raw.split(/[、,]/).map((s) => s.trim()).filter(Boolean);
+  const translated = [];
+  const used = new Set();
+
+  for (let i = 0; i < chunks.length; i++) {
+    const en = translateAppearanceChunk(chunks[i]);
+    if (en && !used.has(en)) {
+      translated.push(en);
+      used.add(en);
+    }
+  }
+
+  return translated.join(', ');
 }
 
 export function buildCharacterDescriptionFromGen(fields) {
@@ -150,7 +326,7 @@ export function buildHimejinPrompt(fields) {
 
   if (hasGenAttributes(fields)) {
     const charDesc = buildCharacterDescriptionFromGen(fields);
-    const appearanceNotes = formatAppearanceNotes(fields.gen_appearance_notes);
+    const appearanceNotes = translateAppearanceNotes(fields.gen_appearance_notes);
     let prompt = 'Candid film still from a modern Japanese TV drama, ' + charDesc + '.';
     if (appearanceNotes) {
       prompt += ' Appearance: ' + appearanceNotes + '.';

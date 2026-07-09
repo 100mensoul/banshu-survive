@@ -3,8 +3,6 @@
  * 座標: スポットは正規化 (0–1) で保存。地形編集はワールド座標。
  */
 import * as THREE from 'three';
-import { attachPointerInput } from './world/input-touch.js';
-import { initAtmosphere, updateAtmosphere, timeOfDayLabel } from './world/atmosphere.js';
 
 const LAYER_ID = 'hirao';
 const PERSON_M = 1.7;
@@ -82,12 +80,6 @@ const WORLD_PRESETS = {
     brushRadius: 48,
     orbitDefault: 580,
     planZoomMin: 0.5,
-    atmosphere: {
-      dawn: { fog: '#9aacbc', skyTop: '#6888a8', skyBottom: '#b0c0cc' },
-      day: { fog: '#b8c8d8', skyTop: '#5a98c8', skyBottom: '#d0e0ec' },
-      dusk: { fog: '#c8a878', skyTop: '#d87838', skyBottom: '#e8d0a8' },
-      night: { fog: '#283848', skyTop: '#101820', skyBottom: '#384858' },
-    },
   },
   'hime-memory': {
     worldId: 'hime-memory',
@@ -110,12 +102,6 @@ const WORLD_PRESETS = {
     orbitDefault: 1400,
     planZoomDefault: 2.8,
     planZoomMin: 1.0,
-    atmosphere: {
-      dawn: { fog: '#c0c4c8', skyTop: '#9098a8', skyBottom: '#d8dce0' },
-      day: { fog: '#d4dce4', skyTop: '#78b0d8', skyBottom: '#e4ecf2' },
-      dusk: { fog: '#d8b898', skyTop: '#e89058', skyBottom: '#ecdcc8' },
-      night: { fog: '#343840', skyTop: '#181c24', skyBottom: '#484c58' },
-    },
   },
   'konui-michi': {
     worldId: 'konui-michi',
@@ -153,12 +139,6 @@ const WORLD_PRESETS = {
       gridCell: 25,
       orbitDefault: 280,
       brushRadius: 12,
-    },
-    atmosphere: {
-      dawn: { fog: '#b8c8b0', skyTop: '#88a898', skyBottom: '#ccd8c4' },
-      day: { fog: '#c8d8c8', skyTop: '#68a8d0', skyBottom: '#dce8dc' },
-      dusk: { fog: '#d8c0a0', skyTop: '#e89850', skyBottom: '#e8dcc0' },
-      night: { fog: '#384838', skyTop: '#182820', skyBottom: '#485848' },
     },
   },
 };
@@ -342,20 +322,6 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   const sun = new THREE.DirectionalLight(0xfff0d8, 0.8);
   sun.position.set(120, 180, 80);
   scene.add(sun);
-
-  const atmosphereState = initAtmosphere(scene);
-  let timeOfDay = 0.35;
-
-  function syncAtmosphere() {
-    const span = Math.max(SIZE_X || SIZE || 500, SIZE_Z || SIZE || 500);
-    updateAtmosphere(atmosphereState, {
-      enabled: viewMode === '3d',
-      worldSize: span,
-      altUnits: heronAltUnits(),
-      timeOfDay,
-      palette: preset().atmosphere,
-    });
-  }
 
   const guideTextureLoader = new THREE.TextureLoader();
   let guidePlane = null;
@@ -3822,10 +3788,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (!land) {
       syncKonuiViewToggle();
       updateCam();
-      syncAtmosphere();
       return;
     }
-    syncAtmosphere();
+    scene.fog = null;
     wireMesh.material.opacity = mode === 'plan' ? 0.35 : 0.05;
     gridHelper.material.opacity = mode === 'plan' ? 0.45 : 0.15;
     land.material.flatShading = mode === 'plan';
@@ -3848,7 +3813,6 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     updateZoneLinkPositions();
     updateGuideUI();
     updateCam();
-    syncAtmosphere();
   }
 
   function setupMinimapCamera() {
@@ -4414,25 +4378,6 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
   if (presetNextBtn) presetNextBtn.addEventListener('click', () => switchPresetStep(1));
   syncPresetNav();
 
-  const timeOfDaySlider = document.getElementById('world-map-time-of-day');
-  const timeOfDayLabelEl = document.getElementById('world-map-time-of-day-label');
-  function syncTimeOfDayUI() {
-    if (timeOfDaySlider) timeOfDaySlider.value = String(Math.round(timeOfDay * 100));
-    if (timeOfDayLabelEl) timeOfDayLabelEl.textContent = timeOfDayLabel(timeOfDay);
-  }
-  if (timeOfDaySlider) {
-    timeOfDaySlider.addEventListener('input', () => {
-      timeOfDay = (parseInt(timeOfDaySlider.value, 10) || 35) / 100;
-      syncTimeOfDayUI();
-      syncAtmosphere();
-    });
-  }
-  syncTimeOfDayUI();
-  if (readOnly) {
-    const atmosphereBar = document.getElementById('world-map-atmosphere-bar');
-    if (atmosphereBar) atmosphereBar.hidden = true;
-  }
-
   const guideToggleBtn = document.getElementById('world-map-guide-toggle');
   if (guideToggleBtn) {
     guideToggleBtn.addEventListener('click', () => {
@@ -4529,31 +4474,12 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
   renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  function applyZoomFromWheelDelta(deltaY) {
-    if (viewMode === 'plan') {
-      planZoom = Math.max(
-        planZoomMin(),
-        Math.min(PLAN_ZOOM_MAX, planZoom * Math.exp(-deltaY * 0.0012)),
-      );
-    } else {
-      orbit = Math.max(orbitMin(), Math.min(orbitMax(), orbit * Math.exp(deltaY * 0.0012)));
-    }
-  }
-
-  function applyZoomFromPinchRatio(ratio) {
-    if (!isFinite(ratio) || ratio <= 0) return;
-    if (viewMode === 'plan') {
-      planZoom = Math.max(planZoomMin(), Math.min(PLAN_ZOOM_MAX, planZoom / ratio));
-    } else {
-      orbit = Math.max(orbitMin(), Math.min(orbitMax(), orbit / ratio));
-    }
-  }
-
-  function handleCanvasPointerDown(e) {
+  renderer.domElement.addEventListener('mousedown', (e) => {
     const panDrag = e.button === 1 || e.button === 2 || (e.button === 0 && e.shiftKey);
 
     if (readOnly) {
-      dragMode = panDrag || viewMode === 'plan' ? 'planpan' : 'orbit';
+      // 平面ビューはドラッグで地図移動、立体ビューはドラッグで角度回転
+      dragMode = (panDrag || viewMode === 'plan') ? 'planpan' : 'orbit';
       ox = e.clientX;
       oy = e.clientY;
       if (panDrag) e.preventDefault();
@@ -4569,6 +4495,7 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     }
 
     if (tool === 'look') {
+      // 平面ビューはドラッグで地図移動、立体ビューはドラッグで角度回転
       dragMode = viewMode === 'plan' ? 'planpan' : 'orbit';
       ox = e.clientX;
       oy = e.clientY;
@@ -4631,9 +4558,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       ox = e.clientX;
       oy = e.clientY;
     }
-  }
+  });
 
-  function handleCanvasPointerMove(e) {
+  window.addEventListener('mousemove', (e) => {
     if (draggingSpot) {
       const p = pickGround(e);
       if (p) {
@@ -4690,9 +4617,9 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
     if (previewToolActive() && !painting && !draggingSpot) {
       updateRiverPreview(pickGround(e));
     }
-  }
+  });
 
-  function handleCanvasPointerUp(e) {
+  window.addEventListener('mouseup', () => {
     const didSculpt = painting;
     const didSpotDrag = spotDragMoved;
     if (painting && sculptCenter && (lastSculptTool === 'raise' || lastSculptTool === 'lower')) {
@@ -4714,56 +4641,21 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
       spotClickAt = null;
     }
     if (didSculpt || didSpotDrag) pushHistory();
-  }
-
-  attachPointerInput(renderer.domElement, {
-    getViewMode: () => viewMode,
-    onStrokeDown: handleCanvasPointerDown,
-    onStrokeMove: handleCanvasPointerMove,
-    onStrokeUp: handleCanvasPointerUp,
-    onStrokeCancel: () => {
-      painting = false;
-      dragMode = null;
-      sculptCenter = null;
-      lastSculptTool = null;
-      lastPaintPos = null;
-      draggingSpot = null;
-      spotDragMoved = false;
-      spotClickAt = null;
-      hideRiverPreview();
-    },
-    onPanDelta: (dx, dy) => {
-      applyPanPixels(dx, dy);
-    },
-    onOrbitDelta: (dx, dy) => {
-      azimuth -= dx * 0.005;
-      if (viewMode === '3d') {
-        polar = Math.max(POLAR_MIN, Math.min(POLAR_MAX, polar - dy * 0.004));
-      }
-      updateCam();
-      updateShirasagiAvatar();
-    },
-    onPinchZoom: (ratio) => {
-      applyZoomFromPinchRatio(ratio);
-    },
-    onTwoFingerTap: () => {
-      undo();
-    },
-    onThreeFingerTap: () => {
-      redo();
-    },
-    onHoverMove: (e) => {
-      if (previewToolActive() && !painting && !draggingSpot) {
-        updateRiverPreview(pickGround(e));
-      }
-    },
   });
 
   renderer.domElement.addEventListener(
     'wheel',
     (e) => {
       e.preventDefault();
-      applyZoomFromWheelDelta(e.deltaY);
+      if (viewMode === 'plan') {
+        // 指数ズーム（ホイール）。下スクロールで引く・上で寄る
+        planZoom = Math.max(
+          planZoomMin(),
+          Math.min(PLAN_ZOOM_MAX, planZoom * Math.exp(-e.deltaY * 0.0012)),
+        );
+      } else {
+        orbit = Math.max(orbitMin(), Math.min(orbitMax(), orbit * Math.exp(e.deltaY * 0.0012)));
+      }
     },
     { passive: false },
   );
@@ -5670,8 +5562,6 @@ export function initWorldMapEditor({ supabase, onStatus, readOnly = false, defau
 
     scaleLegendTick++;
     if (scaleLegendTick % 45 === 0) updateScaleLegend();
-
-    syncAtmosphere();
 
     spots.forEach((sp, i) => {
       const pulse = 0.5 + 0.5 * Math.sin(t / 600 + i);

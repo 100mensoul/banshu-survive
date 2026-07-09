@@ -17,10 +17,12 @@ import {
   shiftEdgeEndpointsForNode,
   snapEndpointNormForEdge,
   applyPortDrag,
+  applyEndpointDrag,
   clearEdgeManualLayout,
   ARROW_TIP_LEN,
   snapAngleDeg,
-} from './chart-layout-geometry.js?v=21';
+  boundsFromDomRect,
+} from './chart-layout-geometry.js?v=22';
 
 const LAYOUT_ID = 'main';
 const LOCAL_KEY = 'banshu_chart_layout_v1';
@@ -86,6 +88,8 @@ export function initChartLayoutEditor(options) {
   let labelDragMoved = false;
   let pendingElbowDrag = null;
   let elbowDragMoved = false;
+  let edgeJustSelected = false;
+  let lastEdgePaths = new Map();
   let dragLastNormX = 0;
   let dragLastNormY = 0;
 
@@ -334,31 +338,78 @@ export function initChartLayoutEditor(options) {
   }
 
   function appendArrowTipHandle(group, pt, edgeIndex, role, angleDeg, selected, dragging) {
+    // 矢印そのものは法線ベースのポリゴン（appendArrowPolygon）が唯一の表示。
+    // ここはドラッグ用の透明な当たり判定のみ。蝶ネクタイ（二重矢印）を防ぐ。
     const tip = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     let tipCls = 'chart-layout-edge-tip';
     if (selected) tipCls += ' chart-layout-edge-tip--selected';
     if (dragging) tipCls += ' chart-layout-edge-tip--dragging';
     tip.setAttribute('class', tipCls);
-    const angle = snapAngleDeg(angleDeg);
-    tip.setAttribute('transform', 'translate(' + pt.x + ',' + pt.y + ') rotate(' + angle + ')');
+    tip.setAttribute('transform', 'translate(' + pt.x + ',' + pt.y + ')');
     tip.dataset.edgeIndex = String(edgeIndex);
     tip.dataset.endpoint = role;
 
-    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    hit.setAttribute('x', '-14');
-    hit.setAttribute('y', '-14');
-    hit.setAttribute('width', '28');
-    hit.setAttribute('height', '28');
+    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    hit.setAttribute('cx', '0');
+    hit.setAttribute('cy', '0');
+    hit.setAttribute('r', '13');
     hit.setAttribute('class', 'chart-layout-edge-tip__hit');
-
-    const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    arrow.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
-    arrow.setAttribute('class', 'chart-layout-edge-tip__arrow');
-    arrow.setAttribute('transform', 'translate(-10, -5)');
-
     tip.appendChild(hit);
-    tip.appendChild(arrow);
+
+    if (selected) {
+      const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      ring.setAttribute('cx', '0');
+      ring.setAttribute('cy', '0');
+      ring.setAttribute('r', '6');
+      ring.setAttribute('class', 'chart-layout-edge-tip__ring');
+      tip.appendChild(ring);
+    }
+
     group.appendChild(tip);
+  }
+
+  /** kind:'edge' 端点 — 参照エッジ上の接続点（夫婦線など） */
+  function appendEdgeAnchorHandle(group, pt, edgeIndex, role, selected, dragging) {
+    const anchor = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    let cls = 'chart-layout-edge-anchor';
+    if (selected) cls += ' chart-layout-edge-anchor--selected';
+    if (dragging) cls += ' chart-layout-edge-anchor--dragging';
+    anchor.setAttribute('class', cls);
+    anchor.setAttribute('transform', 'translate(' + pt.x + ',' + pt.y + ')');
+    anchor.dataset.edgeIndex = String(edgeIndex);
+    anchor.dataset.endpoint = role;
+
+    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    hit.setAttribute('cx', '0');
+    hit.setAttribute('cy', '0');
+    hit.setAttribute('r', '11');
+    hit.setAttribute('class', 'chart-layout-edge-anchor__hit');
+    anchor.appendChild(hit);
+
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', '0');
+    dot.setAttribute('cy', '0');
+    dot.setAttribute('r', '5');
+    dot.setAttribute('class', 'chart-layout-edge-anchor__dot');
+    anchor.appendChild(dot);
+
+    group.appendChild(anchor);
+  }
+
+  function collectCardOuterBounds() {
+    const map = new Map();
+    if (!stage || !nodesEl) return map;
+    const stageRect = stage.getBoundingClientRect();
+    nodesEl.querySelectorAll('.chart-layout-node[data-slug]').forEach(function (el) {
+      const slug = el.dataset.slug;
+      if (!slug) return;
+      map.set(slug, boundsFromDomRect(el.getBoundingClientRect(), stageRect));
+    });
+    return map;
+  }
+
+  function renderPlanOptions() {
+    return { boundsMap: collectCardOuterBounds() };
   }
 
   function appendElbowHandle(group, pt, edgeIndex, cornerIndex, selected, dragging) {
@@ -368,11 +419,17 @@ export function initChartLayoutEditor(options) {
     elbow.setAttribute('width', '14');
     elbow.setAttribute('height', '14');
     let cls = 'chart-layout-edge-elbow';
+    if (pt.auto) cls += ' chart-layout-edge-elbow--auto';
     if (selected) cls += ' chart-layout-edge-elbow--selected';
     if (dragging) cls += ' chart-layout-edge-elbow--dragging';
     elbow.setAttribute('class', cls);
     elbow.dataset.edgeIndex = String(edgeIndex);
     elbow.dataset.cornerIndex = String(cornerIndex);
+    if (pt.auto) {
+      elbow.dataset.autoCorner = '1';
+      elbow.dataset.px = String(pt.x);
+      elbow.dataset.py = String(pt.y);
+    }
     group.appendChild(elbow);
   }
 
@@ -382,7 +439,9 @@ export function initChartLayoutEditor(options) {
 
     edgesSvg.addEventListener('pointerdown', function (e) {
       if (tool !== 'move') return;
-      const handle = e.target && e.target.closest ? e.target.closest('.chart-layout-edge-tip') : null;
+      const handle = e.target && e.target.closest
+        ? e.target.closest('.chart-layout-edge-tip, .chart-layout-edge-anchor')
+        : null;
       if (!handle) return;
       e.stopPropagation();
       e.preventDefault();
@@ -402,18 +461,21 @@ export function initChartLayoutEditor(options) {
       if (!edge) return;
       const norm = pointerToNorm(e.clientX, e.clientY);
       const rect = stage.getBoundingClientRect();
+      const boundsMap = collectCardOuterBounds();
       const snapped = snapEndpointNormForEdge(
         edge,
         pendingEndpointDrag.role,
         norm,
         canvas,
         rect.width || 1,
-        rect.height || 1
+        rect.height || 1,
+        boundsMap,
+        lastEdgePaths
       );
-      if (pendingEndpointDrag.role === 'from') {
-        applyPortDrag(edge, 'from', snapped.port);
-      } else {
-        applyPortDrag(edge, 'to', snapped.port);
+      if (snapped.endpoint) {
+        applyEndpointDrag(edge, pendingEndpointDrag.role, snapped.endpoint);
+      } else if (snapped.port) {
+        applyPortDrag(edge, pendingEndpointDrag.role, snapped.port);
       }
       endpointDragMoved = true;
       renderEdges();
@@ -437,6 +499,94 @@ export function initChartLayoutEditor(options) {
     edgesSvg.addEventListener('pointercancel', finishEndpointDrag);
   }
 
+  /** 正規化点 p と線分 a-b の距離 */
+  function distPointToSeg(p, a, b) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    let t = len2 ? ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const cx = a.x + dx * t;
+    const cy = a.y + dy * t;
+    return Math.hypot(p.x - cx, p.y - cy);
+  }
+
+  /** 線上の cursor 位置に waypoint を1つ挿入し、その配列 index を返す */
+  function insertWaypointAtCursor(edgeIndex, norm, boundsMap) {
+    const edge = canvas.edges[edgeIndex];
+    if (!edge) return -1;
+    const rect = stage.getBoundingClientRect();
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    const plan = buildRenderPlan(canvas, w, h, personName, { boundsMap: boundsMap || collectCardOuterBounds() });
+    const item = plan.edges.find(function (it) { return it.index === edgeIndex; });
+    if (!item || !item.endpointFrom || !item.endpointTo) return -1;
+    // 端点→...waypoints→端点 のアンカー列（正規化）で最寄り区間を求める
+    const anchors = [{ x: item.endpointFrom.x / w, y: item.endpointFrom.y / h }];
+    (edge.waypoints || []).forEach(function (wp) { anchors.push({ x: wp.x, y: wp.y }); });
+    anchors.push({ x: item.endpointTo.x / w, y: item.endpointTo.y / h });
+    let bestSeg = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < anchors.length - 1; i++) {
+      const d = distPointToSeg(norm, anchors[i], anchors[i + 1]);
+      if (d < bestD) { bestD = d; bestSeg = i; }
+    }
+    if (!edge.waypoints) edge.waypoints = [];
+    edge.waypoints.splice(bestSeg, 0, { x: norm.x, y: norm.y });
+    return bestSeg;
+  }
+
+  /** 自動コーナー座標を実 waypoint に昇格し、挿入 index を返す */
+  function promoteAutoCornerToWaypoint(edgeIndex, px, py, boundsMap) {
+    const edge = canvas.edges[edgeIndex];
+    if (!edge) return -1;
+    const rect = stage.getBoundingClientRect();
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    const norm = { x: clamp01(px / w), y: clamp01(py / h) };
+    const plan = buildRenderPlan(canvas, w, h, personName, { boundsMap: boundsMap || collectCardOuterBounds() });
+    const item = plan.edges.find(function (it) { return it.index === edgeIndex; });
+    if (!item || !item.pts) return -1;
+    const pts = item.pts;
+    let cornerPathIdx = -1;
+    for (let i = 0; i < pts.length; i++) {
+      if (Math.abs(pts[i].x - px) < 1 && Math.abs(pts[i].y - py) < 1) cornerPathIdx = i;
+    }
+    if (cornerPathIdx < 0) return -1;
+    if (!edge.waypoints) edge.waypoints = [];
+    let insertAt = 0;
+    (edge.waypoints || []).forEach(function (wp) {
+      const wpX = Math.round(wp.x * w);
+      const wpY = Math.round(wp.y * h);
+      let wpPathIdx = -1;
+      for (let i = 0; i < pts.length; i++) {
+        if (pts[i].x === wpX && pts[i].y === wpY) { wpPathIdx = i; break; }
+      }
+      if (wpPathIdx >= 0 && wpPathIdx < cornerPathIdx) insertAt++;
+    });
+    edge.waypoints.splice(insertAt, 0, norm);
+    return insertAt;
+  }
+
+  /** ドラッグ開始点近傍の曲がり角（手動+自動）を検出。角優先判定用 */
+  function findNearCornerHandle(edgeIndex, clientX, clientY, boundsMap, thresholdPx) {
+    const rect = stage.getBoundingClientRect();
+    const px = clientX - rect.left;
+    const py = clientY - rect.top;
+    const plan = buildRenderPlan(canvas, rect.width || 1, rect.height || 1, personName, {
+      boundsMap: boundsMap || collectCardOuterBounds(),
+    });
+    const item = plan.edges.find(function (it) { return it.index === edgeIndex; });
+    if (!item || !item.cornerHandles) return null;
+    let best = null;
+    let bestD = thresholdPx == null ? 14 : thresholdPx;
+    item.cornerHandles.forEach(function (c) {
+      const d = Math.hypot(px - c.x, py - c.y);
+      if (d <= bestD) { bestD = d; best = c; }
+    });
+    return best;
+  }
+
   function bindElbowDrag() {
     if (readOnly || !edgesSvg || edgesSvg.dataset.boundElbow === '1') return;
     edgesSvg.dataset.boundElbow = '1';
@@ -444,36 +594,121 @@ export function initChartLayoutEditor(options) {
     edgesSvg.addEventListener('pointerdown', function (e) {
       if (tool !== 'move') return;
       const handle = e.target && e.target.closest ? e.target.closest('.chart-layout-edge-elbow') : null;
-      if (!handle) return;
+      if (handle) {
+        e.stopPropagation();
+        e.preventDefault();
+        const edgeIndex = parseInt(handle.dataset.edgeIndex, 10);
+        if (edgeIndex < 0) return;
+        selectedEdgeIndex = edgeIndex;
+        const cornerIndex = parseInt(handle.dataset.cornerIndex, 10);
+        if (handle.dataset.autoCorner === '1') {
+          pendingElbowDrag = {
+            edgeIndex,
+            pointerId: e.pointerId,
+            startX: e.clientX,
+            startY: e.clientY,
+            mode: 'move-auto-corner',
+            waypointIndex: -1,
+            cornerPx: parseFloat(handle.dataset.px),
+            cornerPy: parseFloat(handle.dataset.py),
+          };
+        } else {
+          pendingElbowDrag = {
+            edgeIndex,
+            pointerId: e.pointerId,
+            startX: e.clientX,
+            startY: e.clientY,
+            mode: 'move-waypoint',
+            waypointIndex: cornerIndex,
+          };
+        }
+        elbowDragMoved = false;
+        edgesSvg.setPointerCapture(e.pointerId);
+        renderEdges();
+        return;
+      }
+
+      if (e.target && e.target.closest && e.target.closest('.chart-layout-edge-tip, .chart-layout-edge-anchor, .chart-layout-edge__label-group')) return;
+      const lineEl = e.target && e.target.closest
+        ? e.target.closest('.chart-layout-edge-hit, .chart-layout-edge--interactive')
+        : null;
+      if (!lineEl || !lineEl.dataset.edgeIndex) return;
+      const edgeIndex = parseInt(lineEl.dataset.edgeIndex, 10);
+      if (edgeIndex !== selectedEdgeIndex) return;
+      if (edgeJustSelected) return;
       e.stopPropagation();
       e.preventDefault();
-      const edgeIndex = parseInt(handle.dataset.edgeIndex, 10);
-      const cornerIndex = parseInt(handle.dataset.cornerIndex, 10);
-      if (edgeIndex < 0) return;
-      selectedEdgeIndex = edgeIndex;
-      pendingElbowDrag = { edgeIndex, waypointIndex: cornerIndex, pointerId: e.pointerId };
+      pendingElbowDrag = {
+        edgeIndex,
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        mode: 'pending',
+        waypointIndex: -1,
+      };
       elbowDragMoved = false;
       edgesSvg.setPointerCapture(e.pointerId);
-      renderEdges();
     });
 
     edgesSvg.addEventListener('pointermove', function (e) {
       if (!pendingElbowDrag || e.pointerId !== pendingElbowDrag.pointerId) return;
       const edge = canvas.edges[pendingElbowDrag.edgeIndex];
       if (!edge) return;
+      const dist = Math.hypot(e.clientX - pendingElbowDrag.startX, e.clientY - pendingElbowDrag.startY);
+      const boundsMap = collectCardOuterBounds();
+      const rect = stage.getBoundingClientRect();
+      const w = rect.width || 1;
+      const h = rect.height || 1;
+
+      if (pendingElbowDrag.mode === 'pending') {
+        if (dist < DRAG_THRESHOLD) return;
+        const nearCorner = findNearCornerHandle(
+          pendingElbowDrag.edgeIndex,
+          pendingElbowDrag.startX,
+          pendingElbowDrag.startY,
+          boundsMap
+        );
+        if (nearCorner) {
+          let wi = nearCorner.index;
+          if (nearCorner.auto) {
+            wi = promoteAutoCornerToWaypoint(pendingElbowDrag.edgeIndex, nearCorner.x, nearCorner.y, boundsMap);
+          }
+          if (wi < 0) return;
+          pendingElbowDrag.mode = 'move-waypoint';
+          pendingElbowDrag.waypointIndex = wi;
+        } else {
+          const norm = {
+            x: clamp01((pendingElbowDrag.startX - rect.left) / w),
+            y: clamp01((pendingElbowDrag.startY - rect.top) / h),
+          };
+          const wi = insertWaypointAtCursor(pendingElbowDrag.edgeIndex, norm, boundsMap);
+          if (wi < 0) return;
+          pendingElbowDrag.mode = 'insert';
+          pendingElbowDrag.waypointIndex = wi;
+        }
+      }
+
+      if (pendingElbowDrag.mode === 'move-auto-corner') {
+        if (dist < DRAG_THRESHOLD) return;
+        const wi = promoteAutoCornerToWaypoint(
+          pendingElbowDrag.edgeIndex,
+          pendingElbowDrag.cornerPx,
+          pendingElbowDrag.cornerPy,
+          boundsMap
+        );
+        if (wi < 0) return;
+        pendingElbowDrag.mode = 'move-waypoint';
+        pendingElbowDrag.waypointIndex = wi;
+      }
+
+      if (pendingElbowDrag.mode !== 'move-waypoint' && pendingElbowDrag.mode !== 'insert') return;
+
       const norm = pointerToNorm(e.clientX, e.clientY);
       const wi = pendingElbowDrag.waypointIndex;
       if (!edge.waypoints) edge.waypoints = [];
       if (wi >= 0 && wi < edge.waypoints.length) {
         edge.waypoints[wi] = { x: norm.x, y: norm.y };
-      } else {
-        edge.waypoints = [{ x: norm.x, y: norm.y }];
       }
-      delete edge.jointMidX;
-      delete edge.jointMidY;
-      delete edge.elbowPoint;
-      delete edge.fromPoint;
-      delete edge.toPoint;
       elbowDragMoved = true;
       renderEdges();
     });
@@ -481,6 +716,7 @@ export function initChartLayoutEditor(options) {
     function finishElbowDrag(e) {
       if (!pendingElbowDrag || e.pointerId !== pendingElbowDrag.pointerId) return;
       if (edgesSvg.hasPointerCapture(e.pointerId)) edgesSvg.releasePointerCapture(e.pointerId);
+      const drag = pendingElbowDrag;
       pendingElbowDrag = null;
       if (elbowDragMoved) {
         canvas = normalizeCanvas(canvas);
@@ -494,6 +730,26 @@ export function initChartLayoutEditor(options) {
 
     edgesSvg.addEventListener('pointerup', finishElbowDrag);
     edgesSvg.addEventListener('pointercancel', finishElbowDrag);
+
+    edgesSvg.addEventListener('dblclick', function (e) {
+      if (tool !== 'move') return;
+      const handle = e.target && e.target.closest ? e.target.closest('.chart-layout-edge-elbow') : null;
+      if (!handle) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const edgeIndex = parseInt(handle.dataset.edgeIndex, 10);
+      const cornerIndex = parseInt(handle.dataset.cornerIndex, 10);
+      if (handle.dataset.autoCorner === '1') return;
+      const edge = canvas.edges[edgeIndex];
+      if (!edge || !edge.waypoints || cornerIndex < 0 || cornerIndex >= edge.waypoints.length) return;
+      edge.waypoints.splice(cornerIndex, 1);
+      if (!edge.waypoints.length) delete edge.waypoints;
+      canvas = normalizeCanvas(canvas);
+      pushHistory();
+      saveLocal();
+      updateEdgeResetButton();
+      renderEdges();
+    });
   }
 
   function bindLabelDrag() {
@@ -562,7 +818,7 @@ export function initChartLayoutEditor(options) {
     const rect = stage.getBoundingClientRect();
     const w = rect.width || 1;
     const h = rect.height || 1;
-    const plan = buildRenderPlan(canvas, w, h, personName);
+    const plan = buildRenderPlan(canvas, w, h, personName, renderPlanOptions());
     const item = plan.edges.find(function (it) { return it.index === index; });
     const lb = item && item.labels[0];
     if (lb) {
@@ -604,7 +860,7 @@ export function initChartLayoutEditor(options) {
     edgesSvg.dataset.boundSelect = '1';
     edgesSvg.addEventListener('pointerdown', function (e) {
       if (tool !== 'move') return;
-      if (e.target && e.target.closest && e.target.closest('.chart-layout-edge-tip, .chart-layout-edge-elbow, .chart-layout-edge__label-group')) return;
+      if (e.target && e.target.closest && e.target.closest('.chart-layout-edge-tip, .chart-layout-edge-anchor, .chart-layout-edge-elbow, .chart-layout-edge__label-group')) return;
       const target = e.target;
       const edgeEl = target && target.closest
         ? target.closest('[data-edge-index]')
@@ -612,12 +868,14 @@ export function initChartLayoutEditor(options) {
       if (!edgeEl || !edgeEl.dataset.edgeIndex) return;
       e.stopPropagation();
       e.preventDefault();
-      selectEdge(parseInt(edgeEl.dataset.edgeIndex, 10), { openModal: false });
+      const idx = parseInt(edgeEl.dataset.edgeIndex, 10);
+      edgeJustSelected = (selectedEdgeIndex !== idx);
+      selectEdge(idx, { openModal: false });
     });
 
     edgesSvg.addEventListener('dblclick', function (e) {
       if (tool !== 'move') return;
-      if (e.target && e.target.closest && e.target.closest('.chart-layout-edge-tip, .chart-layout-edge-elbow, .chart-layout-edge__label-group')) return;
+      if (e.target && e.target.closest && e.target.closest('.chart-layout-edge-tip, .chart-layout-edge-anchor, .chart-layout-edge-elbow, .chart-layout-edge__label-group')) return;
       const edgeEl = e.target && e.target.closest ? e.target.closest('[data-edge-index]') : null;
       if (!edgeEl || !edgeEl.dataset.edgeIndex) return;
       e.stopPropagation();
@@ -655,7 +913,8 @@ export function initChartLayoutEditor(options) {
     const h = rect.height || 1;
     edgesSvg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
     edgesSvg.innerHTML = '';
-    const plan = buildRenderPlan(canvas, w, h, personName);
+    const plan = buildRenderPlan(canvas, w, h, personName, renderPlanOptions());
+    lastEdgePaths = plan.edgePaths || new Map();
     const edgesInteractive = !readOnly && tool === 'move';
     edgesSvg.classList.toggle('chart-layout-edges--edit', edgesInteractive);
 
@@ -703,29 +962,51 @@ export function initChartLayoutEditor(options) {
 
       if (showTips) {
         const dragIdx = pendingEndpointDrag ? pendingEndpointDrag.edgeIndex : -1;
-        appendArrowTipHandle(
-          group,
-          item.endpointFrom,
-          item.index,
-          'from',
-          item.endpointFromAngle != null ? item.endpointFromAngle : 180,
-          selected,
-          dragIdx === item.index && pendingEndpointDrag && pendingEndpointDrag.role === 'from'
-        );
-        appendArrowTipHandle(
-          group,
-          item.endpointTo,
-          item.index,
-          'to',
-          item.endpointToAngle != null ? item.endpointToAngle : 0,
-          selected,
-          dragIdx === item.index && pendingEndpointDrag && pendingEndpointDrag.role === 'to'
-        );
+        if (item.endpointFromKind !== 'edge') {
+          appendArrowTipHandle(
+            group,
+            item.endpointFrom,
+            item.index,
+            'from',
+            item.endpointFromAngle != null ? item.endpointFromAngle : 180,
+            selected,
+            dragIdx === item.index && pendingEndpointDrag && pendingEndpointDrag.role === 'from'
+          );
+        } else {
+          appendEdgeAnchorHandle(
+            group,
+            item.endpointFrom,
+            item.index,
+            'from',
+            selected,
+            dragIdx === item.index && pendingEndpointDrag && pendingEndpointDrag.role === 'from'
+          );
+        }
+        if (item.endpointToKind !== 'edge') {
+          appendArrowTipHandle(
+            group,
+            item.endpointTo,
+            item.index,
+            'to',
+            item.endpointToAngle != null ? item.endpointToAngle : 0,
+            selected,
+            dragIdx === item.index && pendingEndpointDrag && pendingEndpointDrag.role === 'to'
+          );
+        } else {
+          appendEdgeAnchorHandle(
+            group,
+            item.endpointTo,
+            item.index,
+            'to',
+            selected,
+            dragIdx === item.index && pendingEndpointDrag && pendingEndpointDrag.role === 'to'
+          );
+        }
       }
 
-      if (edgesInteractive && selected && item.waypointHandles && item.waypointHandles.length) {
+      if (edgesInteractive && selected && item.cornerHandles && item.cornerHandles.length) {
         const elbowDragIdx = pendingElbowDrag ? pendingElbowDrag.edgeIndex : -1;
-        item.waypointHandles.forEach(function (corner) {
+        item.cornerHandles.forEach(function (corner) {
           appendElbowHandle(
             group,
             corner,

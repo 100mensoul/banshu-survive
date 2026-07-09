@@ -2,9 +2,9 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>世界地図｜播州サバイブ</title>
-  <link rel="stylesheet" href="../css/world-map.css?v=45">
+  <link rel="stylesheet" href="../css/world-map.css?v=51">
 </head>
 <body class="world-map-page">
   <div class="world-map-page">
@@ -14,6 +14,7 @@
         <small>世界地図 · 閲覧</small>
       </div>
       <a class="world-map-home-link" href="../index.html">トップへ</a>
+      <a class="world-map-zone-back" id="world-map-zone-back" href="?map=konui-michi" hidden>← 平面に戻る</a>
       <div class="world-map-preset-bar">
         <button type="button" class="world-map-preset-nav" id="world-map-preset-prev" aria-label="前のマップ">‹</button>
         <span class="world-map-preset-nav-label" id="world-map-preset-nav-label"></span>
@@ -86,20 +87,34 @@
           <canvas id="world-map-minimap-canvas" width="148" height="148"></canvas>
           <span class="world-map-minimap-dot" id="world-map-minimap-dot" aria-hidden="true"></span>
         </button>
-        <span class="world-map-minimap__label">俯瞰</span>
+        <span class="world-map-minimap__label">俯瞰 · タップで拡大</span>
+      </div>
+
+      <div class="world-map-zone-context" id="world-map-zone-context" hidden>
+        <button type="button" class="world-map-zone-context__frame" id="world-map-zone-context-open" aria-label="コヌイの路全体マップを拡大">
+          <canvas id="world-map-zone-context-canvas" class="world-map-zone-context__canvas" width="188" height="188"></canvas>
+          <div class="world-map-zone-context__highlight" id="world-map-zone-context-highlight"></div>
+          <span class="world-map-minimap-dot" id="world-map-zone-context-dot" aria-hidden="true"></span>
+        </button>
+        <span class="world-map-zone-context__label">コヌイの路 · タップで拡大</span>
       </div>
 
       <div class="world-map-minimap-modal" id="world-map-minimap-modal" hidden>
         <div class="world-map-minimap-modal__backdrop" id="world-map-minimap-backdrop"></div>
         <div class="world-map-minimap-modal__panel" role="dialog" aria-label="俯瞰マップ">
           <div class="world-map-minimap-modal__head">
-            <strong>俯瞰マップ</strong>
-            <span class="world-map-minimap-modal__hint">赤い点＝いまの視点</span>
+            <strong id="world-map-minimap-modal-title">俯瞰マップ</strong>
+            <span class="world-map-minimap-modal__hint" id="world-map-minimap-modal-hint">赤い点＝いまの視点</span>
             <button type="button" class="world-map-minimap-modal__close" id="world-map-minimap-close">閉じる</button>
           </div>
-          <div class="world-map-minimap-modal__frame">
+          <div class="world-map-minimap-modal__frame" id="world-map-minimap-modal-scene">
             <canvas id="world-map-minimap-modal-canvas" width="480" height="480"></canvas>
             <span class="world-map-minimap-dot world-map-minimap-dot--lg" id="world-map-minimap-modal-dot" aria-hidden="true"></span>
+          </div>
+          <div class="world-map-minimap-modal__frame world-map-minimap-modal__frame--overview" id="world-map-minimap-modal-overview" hidden>
+            <canvas id="world-map-overview-modal-canvas" width="480" height="480"></canvas>
+            <div class="world-map-zone-context__highlight world-map-zone-context__highlight--lg" id="world-map-overview-modal-highlight"></div>
+            <span class="world-map-minimap-dot world-map-minimap-dot--lg" id="world-map-overview-modal-dot" aria-hidden="true"></span>
           </div>
         </div>
       </div>
@@ -118,7 +133,7 @@
   </script>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    import { initWorldMapEditor } from '../js/world-map-editor.js?v=67';
+    import { initWorldMapEditor } from '../js/world-map-editor.js?v=85';
 
     const supabase = createClient(window.__SB_URL, window.__SB_ANON_KEY);
 

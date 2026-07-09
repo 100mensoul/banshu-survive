@@ -325,6 +325,19 @@
   pointer-events: all;
 }
 
+.chart-layout-edge-tip__ring {
+  fill: #fff;
+  stroke: #c23b2a;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.chart-layout-edge-tip:hover .chart-layout-edge-tip__ring,
+.chart-layout-edge-tip--dragging .chart-layout-edge-tip__ring {
+  fill: #ffe3dd;
+  stroke: #922;
+}
+
 .chart-layout-edge-tip__arrow {
   fill: #111;
   pointer-events: none;
@@ -361,6 +374,44 @@
 .chart-layout-edge-elbow--dragging {
   cursor: grabbing;
   fill: #ffe8cc;
+}
+
+.chart-layout-edge-elbow--auto {
+  stroke-dasharray: 3 2;
+}
+
+.chart-layout-edge-anchor {
+  pointer-events: all;
+  cursor: grab;
+}
+
+.chart-layout-edge-anchor__hit {
+  fill: transparent;
+  stroke: none;
+  pointer-events: all;
+}
+
+.chart-layout-edge-anchor__dot {
+  fill: #fff;
+  stroke: #c47a28;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.chart-layout-edge-anchor--selected .chart-layout-edge-anchor__dot,
+.chart-layout-edge-anchor:hover .chart-layout-edge-anchor__dot {
+  fill: #fff3d6;
+  stroke: #922;
+  stroke-width: 2.5;
+}
+
+.chart-layout-edge-anchor--dragging {
+  cursor: grabbing;
+}
+
+.chart-layout-edge-anchor--dragging .chart-layout-edge-anchor__dot {
+  fill: #ffe8cc;
+  stroke: #c23b2a;
 }
 
 .chart-layout-edge-hit {
