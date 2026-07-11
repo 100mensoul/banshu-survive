@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja" data-typo-font="noto" data-typo-size="m" data-typo-page-bg="forest" data-typo-modal-bg="tribe" data-typo-watermark="soft" data-typo-tagline="italic">
+<head>
+  <meta charset="utf-8">
+  <title>ひめじん・タイポ比較ラボ｜播州サバイブ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="../css/main.css?v=navmichi7">
+  <link rel="stylesheet" href="../css/himejin-typo-prototype.css?v=2">
+  <link rel="stylesheet" href="../css/himejin-typo-lab.css?v=1">
+</head>
+<body class="page-himejin-typo typo-lab">
+
+  <nav class="nav-bar">
+    <div class="nav-group">
+      <a href="arasuji.html">あらすじ</a>
+      <div class="dropdown">
+        <div class="dropbtn" tabindex="0">キャスト</div>
+        <div class="dropdown-content">
+          <a href="chart.html">相関図</a>
+          <a href="himejin.html">ひめじんファイル</a>
+          <a href="himejin-typo-prototype.html">ひめじん・タイポ試作</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="typo-wrap">
+    <p class="typo-lab-banner" role="note">
+      <strong>比較ラボ（ローカル検証用）</strong> — 下のパネルでフォント・サイズ・背景を切り替えられます。
+      設定はブラウザに保存されます。
+      気に入った現行版は <a href="himejin-typo-prototype.html">タイポ試作（確定版）</a> をご覧ください。
+    </p>
+
+    <p id="typo-lab-status" class="typo-lab-status" aria-live="polite"></p>
+
+    <header class="typo-hero">
+      <p class="typo-hero__label">LAB / TYPOGRAPHY VARIANTS</p>
+      <h1 class="typo-hero__title">ひめじんファイル</h1>
+      <p class="typo-hero__catch">つながれ、ひめじん。</p>
+      <p class="typo-hero__note">
+        カードをタップしてモーダルを開きながら、文字のフォント・大きさ・背景を比較してください。
+        XXL はかなり大きくなります。
+      </p>
+    </header>
+
+    <section aria-labelledby="typo-index-heading">
+      <h2 id="typo-index-heading" class="typo-section-title">HIMEJIN INDEX</h2>
+      <div id="typo-index-root" class="typo-index" aria-live="polite"></div>
+    </section>
+
+    <div id="typo-modal" class="typo-modal" hidden aria-modal="true" role="dialog" aria-label="ひめじん詳細">
+      <div class="typo-modal__backdrop" data-close-modal tabindex="-1"></div>
+      <div class="typo-modal__stage">
+        <button type="button" class="typo-modal__close" data-close-modal aria-label="閉じる">×</button>
+        <div id="typo-modal-body"></div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <p><a href="himejin-typo-prototype.html">確定版プロトタイプへ</a> · <a href="himejin.html">ひめじんファイル</a></p>
+      <p>© 2026 播州サバイブ</p>
+    </footer>
+  </div>
+
+  <aside id="typo-lab-panel" class="typo-lab-panel" aria-label="タイポ設定パネル">
+    <div class="typo-lab-panel__head">
+      <p class="typo-lab-panel__title">TYPO LAB</p>
+      <button type="button" id="typo-lab-reset" class="typo-lab-panel__reset">現行に戻す</button>
+    </div>
+
+    <div class="typo-lab-panel__group">
+      <span class="typo-lab-panel__label">フォント</span>
+      <div class="typo-lab-panel__chips">
+        <button type="button" class="typo-lab-chip" data-group="typo-font" data-value="noto">Noto Sans</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-font" data-value="mincho">しっぽり明朝</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-font" data-value="serif">Noto Serif</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-font" data-value="zen">Zen角ゴ</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-font" data-value="yuji">Yuji Boku</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-font" data-value="dot">ドット</button>
+      </div>
+    </div>
+
+    <div class="typo-lab-panel__group">
+      <span class="typo-lab-panel__label">名前の大きさ</span>
+      <div class="typo-lab-panel__chips">
+        <button type="button" class="typo-lab-chip" data-group="typo-size" data-value="m">M</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-size" data-value="l">L</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-size" data-value="xl">XL</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-size" data-value="xxl">XXL</button>
+      </div>
+    </div>
+
+    <div class="typo-lab-panel__group">
+      <span class="typo-lab-panel__label">一覧の背景</span>
+      <div class="typo-lab-panel__chips">
+        <button type="button" class="typo-lab-chip" data-group="typo-page-bg" data-value="forest">森</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-page-bg" data-value="void">真っ黒</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-page-bg" data-value="ledger">台帳</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-page-bg" data-value="ink">インク</button>
+      </div>
+    </div>
+
+    <div class="typo-lab-panel__group">
+      <span class="typo-lab-panel__label">モーダル背景</span>
+      <div class="typo-lab-panel__chips">
+        <button type="button" class="typo-lab-chip" data-group="typo-modal-bg" data-value="tribe">種族色</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-modal-bg" data-value="void">真っ黒</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-modal-bg" data-value="forest">森</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-modal-bg" data-value="gold">金</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-modal-bg" data-value="cold">冷色</button>
+      </div>
+    </div>
+
+    <div class="typo-lab-panel__group">
+      <span class="typo-lab-panel__label">背景の巨大文字</span>
+      <div class="typo-lab-panel__chips">
+        <button type="button" class="typo-lab-chip" data-group="typo-watermark" data-value="soft">薄</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-watermark" data-value="mid">中</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-watermark" data-value="bold">濃</button>
+      </div>
+    </div>
+
+    <div class="typo-lab-panel__group">
+      <span class="typo-lab-panel__label">tagline の味</span>
+      <div class="typo-lab-panel__chips">
+        <button type="button" class="typo-lab-chip" data-group="typo-tagline" data-value="italic">イタリック</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-tagline" data-value="bold">太字</button>
+        <button type="button" class="typo-lab-chip" data-group="typo-tagline" data-value="thin">細・字間</button>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.nav-bar .dropdown > .dropbtn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var drop = btn.parentElement;
+          var willOpen = !drop.classList.contains('is-touch-open');
+          document.querySelectorAll('.nav-bar .dropdown.is-touch-open').forEach(function (d) {
+            d.classList.remove('is-touch-open');
+          });
+          if (willOpen) drop.classList.add('is-touch-open');
+        });
+      });
+      document.addEventListener('click', function (e) {
+        if (e.target.closest('.nav-bar .dropdown')) return;
+        document.querySelectorAll('.nav-bar .dropdown.is-touch-open').forEach(function (d) {
+          d.classList.remove('is-touch-open');
+        });
+      });
+    });
+  </script>
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="module" src="../js/home-episode-nav.js"></script>
+  <script type="module" src="../js/himejin-typo-prototype.js?v=1"></script>
+  <script type="module" src="../js/himejin-typo-lab.js?v=1"></script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+/* ひめじんタイポ比較ラボ — ローカル検証用（本番デプロイ対象外） */
+
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=DotGothic16&family=Noto+Serif+JP:wght@500;700;900&display=swap');
+
+.page-himejin-typo.typo-lab {
+  padding-bottom: 5.5rem;
+}
+
+.page-himejin-typo.typo-lab .typo-lab-banner {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.8rem;
+  line-height: 1.65;
+}
+.page-himejin-typo.typo-lab .typo-lab-banner a {
+  color: #9fc99f;
+  text-underline-offset: 3px;
+}
+
+.page-himejin-typo.typo-lab .typo-lab-status {
+  margin: 0 0 1.25rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.28);
+  font-size: 0.72rem;
+  line-height: 1.55;
+  letter-spacing: 0.04em;
+  opacity: 0.88;
+}
+.page-himejin-typo.typo-lab .typo-lab-status strong {
+  color: #fff100;
+  font-weight: 700;
+}
+
+/* コントロールパネル */
+.typo-lab-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5000;
+  max-height: 52vh;
+  overflow: auto;
+  padding: 0.65rem 0.75rem calc(0.65rem + env(safe-area-inset-bottom, 0));
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(8, 12, 10, 0.94);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.35);
+}
+.typo-lab-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+.typo-lab-panel__title {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  opacity: 0.8;
+}
+.typo-lab-panel__reset {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.68rem;
+  padding: 0.25rem 0.65rem;
+  cursor: pointer;
+}
+.typo-lab-panel__reset:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.typo-lab-panel__group {
+  margin-bottom: 0.55rem;
+}
+.typo-lab-panel__label {
+  display: block;
+  margin: 0 0 0.3rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  opacity: 0.65;
+}
+.typo-lab-panel__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.typo-lab-chip {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font: inherit;
+  font-size: 0.68rem;
+  padding: 0.28rem 0.62rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.typo-lab-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.typo-lab-chip.is-active {
+  border-color: #fff100;
+  background: rgba(255, 241, 0, 0.14);
+  color: #fff100;
+}
+
+/* --- フォント --- */
+html[data-typo-font='noto'] .page-himejin-typo {
+  --typo-font: 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+}
+html[data-typo-font='mincho'] .page-himejin-typo {
+  --typo-font: 'Shippori Mincho', 'Hiragino Mincho ProN', serif;
+}
+html[data-typo-font='serif'] .page-himejin-typo {
+  --typo-font: 'Noto Serif JP', 'Hiragino Mincho ProN', serif;
+}
+html[data-typo-font='zen'] .page-himejin-typo {
+  --typo-font: 'Zen Kaku Gothic New', 'Hiragino Sans', sans-serif;
+}
+html[data-typo-font='yuji'] .page-himejin-typo {
+  --typo-font: 'Yuji Boku', 'Hiragino Mincho ProN', serif;
+}
+html[data-typo-font='dot'] .page-himejin-typo {
+  --typo-font: 'DotGothic16', monospace;
+}
+
+/* --- サイズ --- */
+html[data-typo-size='m'] .page-himejin-typo { --typo-scale: 1; }
+html[data-typo-size='l'] .page-himejin-typo { --typo-scale: 1.22; }
+html[data-typo-size='xl'] .page-himejin-typo { --typo-scale: 1.48; }
+html[data-typo-size='xxl'] .page-himejin-typo { --typo-scale: 1.82; }
+
+/* --- ページ背景 --- */
+html[data-typo-page-bg='forest'] .page-himejin-typo {
+  --typo-bg: #0a0f0c;
+}
+html[data-typo-page-bg='void'] .page-himejin-typo {
+  --typo-bg: #000000;
+}
+html[data-typo-page-bg='ledger'] .page-himejin-typo {
+  --typo-bg: #14110d;
+  --typo-fg: #efe8dc;
+}
+html[data-typo-page-bg='ink'] .page-himejin-typo {
+  --typo-bg: #0b0d14;
+  --typo-fg: #e8ecf8;
+}
+
+/* --- モーダル背景（種族別を上書き） --- */
+html[data-typo-modal-bg='tribe'] .page-himejin-typo .typo-modal__stage {
+  /* JS が種族色をセット（デフォルト） */
+}
+html[data-typo-modal-bg='void'] .page-himejin-typo .typo-modal__stage {
+  background: #000 !important;
+  --typo-stage-accent: #ecefe9;
+}
+html[data-typo-modal-bg='forest'] .page-himejin-typo .typo-modal__stage {
+  background: linear-gradient(165deg, #1a2420 0%, #0a0f0c 100%) !important;
+  --typo-stage-accent: #9fc99f;
+}
+html[data-typo-modal-bg='gold'] .page-himejin-typo .typo-modal__stage {
+  background: linear-gradient(165deg, #1c1810 0%, #080806 100%) !important;
+  --typo-stage-accent: #fff100;
+}
+html[data-typo-modal-bg='cold'] .page-himejin-typo .typo-modal__stage {
+  background: linear-gradient(165deg, #101820 0%, #060a10 100%) !important;
+  --typo-stage-accent: #8ec0ff;
+}
+
+/* --- ウォーターマーク強度 --- */
+html[data-typo-watermark='soft'] .page-himejin-typo .typo-modal__watermark { opacity: 0.055; }
+html[data-typo-watermark='mid'] .page-himejin-typo .typo-modal__watermark { opacity: 0.1; }
+html[data-typo-watermark='bold'] .page-himejin-typo .typo-modal__watermark { opacity: 0.16; }
+
+/* --- tagline スタイル --- */
+html[data-typo-tagline='italic'] .page-himejin-typo .typo-modal__tagline {
+  font-style: italic;
+  font-weight: 500;
+}
+html[data-typo-tagline='bold'] .page-himejin-typo .typo-modal__tagline {
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+html[data-typo-tagline='thin'] .page-himejin-typo .typo-modal__tagline {
+  font-style: normal;
+  font-weight: 400;
+  opacity: 0.82;
+  letter-spacing: 0.12em;
+}
+
+@media (max-width: 520px) {
+  .typo-lab-panel {
+    max-height: 46vh;
+  }
+  .typo-lab-chip {
+    font-size: 0.64rem;
+  }
+}

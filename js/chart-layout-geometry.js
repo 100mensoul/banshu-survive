@@ -134,7 +134,9 @@ function normalizeEndpoint(raw) {
     const edgeId = String(raw.edgeId || '').trim();
     const t = Number(raw.t);
     if (!edgeId || !Number.isFinite(t)) return null;
-    return { kind: 'edge', edgeId, t: Math.max(0.02, Math.min(0.98, t)) };
+    const ep = { kind: 'edge', edgeId, t: Math.max(0.02, Math.min(0.98, t)) };
+    if (raw.autoT === false) ep.autoT = false;
+    return ep;
   }
   const nodeId = String(raw.nodeId || raw.slug || '').trim();
   const side = normalizeSide(raw.side);
@@ -144,8 +146,13 @@ function normalizeEndpoint(raw) {
 }
 
 function ensureEndpointKind(ep) {
-  if (!ep || ep.kind) return ep;
-  if (ep.edgeId) return { kind: 'edge', edgeId: String(ep.edgeId), t: Number(ep.t) || 0.5 };
+  if (!ep) return ep;
+  if (ep.kind) return ep;
+  if (ep.edgeId) {
+    const out = { kind: 'edge', edgeId: String(ep.edgeId), t: Number(ep.t) || 0.5 };
+    if (ep.autoT === false) out.autoT = false;
+    return out;
+  }
   return { kind: 'node', nodeId: ep.nodeId, side: ep.side, t: ep.t };
 }
 
@@ -175,10 +182,206 @@ function referencedEdgeIds(edge) {
 
 function normalizeWaypoint(raw) {
   if (!raw || typeof raw !== 'object') return null;
+  const seg = Number(raw.seg);
+  const u = Number(raw.u);
+  if (Number.isFinite(seg) && Number.isFinite(u)) {
+    return { seg: Math.max(0, Math.floor(seg)), u: Math.max(0, Math.min(1, u)) };
+  }
   const x = Number(raw.x);
   const y = Number(raw.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
   return { x: clamp01(x), y: clamp01(y) };
+}
+
+function isRelativeWaypoint(wp) {
+  return !!(wp && Number.isFinite(wp.seg) && Number.isFinite(wp.u));
+}
+
+function isAbsoluteWaypoint(wp) {
+  return !!(wp && Number.isFinite(wp.x) && Number.isFinite(wp.y));
+}
+
+export const CARD_ROUTE_PAD = 12;
+
+function inflateBounds(bounds, pad) {
+  pad = pad == null ? CARD_ROUTE_PAD : pad;
+  return {
+    left: bounds.left - pad,
+    right: bounds.right + pad,
+    top: bounds.top - pad,
+    bottom: bounds.bottom + pad,
+    cx: bounds.cx,
+    cy: bounds.cy,
+    nw: bounds.nw + pad * 2,
+    nh: bounds.nh + pad * 2,
+  };
+}
+
+function hSegHitsRect(y, x1, x2, rect) {
+  const xmin = Math.min(x1, x2);
+  const xmax = Math.max(x1, x2);
+  return y >= rect.top && y <= rect.bottom && xmax >= rect.left && xmin <= rect.right;
+}
+
+function vSegHitsRect(x, y1, y2, rect) {
+  const ymin = Math.min(y1, y2);
+  const ymax = Math.max(y1, y2);
+  return x >= rect.left && x <= rect.right && ymax >= rect.top && ymin <= rect.bottom;
+}
+
+function corridorSegmentsHitObstacles(anchors, obstacles) {
+  if (!obstacles || !obstacles.length || anchors.length < 2) return false;
+  for (let i = 0; i < anchors.length - 1; i++) {
+    const a = anchors[i];
+    const b = anchors[i + 1];
+    for (let j = 0; j < obstacles.length; j++) {
+      const r = inflateBounds(obstacles[j], CARD_ROUTE_PAD);
+      if (Math.abs(a.y - b.y) < 1 && hSegHitsRect(a.y, a.x, b.x, r)) return true;
+      if (Math.abs(a.x - b.x) < 1 && vSegHitsRect(a.x, a.y, b.y, r)) return true;
+    }
+  }
+  return false;
+}
+
+function nodeSlugsForEdge(edge) {
+  const slugs = new Set();
+  if (edge.kind === 'family-child') {
+    slugs.add(edge.child);
+    (edge.parents || []).forEach(function (s) { if (s) slugs.add(s); });
+  } else {
+    if (edge.from) slugs.add(edge.from);
+    if (edge.to) slugs.add(edge.to);
+  }
+  const src = edge.source ? ensureEndpointKind(edge.source) : null;
+  const tgt = edge.target ? ensureEndpointKind(edge.target) : null;
+  if (src && src.kind === 'node') slugs.add(src.nodeId);
+  if (tgt && tgt.kind === 'node') slugs.add(tgt.nodeId);
+  return slugs;
+}
+
+export function collectRouteObstacles(nodeMap, w, h, boundsMap, excludeSlugs) {
+  const obstacles = [];
+  const skip = excludeSlugs || new Set();
+  nodeMap.forEach(function (node, slug) {
+    if (skip.has(slug)) return;
+    obstacles.push(nodePixelBounds(node, w, h, boundsMap));
+  });
+  return obstacles;
+}
+
+function buildStubCorridorAnchors(srcStub, tgtStub, srcNormal, tgtNormal, obstacles) {
+  const mid = autoWaypointsBetweenStubs(srcStub, tgtStub, srcNormal, tgtNormal, obstacles);
+  return [srcStub].concat(mid).concat([tgtStub]);
+}
+
+function pointOnAnchorSegment(anchors, seg, u) {
+  const a = anchors[seg];
+  const b = anchors[seg + 1];
+  if (!a || !b) return anchors[0] ? { x: anchors[0].x, y: anchors[0].y } : { x: 0, y: 0 };
+  return {
+    x: snapPx(a.x + (b.x - a.x) * u),
+    y: snapPx(a.y + (b.y - a.y) * u),
+  };
+}
+
+function nearestSegmentOnAnchors(px, py, anchors) {
+  let bestSeg = 0;
+  let bestU = 0.5;
+  let bestD = Infinity;
+  for (let i = 0; i < anchors.length - 1; i++) {
+    const a = anchors[i];
+    const b = anchors[i + 1];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    let t = len2 ? ((px - a.x) * dx + (py - a.y) * dy) / len2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const cx = a.x + dx * t;
+    const cy = a.y + dy * t;
+    const d = Math.hypot(px - cx, py - cy);
+    if (d < bestD) {
+      bestD = d;
+      bestSeg = i;
+      bestU = t;
+    }
+  }
+  return { seg: bestSeg, u: bestU };
+}
+
+function resolveManualWaypointsPx(waypoints, w, h, srcResolved, tgtResolved, obstacles) {
+  if (!waypoints || !waypoints.length) return [];
+  const srcStub = vecAdd(srcResolved.point, vecScale(srcResolved.normal, ARROW_STUB_LEN));
+  const tgtStub = vecAdd(tgtResolved.point, vecScale(tgtResolved.normal, ARROW_STUB_LEN));
+  const anchors = buildStubCorridorAnchors(srcStub, tgtStub, srcResolved.normal, tgtResolved.normal, obstacles);
+  return waypoints.map(function (wp) {
+    if (isRelativeWaypoint(wp)) return pointOnAnchorSegment(anchors, wp.seg, wp.u);
+    if (isAbsoluteWaypoint(wp)) return { x: snapPx(wp.x * w), y: snapPx(wp.y * h) };
+    return null;
+  }).filter(Boolean);
+}
+
+/** ドラッグ確定時: 絶対座標 waypoint をセグメント相対形式へ変換 */
+export function finalizeWaypointRelative(edge, waypointIndex, px, py, nodeMap, w, h, options) {
+  options = options || {};
+  const resolved = resolveEdgeEndpointsForRouting(edge, nodeMap, w, h, options);
+  if (!resolved || !edge.waypoints || waypointIndex < 0 || waypointIndex >= edge.waypoints.length) return;
+  const anchors = buildStubCorridorAnchors(
+    resolved.srcStub,
+    resolved.tgtStub,
+    resolved.srcNormal,
+    resolved.tgtNormal,
+    resolved.obstacles
+  );
+  const hit = nearestSegmentOnAnchors(px, py, anchors);
+  edge.waypoints[waypointIndex] = { seg: hit.seg, u: hit.u };
+}
+
+function resolveEdgeEndpointsForRouting(edge, nodeMap, w, h, options) {
+  options = options || {};
+  const boundsMap = options.boundsMap || null;
+  const edgePaths = options.edgePaths || null;
+  const canvasEdges = options.canvas || null;
+  const autoPorts = options.autoPorts || null;
+  const defaults = defaultPortsForEdge(edge, nodeMap, w, h, boundsMap, canvasEdges);
+  if (!defaults) return null;
+  const sourceEp = ensureEndpointKind(pickEffectiveEndpoint(edge, 'source', autoPorts, defaults));
+  const targetEp = ensureEndpointKind(pickEffectiveEndpoint(edge, 'target', autoPorts, defaults));
+  const ctx = { nodeMap, w, h, boundsMap, edgePaths };
+
+  const childNode = edge.kind === 'family-child' ? nodeMap.get(edge.child) : null;
+  const childCenter = childNode ? nodeCenter(childNode, w, h, boundsMap) : null;
+  let towardForSource = null;
+  if (targetEp.kind === 'node') {
+    const tn = nodeMap.get(targetEp.nodeId);
+    if (tn) towardForSource = nodeCenter(tn, w, h, boundsMap);
+  } else if (targetEp.kind === 'edge' && edgePaths) {
+    const ref = edgePaths.get(targetEp.edgeId);
+    if (ref && ref.pts) {
+      const at = pointAtArcLength(ref.pts, targetEp.t);
+      if (at) towardForSource = at.point;
+    }
+  }
+  if (sourceEp.kind === 'node') {
+    const sn = nodeMap.get(sourceEp.nodeId);
+    if (sn && !childCenter) towardForSource = nodeCenter(sn, w, h, boundsMap);
+  }
+
+  const tgtResolved = resolveEndpoint(targetEp, ctx, childCenter);
+  const srcResolved = resolveEndpoint(sourceEp, ctx, towardForSource || (tgtResolved && tgtResolved.point));
+  if (!srcResolved || !tgtResolved) return null;
+
+  const srcStub = vecAdd(srcResolved.point, vecScale(srcResolved.normal, ARROW_STUB_LEN));
+  const tgtStub = vecAdd(tgtResolved.point, vecScale(tgtResolved.normal, ARROW_STUB_LEN));
+  const obstacles = collectRouteObstacles(nodeMap, w, h, boundsMap, nodeSlugsForEdge(edge));
+  return {
+    srcResolved,
+    tgtResolved,
+    srcStub,
+    tgtStub,
+    srcNormal: srcResolved.normal,
+    tgtNormal: tgtResolved.normal,
+    obstacles,
+  };
 }
 
 function attachPortLayoutFields(edge, raw) {
@@ -359,7 +562,6 @@ export function assignAutoLanes(edges) {
   });
 }
 
-export const EDGE_MARKER_INSET = 14;
 export const ARROW_TIP_LEN = 10;
 export const ARROW_STUB_LEN = 24;
 export const ARROW_HEAD_WIDTH = 6;
@@ -624,8 +826,8 @@ function defaultPortsBetweenBounds(bFrom, bTo, fromSlug, toSlug) {
   const lowerB = fromIsUpper ? bTo : bFrom;
   const upperSlug = fromIsUpper ? fromSlug : toSlug;
   const lowerSlug = fromIsUpper ? toSlug : fromSlug;
-  const upperSide = upperB.cx <= lowerB.cx ? 'bottom' : 'bottom';
-  const upperT = 0.5;
+  const upperSide = 'bottom';
+  const upperT = upperB.cx <= lowerB.cx ? 0.62 : 0.38;
   if (fromSlug === upperSlug) {
     return {
       source: { nodeId: fromSlug, side: upperSide, t: upperT },
@@ -691,26 +893,165 @@ export function defaultPortsForEdge(edge, nodeMap, w, h, boundsMap, canvasEdges)
   };
 }
 
-function autoWaypointsBetweenStubs(srcStub, tgtStub, srcNormal, tgtNormal) {
+function autoWaypointsBetweenStubs(srcStub, tgtStub, srcNormal, tgtNormal, obstacles) {
   const dx = tgtStub.x - srcStub.x;
   const dy = tgtStub.y - srcStub.y;
   if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return [];
 
   const exitH = Math.abs(srcNormal.x) > Math.abs(srcNormal.y);
   const enterH = Math.abs(tgtNormal.x) > Math.abs(tgtNormal.y);
+  let base = [];
 
   if (exitH && enterH) {
     if (Math.abs(srcStub.y - tgtStub.y) < 4) return [];
     const midX = snapPx((srcStub.x + tgtStub.x) / 2);
-    return [{ x: midX, y: srcStub.y }, { x: midX, y: tgtStub.y }];
-  }
-  if (!exitH && !enterH) {
+    base = [{ x: midX, y: srcStub.y }, { x: midX, y: tgtStub.y }];
+  } else if (!exitH && !enterH) {
     if (Math.abs(srcStub.x - tgtStub.x) < 4) return [];
     const midY = snapPx((srcStub.y + tgtStub.y) / 2);
-    return [{ x: srcStub.x, y: midY }, { x: tgtStub.x, y: midY }];
+    base = [{ x: srcStub.x, y: midY }, { x: tgtStub.x, y: midY }];
+  } else if (exitH) {
+    base = [{ x: tgtStub.x, y: srcStub.y }];
+  } else {
+    base = [{ x: srcStub.x, y: tgtStub.y }];
   }
-  if (exitH) return [{ x: tgtStub.x, y: srcStub.y }];
-  return [{ x: srcStub.x, y: tgtStub.y }];
+
+  if (!obstacles || !obstacles.length) return base;
+
+  const anchors = [srcStub].concat(base).concat([tgtStub]);
+  if (!corridorSegmentsHitObstacles(anchors, obstacles)) return base;
+
+  // 水平/垂直シフトで回避できない場合: 障害物の上/下（または左/右）を迂回
+  const detour = detourMidpointsAroundObstacles(srcStub, tgtStub, srcNormal, tgtNormal, obstacles);
+  if (detour) {
+    const trial = [srcStub].concat(detour).concat([tgtStub]);
+    if (!corridorSegmentsHitObstacles(trial, obstacles)) return detour;
+  }
+
+  const candidates = new Set();
+  if (exitH && enterH && base.length === 2) {
+    candidates.add(snapPx((srcStub.x + tgtStub.x) / 2));
+    candidates.add(snapPx(srcStub.x + (tgtStub.x - srcStub.x) * 0.33));
+    candidates.add(snapPx(srcStub.x + (tgtStub.x - srcStub.x) * 0.67));
+    obstacles.forEach(function (obs) {
+      const r = inflateBounds(obs, CARD_ROUTE_PAD);
+      candidates.add(snapPx(r.left - CARD_ROUTE_PAD));
+      candidates.add(snapPx(r.right + CARD_ROUTE_PAD));
+    });
+    let best = base;
+    let bestScore = Infinity;
+    candidates.forEach(function (midX) {
+      const mid = [{ x: midX, y: srcStub.y }, { x: midX, y: tgtStub.y }];
+      const trial = [srcStub].concat(mid).concat([tgtStub]);
+      if (corridorSegmentsHitObstacles(trial, obstacles)) return;
+      const score = Math.abs(midX - (srcStub.x + tgtStub.x) / 2);
+      if (score < bestScore) { bestScore = score; best = mid; }
+    });
+    return best;
+  }
+
+  if (!exitH && !enterH && base.length === 2) {
+    candidates.add(snapPx((srcStub.y + tgtStub.y) / 2));
+    candidates.add(snapPx(srcStub.y + (tgtStub.y - srcStub.y) * 0.33));
+    candidates.add(snapPx(srcStub.y + (tgtStub.y - srcStub.y) * 0.67));
+    obstacles.forEach(function (obs) {
+      const r = inflateBounds(obs, CARD_ROUTE_PAD);
+      candidates.add(snapPx(r.top - CARD_ROUTE_PAD));
+      candidates.add(snapPx(r.bottom + CARD_ROUTE_PAD));
+    });
+    let best = base;
+    let bestScore = Infinity;
+    candidates.forEach(function (midY) {
+      const mid = [{ x: srcStub.x, y: midY }, { x: tgtStub.x, y: midY }];
+      const trial = [srcStub].concat(mid).concat([tgtStub]);
+      if (corridorSegmentsHitObstacles(trial, obstacles)) return;
+      const score = Math.abs(midY - (srcStub.y + tgtStub.y) / 2);
+      if (score < bestScore) { bestScore = score; best = mid; }
+    });
+    return best;
+  }
+
+  if (base.length === 1) {
+    const corner = base[0];
+    const altA = { x: corner.x, y: snapPx((srcStub.y + tgtStub.y) / 2) };
+    const altB = { x: snapPx((srcStub.x + tgtStub.x) / 2), y: corner.y };
+    const trials = [
+      [corner],
+      [altA],
+      [altB],
+    ];
+    let best = base;
+    let bestScore = Infinity;
+    trials.forEach(function (mid) {
+      const trial = [srcStub].concat(mid).concat([tgtStub]);
+      if (corridorSegmentsHitObstacles(trial, obstacles)) return;
+      const c = mid[0];
+      const score = Math.abs(c.x - corner.x) + Math.abs(c.y - corner.y);
+      if (score < bestScore) { bestScore = score; best = mid; }
+    });
+    return best;
+  }
+
+  return base;
+}
+
+/** 障害物群を避ける上下/左右の迂回ウェイポイント候補 */
+function detourMidpointsAroundObstacles(srcStub, tgtStub, srcNormal, tgtNormal, obstacles) {
+  const exitH = Math.abs(srcNormal.x) > Math.abs(srcNormal.y);
+  const enterH = Math.abs(tgtNormal.x) > Math.abs(tgtNormal.y);
+  const xMin = Math.min(srcStub.x, tgtStub.x);
+  const xMax = Math.max(srcStub.x, tgtStub.x);
+  const yMin = Math.min(srcStub.y, tgtStub.y);
+  const yMax = Math.max(srcStub.y, tgtStub.y);
+  let laneTop = Infinity;
+  let laneBottom = -Infinity;
+  let laneLeft = Infinity;
+  let laneRight = -Infinity;
+
+  obstacles.forEach(function (obs) {
+    const r = inflateBounds(obs, CARD_ROUTE_PAD);
+    if (r.right >= xMin && r.left <= xMax) {
+      laneTop = Math.min(laneTop, r.top);
+      laneBottom = Math.max(laneBottom, r.bottom);
+    }
+    if (r.bottom >= yMin && r.top <= yMax) {
+      laneLeft = Math.min(laneLeft, r.left);
+      laneRight = Math.max(laneRight, r.right);
+    }
+  });
+
+  const lanes = [];
+  if (laneTop < Infinity) {
+    const y = snapPx(laneTop - CARD_ROUTE_PAD);
+    lanes.push([{ x: srcStub.x, y }, { x: tgtStub.x, y }]);
+    lanes.push([{ x: srcStub.x, y }, { x: snapPx((srcStub.x + tgtStub.x) / 2), y }, { x: tgtStub.x, y }]);
+  }
+  if (laneBottom > -Infinity) {
+    const y = snapPx(laneBottom + CARD_ROUTE_PAD);
+    lanes.push([{ x: srcStub.x, y }, { x: tgtStub.x, y }]);
+    lanes.push([{ x: srcStub.x, y }, { x: snapPx((srcStub.x + tgtStub.x) / 2), y }, { x: tgtStub.x, y }]);
+  }
+  if (!exitH && !enterH) {
+    if (laneLeft < Infinity) {
+      const x = snapPx(laneLeft - CARD_ROUTE_PAD);
+      lanes.push([{ x, y: srcStub.y }, { x, y: tgtStub.y }]);
+    }
+    if (laneRight > -Infinity) {
+      const x = snapPx(laneRight + CARD_ROUTE_PAD);
+      lanes.push([{ x, y: srcStub.y }, { x, y: tgtStub.y }]);
+    }
+  }
+
+  let best = null;
+  let bestScore = Infinity;
+  lanes.forEach(function (mid) {
+    const trial = [srcStub].concat(mid).concat([tgtStub]);
+    if (corridorSegmentsHitObstacles(trial, obstacles)) return;
+    const c = mid[Math.floor(mid.length / 2)];
+    const score = Math.abs(c.x - (srcStub.x + tgtStub.x) / 2) + Math.abs(c.y - (srcStub.y + tgtStub.y) / 2);
+    if (score < bestScore) { bestScore = score; best = mid; }
+  });
+  return best;
 }
 
 function dedupePoints(pts) {
@@ -732,8 +1073,8 @@ function simplifyCollinear(pts) {
     const a = out[out.length - 1];
     const b = pts[i];
     const c = pts[i + 1];
-    const collinearH = a.y === b.y && b.y === c.y;
-    const collinearV = a.x === b.x && b.x === c.x;
+    const collinearH = Math.abs(a.y - b.y) < 1 && Math.abs(b.y - c.y) < 1;
+    const collinearV = Math.abs(a.x - b.x) < 1 && Math.abs(b.x - c.x) < 1;
     if (collinearH || collinearV) continue;
     out.push(b);
   }
@@ -762,8 +1103,10 @@ export function orthogonalizePath(pts) {
  * 単一ルータ: ポート2点 + waypoints → 直交パス
  * waypoints 空なら stub 間を自動ルート
  */
-export function computePath(srcResolved, tgtResolved, waypointsPx, stubLen) {
+export function computePath(srcResolved, tgtResolved, waypointsPx, stubLen, options) {
   stubLen = stubLen == null ? ARROW_STUB_LEN : stubLen;
+  options = options || {};
+  const obstacles = options.obstacles || null;
   const srcStub = vecAdd(srcResolved.point, vecScale(srcResolved.normal, stubLen));
   const tgtStub = vecAdd(tgtResolved.point, vecScale(tgtResolved.normal, stubLen));
 
@@ -771,7 +1114,18 @@ export function computePath(srcResolved, tgtResolved, waypointsPx, stubLen) {
     return { x: snapPx(wp.x), y: snapPx(wp.y) };
   });
   if (!midPts.length) {
-    midPts = autoWaypointsBetweenStubs(srcStub, tgtStub, srcResolved.normal, tgtResolved.normal);
+    midPts = autoWaypointsBetweenStubs(srcStub, tgtStub, srcResolved.normal, tgtResolved.normal, obstacles);
+    const corridor = [srcStub].concat(midPts).concat([tgtStub]);
+    if (obstacles && obstacles.length && corridorSegmentsHitObstacles(corridor, obstacles)) {
+      const detour = detourMidpointsAroundObstacles(
+        srcStub,
+        tgtStub,
+        srcResolved.normal,
+        tgtResolved.normal,
+        obstacles
+      );
+      if (detour) midPts = detour;
+    }
   }
 
   const raw = [srcResolved.point, srcStub].concat(midPts).concat([tgtStub, tgtResolved.point]);
@@ -883,17 +1237,35 @@ export function extractPathCornerHandles(pts, waypointsPx) {
   return handles;
 }
 
+/** その端点がユーザー確定（手動）か。node は常に手動、edge は autoT===false のみ手動 */
+function isManualEndpoint(ep) {
+  if (!ep) return false;
+  ep = ensureEndpointKind(ep);
+  if (ep.kind === 'node') return true;
+  return ep.autoT === false;
+}
+
+/** role の実効エンドポイントを決定（手動 > 自動割当 > デフォルト） */
+function pickEffectiveEndpoint(edge, role, autoPorts, defaults) {
+  const manual = edge[role];
+  if (manual && isManualEndpoint(manual)) return manual;
+  if (autoPorts && autoPorts[role]) return autoPorts[role];
+  if (manual) return manual;
+  return defaults[role];
+}
+
 /** エッジ1本のジオメトリ（単一入口） */
 export function computeEdgeGeometry(edge, nodeMap, w, h, options) {
   options = options || {};
   const boundsMap = options.boundsMap || null;
   const edgePaths = options.edgePaths || null;
   const canvasEdges = options.canvas || null;
+  const autoPorts = options.autoPorts || null;
   const defaults = defaultPortsForEdge(edge, nodeMap, w, h, boundsMap, canvasEdges);
   if (!defaults) return null;
 
-  const sourceEp = ensureEndpointKind(edge.source || defaults.source);
-  const targetEp = ensureEndpointKind(edge.target || defaults.target);
+  const sourceEp = ensureEndpointKind(pickEffectiveEndpoint(edge, 'source', autoPorts, defaults));
+  const targetEp = ensureEndpointKind(pickEffectiveEndpoint(edge, 'target', autoPorts, defaults));
   const ctx = { nodeMap, w, h, boundsMap, edgePaths };
 
   const childNode = edge.kind === 'family-child' ? nodeMap.get(edge.child) : null;
@@ -919,11 +1291,24 @@ export function computeEdgeGeometry(edge, nodeMap, w, h, options) {
   const srcResolved = resolveEndpoint(sourceEp, ctx, towardForSource || (tgtResolved && tgtResolved.point));
   if (!srcResolved || !tgtResolved) return null;
 
-  const waypointsPx = (edge.waypoints || []).map(function (wp) {
-    return { x: wp.x * w, y: wp.y * h };
-  });
+  const obstacles = collectRouteObstacles(nodeMap, w, h, boundsMap, nodeSlugsForEdge(edge));
+  const manualWaypointsPx = resolveManualWaypointsPx(
+    edge.waypoints,
+    w,
+    h,
+    srcResolved,
+    tgtResolved,
+    obstacles
+  );
+  // 手動 waypoint 優先。無ければトランク等の自動 waypoint を経路に注入（手動扱いにはしない）
+  let routeWaypointsPx = manualWaypointsPx;
+  if (!manualWaypointsPx.length && options.autoWaypointsPx && options.autoWaypointsPx.length) {
+    routeWaypointsPx = options.autoWaypointsPx.map(function (p) {
+      return { x: snapPx(p.x), y: snapPx(p.y) };
+    });
+  }
 
-  const pts = computePath(srcResolved, tgtResolved, waypointsPx);
+  const pts = computePath(srcResolved, tgtResolved, routeWaypointsPx, null, { obstacles });
   const bidirectional = edge.kind !== 'relation' || edge.bidirectional !== false;
   const directed = edge.kind === 'relation' && !!edge.directed && !bidirectional;
   const routeOpts = {
@@ -947,10 +1332,10 @@ export function computeEdgeGeometry(edge, nodeMap, w, h, options) {
     if (autoLb) labels.push(autoLb);
   }
 
-  const waypointHandles = (edge.waypoints || []).map(function (wp, idx) {
-    return { x: wp.x * w, y: wp.y * h, index: idx, auto: false };
+  const waypointHandles = manualWaypointsPx.map(function (pt, idx) {
+    return { x: pt.x, y: pt.y, index: idx, auto: false };
   });
-  const cornerHandles = extractPathCornerHandles(pts, waypointsPx);
+  const cornerHandles = extractPathCornerHandles(pts, manualWaypointsPx);
 
   const srcAngle = srcResolved.side != null
     ? inwardAngleForSide(srcResolved.side)
@@ -981,92 +1366,6 @@ export function computeEdgeGeometry(edge, nodeMap, w, h, options) {
     bidirectional,
     directed,
   };
-}
-
-/** カード外周に垂直スナップ（0/90/180/270° のみ） */
-export function snapPointToRectBorder(bounds, px, py, inset) {
-  inset = inset == null ? EDGE_MARKER_INSET : inset;
-  const clamp = function (lo, hi, v) { return Math.max(lo, Math.min(hi, v)); };
-  const dTop = Math.abs(py - bounds.top);
-  const dBottom = Math.abs(py - bounds.bottom);
-  const dLeft = Math.abs(px - bounds.left);
-  const dRight = Math.abs(px - bounds.right);
-  const minD = Math.min(dTop, dBottom, dLeft, dRight);
-  let side;
-  let x;
-  let y;
-  if (minD === dTop) {
-    side = 'top';
-    x = snapPx(clamp(bounds.left + 6, bounds.right - 6, px));
-    y = snapPx(bounds.top - inset);
-  } else if (minD === dBottom) {
-    side = 'bottom';
-    x = snapPx(clamp(bounds.left + 6, bounds.right - 6, px));
-    y = snapPx(bounds.bottom + inset);
-  } else if (minD === dLeft) {
-    side = 'left';
-    x = snapPx(bounds.left - inset);
-    y = snapPx(clamp(bounds.top + 6, bounds.bottom - 6, py));
-  } else {
-    side = 'right';
-    x = snapPx(bounds.right + inset);
-    y = snapPx(clamp(bounds.top + 6, bounds.bottom - 6, py));
-  }
-  return { x, y, side, angle: inwardAngleForSide(side) };
-}
-
-export function shortenSegment(x1, y1, x2, y2, trimStart, trimEnd) {
-  let sx1 = x1;
-  let sy1 = y1;
-  let sx2 = x2;
-  let sy2 = y2;
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const len = Math.hypot(dx, dy) || 1;
-  const ux = dx / len;
-  const uy = dy / len;
-  if (trimStart > 0) {
-    sx1 += ux * trimStart;
-    sy1 += uy * trimStart;
-  }
-  if (trimEnd > 0) {
-    sx2 -= ux * trimEnd;
-    sy2 -= uy * trimEnd;
-  }
-  return { x1: snapPx(sx1), y1: snapPx(sy1), x2: snapPx(sx2), y2: snapPx(sy2) };
-}
-
-export function cornersFromSegments(segments) {
-  const corners = [];
-  for (let i = 0; i < segments.length - 1; i++) {
-    const a = segments[i];
-    const b = segments[i + 1];
-    corners.push({ x: snapPx(a.x2), y: snapPx(a.y2), index: i });
-  }
-  return corners;
-}
-
-/** 矩形の外側で、相手方向を向いた接点（矢印がカードに隠れない） */
-export function borderPointFacing(bounds, targetX, targetY, inset) {
-  const dx = targetX - bounds.cx;
-  const dy = targetY - bounds.cy;
-  if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
-    return { x: bounds.cx, y: bounds.top - inset };
-  }
-  const hw = bounds.nw / 2;
-  const hh = bounds.nh / 2;
-  const scale = 1 / Math.max(Math.abs(dx) / hw, Math.abs(dy) / hh, 0.001);
-  return {
-    x: snapPx(bounds.cx + dx * scale + (dx >= 0 ? inset : -inset)),
-    y: snapPx(bounds.cy + dy * scale + (dy >= 0 ? inset : -inset)),
-  };
-}
-
-export function segmentBetweenBounds(bA, bB, inset) {
-  inset = inset == null ? EDGE_MARKER_INSET : inset;
-  const pA = borderPointFacing(bA, bB.cx, bB.cy, inset);
-  const pB = borderPointFacing(bB, bA.cx, bA.cy, inset);
-  return { x1: pA.x, y1: pA.y, x2: pB.x, y2: pB.y };
 }
 
 /**
@@ -1106,481 +1405,6 @@ export function boundsFromDomRect(elRect, stageRect) {
   return { left, right, top, bottom, nw, nh, cx: left + nw / 2, cy: top + nh / 2 };
 }
 
-export function computeCoupleGeometry(p1, p2, w, h, boundsMap) {
-  const b1 = nodePixelBounds(p1, w, h, boundsMap);
-  const b2 = nodePixelBounds(p2, w, h, boundsMap);
-  const leftBounds = b1.cx <= b2.cx ? b1 : b2;
-  const rightBounds = b1.cx <= b2.cx ? b2 : b1;
-  const barY = (leftBounds.cy + rightBounds.cy) / 2;
-  let xLeft = leftBounds.right;
-  let xRight = rightBounds.left;
-  if (xRight - xLeft < 8) {
-    xLeft = Math.min(b1.cx, b2.cx);
-    xRight = Math.max(b1.cx, b2.cx);
-  }
-  return {
-    barY,
-    xLeft,
-    xRight,
-    midX: (xLeft + xRight) / 2,
-    midY: barY,
-    p1Drop: { x: leftBounds.cx, y: leftBounds.bottom },
-    p2Drop: { x: rightBounds.cx, y: rightBounds.bottom },
-  };
-}
-
-/** 夫婦線：カード間の横線1本 */
-export function marriageBarSegments(g, b1, b2) {
-  const inset = EDGE_MARKER_INSET;
-  const leftB = b1.cx <= b2.cx ? b1 : b2;
-  const rightB = b1.cx <= b2.cx ? b2 : b1;
-  let x1 = leftB.right + inset;
-  let x2 = rightB.left - inset;
-  if (x2 - x1 < 16) {
-    x1 = g.xLeft + inset;
-    x2 = g.xRight - inset;
-  }
-  return [
-    { x1, y1: g.barY, x2, y2: g.barY, dashed: false, arrowBoth: true },
-  ];
-}
-
-/**
- * 親子関係線：夫婦の横線 ↔ 子ども（直角ジグザグ・縦線ラベルは縦書き）
- */
-function childRelationSegment(g, childBounds, singleParentBounds, edge) {
-  const inset = EDGE_MARKER_INSET;
-  let anchorX;
-  let anchorY;
-
-  if (g) {
-    anchorX = Math.max(g.xLeft, Math.min(g.xRight, childBounds.cx));
-    anchorY = g.barY;
-  } else {
-    anchorX = singleParentBounds.cx;
-    anchorY = singleParentBounds.bottom + 14;
-  }
-
-  const pChild = borderPointFacing(childBounds, anchorX, anchorY, inset);
-  const pAnchor = childBounds.cy > anchorY
-    ? { x: anchorX, y: anchorY + inset }
-    : { x: anchorX, y: anchorY - inset };
-
-  const labelText = String(edge.label || '').trim() || '子';
-  const dashed = edge.style === 'dashed';
-  const segments = [];
-  const hitTargets = [];
-  const dx = Math.abs(pAnchor.x - pChild.x);
-  const charH = 13;
-
-  if (dx < 8) {
-    segments.push({
-      x1: pChild.x,
-      y1: pChild.y,
-      x2: pAnchor.x,
-      y2: pAnchor.y,
-      dashed,
-      arrowStart: true,
-      arrowEnd: true,
-    });
-    hitTargets.push({
-      x1: pChild.x,
-      y1: pChild.y,
-      x2: pAnchor.x,
-      y2: pAnchor.y,
-    });
-    const midY = (pChild.y + pAnchor.y) / 2;
-    return {
-      segments,
-      labels: [{
-        x: pChild.x + 14,
-        y: midY - ((labelText.length - 1) * charH) / 2,
-        text: labelText,
-        vertical: true,
-      }],
-      hitTargets,
-    };
-  }
-
-  const childBelow = pChild.y > pAnchor.y;
-  const spanY = Math.abs(pChild.y - pAnchor.y);
-  const elbowY = childBelow
-    ? pAnchor.y + Math.max(22, Math.min(spanY * 0.42, spanY - 28))
-    : pAnchor.y - Math.max(22, Math.min(spanY * 0.42, spanY - 28));
-
-  segments.push(
-    {
-      x1: pChild.x,
-      y1: pChild.y,
-      x2: pChild.x,
-      y2: elbowY,
-      dashed: false,
-      arrowStart: true,
-    },
-    {
-      x1: pChild.x,
-      y1: elbowY,
-      x2: pAnchor.x,
-      y2: elbowY,
-      dashed: false,
-    },
-    {
-      x1: pAnchor.x,
-      y1: elbowY,
-      x2: pAnchor.x,
-      y2: pAnchor.y,
-      dashed,
-      arrowEnd: true,
-    },
-  );
-  hitTargets.push(
-    { x1: pChild.x, y1: pChild.y, x2: pChild.x, y2: elbowY },
-    { x1: pChild.x, y1: elbowY, x2: pAnchor.x, y2: elbowY },
-    { x1: pAnchor.x, y1: elbowY, x2: pAnchor.x, y2: pAnchor.y },
-  );
-
-  const labelSide = pChild.x <= pAnchor.x ? 14 : -14;
-  const vertMid = (pChild.y + elbowY) / 2;
-
-  return {
-    segments,
-    labels: [{
-      x: pChild.x + labelSide,
-      y: vertMid - ((labelText.length - 1) * charH) / 2,
-      text: labelText,
-      vertical: true,
-    }],
-    hitTargets,
-  };
-}
-
-function offsetSegment(x1, y1, x2, y2, lane, amount) {
-  if (!lane) return { x1, y1, x2, y2 };
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const len = Math.hypot(dx, dy) || 1;
-  const nx = (-dy / len) * lane * amount;
-  const ny = (dx / len) * lane * amount;
-  return { x1: x1 + nx, y1: y1 + ny, x2: x2 + nx, y2: y2 + ny };
-}
-
-/** カード2枚の位置関係に応じた直角ルート（不要な曲げを避け、下側カードは上端へ） */
-function orthogonalRouteBetweenBounds(bFrom, bTo, opts) {
-  opts = opts || {};
-  const inset = EDGE_MARKER_INSET;
-  const dashed = !!opts.dashed;
-  const bidirectional = opts.arrowBoth !== false && !opts.directed;
-  const oneWay = !!opts.directed && !bidirectional;
-  const text = String(opts.labelText || '').trim();
-  const charH = 13;
-  const segments = [];
-  const hitTargets = [];
-  const rowThreshold = Math.min(bFrom.nh, bTo.nh) * 0.38;
-  const colThreshold = Math.min(bFrom.nw, bTo.nw) * 0.38;
-  const dy = bTo.cy - bFrom.cy;
-  const dx = bTo.cx - bFrom.cx;
-
-  function addSeg(x1, y1, x2, y2, flags) {
-    x1 = snapPx(x1);
-    y1 = snapPx(y1);
-    x2 = snapPx(x2);
-    y2 = snapPx(y2);
-    segments.push({
-      x1, y1, x2, y2,
-      dashed: flags.dashed != null ? flags.dashed : dashed,
-      arrowStart: !!flags.arrowStart,
-      arrowEnd: !!flags.arrowEnd,
-    });
-    hitTargets.push({ x1, y1, x2, y2 });
-  }
-
-  function finish(label) {
-    const first = segments[0];
-    const last = segments[segments.length - 1];
-    return {
-      segments,
-      hitTargets,
-      label: label || null,
-      endpointFromAngle: segmentEndpointMeta(first, true).angle,
-      endpointToAngle: segmentEndpointMeta(last, false).angle,
-      elbowCorners: cornersFromSegments(segments),
-    };
-  }
-
-  // ほぼ横並び → 横1本だけ
-  if (Math.abs(dy) <= rowThreshold && Math.abs(dx) > 16) {
-    const leftB = bFrom.cx <= bTo.cx ? bFrom : bTo;
-    const rightB = bFrom.cx <= bTo.cx ? bTo : bFrom;
-    const y = (leftB.cy + rightB.cy) / 2;
-    addSeg(leftB.right + inset, y, rightB.left - inset, y, {
-      arrowStart: bidirectional,
-      arrowEnd: bidirectional || oneWay,
-    });
-    return finish(text ? { x: (leftB.right + rightB.left) / 2, y: y - 10, text, vertical: false } : null);
-  }
-
-  // ほぼ縦並び → 縦1本だけ
-  if (Math.abs(dx) <= colThreshold && Math.abs(dy) > 16) {
-    const topB = bFrom.cy <= bTo.cy ? bFrom : bTo;
-    const bottomB = bFrom.cy <= bTo.cy ? bTo : bFrom;
-    const x = (topB.cx + bottomB.cx) / 2;
-    addSeg(x, topB.bottom + inset, x, bottomB.top - inset, {
-      arrowStart: bidirectional,
-      arrowEnd: bidirectional || oneWay,
-    });
-    return finish(text ? {
-      x: x + 14,
-      y: (topB.bottom + bottomB.top) / 2 - ((text.length - 1) * charH) / 2,
-      text,
-      vertical: true,
-    } : null);
-  }
-
-  // 斜め配置：下側カードの上端中央へ。L字（横→縦）
-  const lower = bFrom.cy >= bTo.cy ? bFrom : bTo;
-  const upper = bFrom.cy >= bTo.cy ? bTo : bFrom;
-  const end = { x: lower.cx, y: lower.top - inset };
-  const start = borderPointFacing(upper, lower.cx, lower.top, inset);
-
-  if (Math.abs(start.x - end.x) < 8) {
-    addSeg(start.x, start.y, end.x, end.y, {
-      arrowStart: bidirectional,
-      arrowEnd: bidirectional || oneWay,
-    });
-    return finish(text ? {
-      x: start.x + 14,
-      y: (start.y + end.y) / 2 - ((text.length - 1) * charH) / 2,
-      text,
-      vertical: true,
-    } : null);
-  }
-
-  const elbow = { x: end.x, y: start.y };
-  addSeg(start.x, start.y, elbow.x, elbow.y, {
-    dashed: false,
-    arrowStart: bidirectional,
-    arrowEnd: false,
-  });
-  addSeg(elbow.x, elbow.y, end.x, end.y, {
-    dashed,
-    arrowStart: false,
-    arrowEnd: bidirectional || oneWay,
-  });
-  return finish(text ? { x: (start.x + elbow.x) / 2, y: start.y - 10, text, vertical: false } : null);
-}
-
-function endpointsFromSegments(segments) {
-  if (!segments.length) return { from: null, to: null };
-  const first = segments[0];
-  const last = segments[segments.length - 1];
-  return {
-    from: { x: first.x1, y: first.y1 },
-    to: { x: last.x2, y: last.y2 },
-  };
-}
-
-function customEndpointRoute(pFrom, pTo, opts) {
-  return orthogonalRouteBetweenBorderAnchors(
-    pFrom, opts.fromSide || 'right',
-    pTo, opts.toSide || 'left',
-    opts
-  );
-}
-
-/** 夫婦線：左カード右辺 → 右カード左辺（高さ差があっても H-V-H） */
-function coupleRouteBetweenBounds(bFrom, bTo, opts) {
-  opts = opts || {};
-  const inset = EDGE_MARKER_INSET;
-  const leftB = bFrom.cx <= bTo.cx ? bFrom : bTo;
-  const rightB = bFrom.cx <= bTo.cx ? bTo : bFrom;
-  const pFrom = { x: snapPx(leftB.right + inset), y: snapPx(leftB.cy) };
-  const pTo = { x: snapPx(rightB.left - inset), y: snapPx(rightB.cy) };
-  const jointMidX = opts.jointMidX != null ? snapPx(opts.jointMidX) : null;
-  return orthogonalRouteBetweenBorderAnchors(
-    pFrom, 'right', pTo, 'left',
-    Object.assign({}, opts, { jointMidX: jointMidX })
-  );
-}
-
-/**
- * カード外周2点を直角のみで結ぶ。
- * 関節は jointMidX（横結び）または jointMidY（縦結び）で調整。
- */
-function orthogonalRouteBetweenBorderAnchors(pFrom, fromSide, pTo, toSide, opts) {
-  opts = opts || {};
-  const dashed = !!opts.dashed;
-  const bidirectional = opts.arrowBoth !== false && !opts.directed;
-  const oneWay = !!opts.directed && !bidirectional;
-  const text = String(opts.labelText || '').trim();
-  const charH = 13;
-  const preferVerticalLabel = !!opts.preferVerticalLabel;
-  const segments = [];
-  const hitTargets = [];
-
-  pFrom = snapOrthogonalPoint(pFrom);
-  pTo = snapOrthogonalPoint(pTo);
-
-  function addSeg(x1, y1, x2, y2, flags) {
-    x1 = snapPx(x1);
-    y1 = snapPx(y1);
-    x2 = snapPx(x2);
-    y2 = snapPx(y2);
-    if (x1 === x2 && y1 === y2) return;
-    segments.push({
-      x1, y1, x2, y2,
-      dashed: flags.dashed != null ? flags.dashed : dashed,
-      arrowStart: !!flags.arrowStart,
-      arrowEnd: !!flags.arrowEnd,
-    });
-    hitTargets.push({ x1, y1, x2, y2 });
-  }
-
-  function buildLabel() {
-    if (!text) return null;
-    const horizSeg = segments.find(function (s) { return s.y1 === s.y2 && Math.abs(s.x2 - s.x1) > 8; });
-    if (horizSeg) {
-      return { x: (horizSeg.x1 + horizSeg.x2) / 2, y: horizSeg.y1 - 10, text, vertical: false };
-    }
-    const vertSeg = segments.find(function (s) { return s.x1 === s.x2 && Math.abs(s.y2 - s.y1) > 8; });
-    if (vertSeg) {
-      const side = vertSeg.x1 <= (pFrom.x + pTo.x) / 2 ? 14 : -14;
-      const midY = (vertSeg.y1 + vertSeg.y2) / 2;
-      return {
-        x: vertSeg.x1 + side,
-        y: midY - ((text.length - 1) * charH) / 2,
-        text,
-        vertical: true,
-      };
-    }
-    return null;
-  }
-
-  const horizPair = (fromSide === 'right' && toSide === 'left')
-    || (fromSide === 'left' && toSide === 'right');
-  const vertPair = (fromSide === 'bottom' && toSide === 'top')
-    || (fromSide === 'top' && toSide === 'bottom');
-
-  if (horizPair) {
-    const lo = Math.min(pFrom.x, pTo.x);
-    const hi = Math.max(pFrom.x, pTo.x);
-    const rawMid = opts.jointMidX != null
-      ? snapPx(opts.jointMidX)
-      : snapPx((pFrom.x + pTo.x) / 2);
-    const midX = snapPx(Math.max(lo, Math.min(hi, rawMid)));
-    if (Math.abs(pFrom.y - pTo.y) < 6) {
-      addSeg(pFrom.x, pFrom.y, pTo.x, pTo.y, {
-        arrowStart: bidirectional,
-        arrowEnd: bidirectional || oneWay,
-      });
-    } else {
-      addSeg(pFrom.x, pFrom.y, midX, pFrom.y, {
-        arrowStart: bidirectional, arrowEnd: false,
-      });
-      addSeg(midX, pFrom.y, midX, pTo.y, {
-        arrowStart: false, arrowEnd: false,
-      });
-      addSeg(midX, pTo.y, pTo.x, pTo.y, {
-        arrowStart: false, arrowEnd: bidirectional || oneWay,
-      });
-    }
-  } else if (vertPair) {
-    const lo = Math.min(pFrom.y, pTo.y);
-    const hi = Math.max(pFrom.y, pTo.y);
-    const rawMid = opts.jointMidY != null
-      ? snapPx(opts.jointMidY)
-      : snapPx((pFrom.y + pTo.y) / 2);
-    const midY = snapPx(Math.max(lo, Math.min(hi, rawMid)));
-    if (Math.abs(pFrom.x - pTo.x) < 6) {
-      addSeg(pFrom.x, pFrom.y, pTo.x, pTo.y, {
-        arrowStart: bidirectional,
-        arrowEnd: bidirectional || oneWay,
-      });
-    } else {
-      addSeg(pFrom.x, pFrom.y, pFrom.x, midY, {
-        arrowStart: bidirectional, arrowEnd: false,
-      });
-      addSeg(pFrom.x, midY, pTo.x, midY, {
-        arrowStart: false, arrowEnd: false,
-      });
-      addSeg(pTo.x, midY, pTo.x, pTo.y, {
-        arrowStart: false, arrowEnd: bidirectional || oneWay,
-      });
-    }
-  } else {
-    const loX = Math.min(pFrom.x, pTo.x);
-    const hiX = Math.max(pFrom.x, pTo.x);
-    const rawMidX = opts.jointMidX != null
-      ? snapPx(opts.jointMidX)
-      : snapPx((pFrom.x + pTo.x) / 2);
-    const midX = snapPx(Math.max(loX, Math.min(hiX, rawMidX)));
-    if (fromSide === 'right' || fromSide === 'left') {
-      addSeg(pFrom.x, pFrom.y, midX, pFrom.y, { arrowStart: bidirectional, arrowEnd: false });
-      addSeg(midX, pFrom.y, midX, pTo.y, { arrowStart: false, arrowEnd: false });
-      addSeg(midX, pTo.y, pTo.x, pTo.y, { arrowStart: false, arrowEnd: bidirectional || oneWay });
-    } else {
-      const midY = opts.jointMidY != null
-        ? snapPx(opts.jointMidY)
-        : snapPx((pFrom.y + pTo.y) / 2);
-      addSeg(pFrom.x, pFrom.y, pFrom.x, midY, { arrowStart: bidirectional, arrowEnd: false });
-      addSeg(pFrom.x, midY, pTo.x, midY, { arrowStart: false, arrowEnd: false });
-      addSeg(pTo.x, midY, pTo.x, pTo.y, { arrowStart: false, arrowEnd: bidirectional || oneWay });
-    }
-  }
-
-  return {
-    segments,
-    hitTargets,
-    label: buildLabel(),
-    endpointFrom: { x: pFrom.x, y: pFrom.y },
-    endpointTo: { x: pTo.x, y: pTo.y },
-    endpointFromAngle: inwardAngleForSide(fromSide),
-    endpointToAngle: inwardAngleForSide(toSide),
-    fromSide,
-    toSide,
-    routeAxis: horizPair || (!vertPair && (fromSide === 'right' || fromSide === 'left')) ? 'x' : 'y',
-    elbowCorners: cornersFromSegments(segments),
-    manual: !!opts.manual,
-  };
-}
-
-function segmentEndpointMeta(seg, atStart) {
-  if (!seg) return { angle: 0 };
-  const dx = seg.x2 - seg.x1;
-  const dy = seg.y2 - seg.y1;
-  if (Math.abs(dx) >= Math.abs(dy)) {
-    const a = dx >= 0 ? 0 : 180;
-    return { angle: atStart ? (a === 0 ? 180 : 0) : a };
-  }
-  const a = dy >= 0 ? 90 : 270;
-  return { angle: atStart ? (a === 90 ? 270 : 90) : a };
-}
-
-function pointOnBorderSide(bounds, side, px, py, inset) {
-  inset = inset == null ? EDGE_MARKER_INSET : inset;
-  const clamp = function (lo, hi, v) { return Math.max(lo, Math.min(hi, v)); };
-  if (side === 'top') {
-    return { x: snapPx(clamp(bounds.left + 6, bounds.right - 6, px)), y: snapPx(bounds.top - inset), side: 'top', angle: inwardAngleForSide('top') };
-  }
-  if (side === 'bottom') {
-    return { x: snapPx(clamp(bounds.left + 6, bounds.right - 6, px)), y: snapPx(bounds.bottom + inset), side: 'bottom', angle: inwardAngleForSide('bottom') };
-  }
-  if (side === 'left') {
-    return { x: snapPx(bounds.left - inset), y: snapPx(clamp(bounds.top + 6, bounds.bottom - 6, py)), side: 'left', angle: inwardAngleForSide('left') };
-  }
-  return { x: snapPx(bounds.right + inset), y: snapPx(clamp(bounds.top + 6, bounds.bottom - 6, py)), side: 'right', angle: inwardAngleForSide('right') };
-}
-
-function applyManualLabel(item, edge, w, h) {
-  if (!edge.labelPoint) return;
-  const text = String(edge.label || '').trim();
-  if (!text) return;
-  item.labels = [{
-    x: edge.labelPoint.x * w,
-    y: edge.labelPoint.y * h,
-    text,
-    vertical: edge.labelPoint.vertical === true,
-  }];
-}
 
 export function hasManualEndpoints(edge) {
   return !!(edge && (edge.source || edge.target));
@@ -1608,6 +1432,7 @@ export function shiftEdgeEndpointsForNode(edges, slug, dx, dy) {
     if (!touches()) return;
     if (edge.waypoints) {
       edge.waypoints.forEach(function (wp) {
+        if (isRelativeWaypoint(wp)) return;
         wp.x = clamp01(wp.x + dx);
         wp.y = clamp01(wp.y + dy);
       });
@@ -1646,7 +1471,8 @@ export function snapEndpointNormForEdge(edge, role, norm, canvas, w, h, boundsMa
     const px = norm.x * w;
     const py = norm.y * h;
     const t = snapArcLengthFromPoint(ref.pts, px, py);
-    const endpoint = { kind: 'edge', edgeId: ep.edgeId, t };
+    // ユーザーが動かした接続点は手動確定（トランク自動配線から外す）
+    const endpoint = { kind: 'edge', edgeId: ep.edgeId, t, autoT: false };
     const at = pointAtArcLength(ref.pts, t);
     if (!at) return { x: norm.x, y: norm.y, endpoint };
     return {
@@ -1733,6 +1559,122 @@ function referencesReach(fromId, toId, edgeById, visited) {
   return false;
 }
 
+/** 端点のおおよその座標（分散の並び順決定用） */
+function approxEndpointPoint(ep, nodeMap, w, h, boundsMap, edgeById) {
+  if (!ep) return null;
+  ep = ensureEndpointKind(ep);
+  if (ep.kind === 'node') {
+    const n = nodeMap.get(ep.nodeId);
+    return n ? nodeCenter(n, w, h, boundsMap) : null;
+  }
+  const e = edgeById.get(ep.edgeId);
+  if (!e) return null;
+  const a = nodeMap.get(e.from);
+  const b = nodeMap.get(e.to);
+  if (a && b) {
+    const ca = nodeCenter(a, w, h, boundsMap);
+    const cb = nodeCenter(b, w, h, boundsMap);
+    return { x: (ca.x + cb.x) / 2, y: (ca.y + cb.y) / 2 };
+  }
+  return null;
+}
+
+/**
+ * A: ポート自動分散。同じ (nodeId, side) に集まる自動エンドポイントを
+ * t=(i+1)/(n+1) で均等割り当て。手動エンドポイントは対象外。
+ * 返り値: Map index -> { source?, target? }
+ */
+function buildAutoPortMap(canvas, nodeMap, w, h, boundsMap, marriageByCouple, edgeById) {
+  const map = new Map();
+  const groups = new Map();
+  canvas.edges.forEach(function (edge, index) {
+    if (shouldSkipEdgeInPlan(edge, marriageByCouple)) return;
+    const defaults = defaultPortsForEdge(edge, nodeMap, w, h, boundsMap, canvas.edges);
+    if (!defaults) return;
+    ['source', 'target'].forEach(function (role) {
+      if (edge[role]) return; // 手動指定は分散しない
+      const def = defaults[role];
+      if (!def || def.kind !== 'node') return;
+      const key = def.nodeId + '|' + def.side;
+      const otherRole = role === 'source' ? 'target' : 'source';
+      const otherEp = edge[otherRole] || defaults[otherRole];
+      const ref = approxEndpointPoint(otherEp, nodeMap, w, h, boundsMap, edgeById);
+      const along = (def.side === 'left' || def.side === 'right')
+        ? (ref ? ref.y : 0)
+        : (ref ? ref.x : 0);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push({ index, role, along, side: def.side, nodeId: def.nodeId });
+    });
+  });
+  groups.forEach(function (list) {
+    list.sort(function (a, b) { return a.along - b.along; });
+    const n = list.length;
+    list.forEach(function (item, i) {
+      const t = n === 1 ? 0.5 : (i + 1) / (n + 1);
+      if (!map.has(item.index)) map.set(item.index, {});
+      map.get(item.index)[item.role] = {
+        kind: 'node',
+        nodeId: item.nodeId,
+        side: item.side,
+        t: Math.max(0.08, Math.min(0.92, t)),
+      };
+    });
+  });
+  return map;
+}
+
+export const TRUNK_BUS_OFFSET = 40;
+
+/**
+ * B: 兄弟トランク配線。同じ夫婦線に付く自動接続の子を marriageId でグルーピングし、
+ * 2人以上なら共有トランクX を算出。t/waypoint は経路計算時（参照先パス確定後）に決める。
+ */
+function buildSiblingTrunkGroups(canvas, nodeMap, w, h, boundsMap) {
+  const groups = new Map();
+  canvas.edges.forEach(function (edge, index) {
+    if (edge.kind !== 'family-child') return;
+    const tgt = edge.target ? ensureEndpointKind(edge.target) : null;
+    if (!tgt || tgt.kind !== 'edge' || tgt.autoT === false) return;
+    if (edge.waypoints && edge.waypoints.length) return;
+    const child = nodeMap.get(edge.child);
+    if (!child) return;
+    if (!groups.has(tgt.edgeId)) groups.set(tgt.edgeId, { marriageId: tgt.edgeId, childIndices: [], xs: [] });
+    const g = groups.get(tgt.edgeId);
+    g.childIndices.push(index);
+    g.xs.push(nodeCenter(child, w, h, boundsMap).x);
+  });
+  const byChildIndex = new Map();
+  groups.forEach(function (g) {
+    if (g.childIndices.length < 2) return; // 子1人はトランク化しない
+    g.trunkX = g.xs.reduce(function (a, b) { return a + b; }, 0) / g.xs.length;
+    g.childIndices.forEach(function (idx) { byChildIndex.set(idx, g); });
+  });
+  return byChildIndex;
+}
+
+/** 兄弟トランク: 参照先パス確定後に子1本ぶんの target(t) と経路 waypoint を算出 */
+function trunkOverrideForChild(edge, group, edgePaths, nodeMap, w, h, boundsMap) {
+  const ref = edgePaths.get(group.marriageId);
+  if (!ref || !ref.pts) return null;
+  const mid = pointAtArcLength(ref.pts, 0.5);
+  if (!mid) return null;
+  const midY = mid.point.y;
+  const child = nodeMap.get(edge.child);
+  if (!child) return null;
+  const childCenter = nodeCenter(child, w, h, boundsMap);
+  const childBelow = childCenter.y > midY;
+  const busY = snapPx(midY + (childBelow ? TRUNK_BUS_OFFSET : -TRUNK_BUS_OFFSET));
+  const trunkX = snapPx(group.trunkX);
+  const t = snapArcLengthFromPoint(ref.pts, trunkX, midY);
+  return {
+    target: { kind: 'edge', edgeId: group.marriageId, t: t },
+    autoWaypointsPx: [
+      { x: snapPx(childCenter.x), y: busY },
+      { x: trunkX, y: busY },
+    ],
+  };
+}
+
 function makeEdgePlanItem(index, edge, geom, nameFn) {
   return {
     index,
@@ -1789,6 +1731,14 @@ export function buildRenderPlan(canvas, w, h, personName, options) {
     if (e.id) edgeById.set(e.id, e);
   });
 
+  // A: ポート自動分散 / B: 兄弟トランク（グループのみ先に確定）
+  const autoPortMap = buildAutoPortMap(canvas, nodeMap, w, h, boundsMap, marriageByCouple, edgeById);
+  const trunkByChildIndex = buildSiblingTrunkGroups(canvas, nodeMap, w, h, boundsMap);
+
+  function autoPortsForIndex(index) {
+    return autoPortMap.get(index) || null;
+  }
+
   const edgeItems = [];
   const itemByIndex = new Map();
 
@@ -1808,6 +1758,7 @@ export function buildRenderPlan(canvas, w, h, personName, options) {
       boundsMap,
       edgePaths,
       canvas: canvas.edges,
+      autoPorts: autoPortsForIndex(index),
     });
     storeGeom(index, edge, geom);
   });
@@ -1836,10 +1787,22 @@ export function buildRenderPlan(canvas, w, h, personName, options) {
           return;
         }
       }
+      let autoPorts = autoPortsForIndex(index);
+      let autoWaypointsPx = null;
+      const trunkGroup = trunkByChildIndex.get(index);
+      if (trunkGroup) {
+        const override = trunkOverrideForChild(edge, trunkGroup, edgePaths, nodeMap, w, h, boundsMap);
+        if (override) {
+          autoPorts = Object.assign({}, autoPorts, { target: override.target });
+          autoWaypointsPx = override.autoWaypointsPx;
+        }
+      }
       const geom = computeEdgeGeometry(edge, nodeMap, w, h, {
         boundsMap,
         edgePaths,
         canvas: canvas.edges,
+        autoPorts: autoPorts,
+        autoWaypointsPx: autoWaypointsPx,
       });
       if (!geom) {
         console.warn('[chart-layout] 参照先未計算、エッジをスキップ:', edge.id);
