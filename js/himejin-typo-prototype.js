@@ -144,8 +144,6 @@ function openModal(row, clanTitle) {
   const body = document.getElementById('typo-modal-body');
   if (!modal || !body) return;
 
-  const code = tribeCode(row);
-  const stage = TRIBE_STAGE[code];
   const metaBits = [esc(row.tribe_label || '未判明')];
   if (clanTitle) metaBits.push(esc(clanTitle));
 
@@ -181,9 +179,9 @@ function openModal(row, clanTitle) {
 
   const stageEl = modal.querySelector('.typo-modal__stage');
   if (stageEl) {
-    stageEl.style.setProperty('--typo-stage-bg', stage.bg);
-    stageEl.style.setProperty('--typo-stage-accent', stage.accent);
-    stageEl.style.background = stage.bg;
+    stageEl.style.removeProperty('background');
+    stageEl.style.removeProperty('--typo-stage-bg');
+    stageEl.style.removeProperty('--typo-stage-accent');
   }
 
   modal.hidden = false;
