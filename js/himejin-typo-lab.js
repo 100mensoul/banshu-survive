@@ -2,11 +2,11 @@
  * ひめじんタイポ比較ラボ — 設定の切り替えと localStorage 保存
  */
 const LAB_DEFAULTS = {
-  'typo-font': 'noto',
-  'typo-size': 'm',
-  'typo-page-bg': 'forest',
-  'typo-modal-bg': 'tribe',
-  'typo-watermark': 'soft',
+  'typo-font': 'mincho',
+  'typo-size': 'xl',
+  'typo-page-bg': 'ink',
+  'typo-modal-bg': 'cold',
+  'typo-watermark': 'mid',
   'typo-tagline': 'italic',
 };
 
@@ -85,6 +85,36 @@ function statusText(settings) {
   return 'フォント: ' + f + ' / サイズ: ' + s + ' / 背景: ' + pb + ' / モーダル: ' + mb;
 }
 
+function setPanelCollapsed(panel, collapsed) {
+  if (!panel) return;
+  panel.classList.toggle('is-collapsed', collapsed);
+  const toggle = document.getElementById('typo-lab-toggle');
+  const body = document.querySelector('.page-himejin-typo.typo-lab');
+  if (toggle) {
+    toggle.textContent = collapsed ? '設定を開く' : 'たたむ';
+    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  }
+  if (body) {
+    body.classList.toggle('typo-lab-panel-open', !collapsed);
+  }
+}
+
+function bindModalCollapse(panel) {
+  const modal = document.getElementById('typo-modal');
+  if (!modal || !panel) return;
+
+  const onModalChange = () => {
+    const open = !modal.hidden;
+    if (open) {
+      setPanelCollapsed(panel, true);
+    }
+  };
+
+  const observer = new MutationObserver(onModalChange);
+  observer.observe(modal, { attributes: true, attributeFilter: ['hidden'] });
+  onModalChange();
+}
+
 function bindLabPanel() {
   const panel = document.getElementById('typo-lab-panel');
   const status = document.getElementById('typo-lab-status');
@@ -93,6 +123,17 @@ function bindLabPanel() {
   let settings = readSettings();
   applyLabSettings(settings);
   if (status) status.textContent = statusText(settings);
+
+  setPanelCollapsed(panel, true);
+  bindModalCollapse(panel);
+
+  const toggleBtn = document.getElementById('typo-lab-toggle');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const willCollapse = !panel.classList.contains('is-collapsed');
+      setPanelCollapsed(panel, willCollapse);
+    });
+  }
 
   panel.querySelectorAll('.typo-lab-chip').forEach((chip) => {
     const group = chip.getAttribute('data-group');

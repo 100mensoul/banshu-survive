@@ -2,9 +2,9 @@
 
 .page-himejin-typo {
   --typo-scale: 1.48;
-  --typo-bg: #0a0f0c;
-  --typo-fg: #ecefe9;
-  --typo-muted: rgba(236, 239, 233, 0.62);
+  --typo-bg: #0b0d14;
+  --typo-fg: #e8ecf8;
+  --typo-muted: rgba(232, 236, 248, 0.62);
   --typo-accent-banshujin: #9fc99f;
   --typo-accent-nbt: #fff100;
   --typo-accent-himejin: #8ec0ff;
@@ -22,6 +22,114 @@
   max-width: 920px;
   margin: 0 auto;
   padding: 1.25rem 1rem 3.5rem;
+}
+
+/* 種族説明・辞典リンク */
+.page-himejin-typo .himejin-intro-block h2 {
+  font-size: 1.05rem;
+  margin: 1.5rem 0 0.75rem;
+  color: #8ec0ff;
+  font-weight: 700;
+}
+.page-himejin-typo .himejin-intro-block p {
+  line-height: 1.85;
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+}
+.page-himejin-typo .himejin-glossary-link {
+  text-align: center;
+  font-size: 0.88rem;
+  margin: 0 0 1.25rem;
+  line-height: 1.65;
+}
+.page-himejin-typo .himejin-glossary-link a {
+  color: #9fc99f;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.page-himejin-typo .himejin-section-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-align: center;
+  margin: 2rem 0 1rem;
+  color: var(--typo-muted);
+  font-weight: 500;
+}
+
+/* 読み込み中（白紙フラッシュ防止） */
+.page-himejin-typo .typo-index__loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  opacity: 0.55;
+  margin: 1.5rem 0;
+}
+
+/* 今日のひめじん */
+.page-himejin-typo .himejin-spotlight-wrap {
+  margin-bottom: 0.75rem;
+}
+.page-himejin-typo .himejin-spotlight {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(255, 241, 0, 0.35);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(255, 241, 0, 0.1) 0%, rgba(255, 255, 255, 0.04) 55%);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  box-sizing: border-box;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.page-himejin-typo .himejin-spotlight:hover,
+.page-himejin-typo .himejin-spotlight:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  outline: none;
+}
+.page-himejin-typo .himejin-spotlight__badge {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  padding: 0.22rem 0.4rem;
+  border-radius: 4px;
+  background: #fff100;
+  color: #1a1a1a;
+  font-weight: 700;
+}
+.page-himejin-typo .himejin-spotlight__glyph {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.65rem;
+  font-weight: 900;
+  opacity: 0.35;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.page-himejin-typo .himejin-spotlight__body {
+  flex: 1;
+  min-width: 0;
+}
+.page-himejin-typo .himejin-spotlight__name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+.page-himejin-typo .himejin-spotlight__tagline {
+  margin: 0.3rem 0 0;
+  font-size: 0.82rem;
+  font-style: italic;
+  opacity: 0.85;
 }
 
 .page-himejin-typo .typo-proto-banner {
