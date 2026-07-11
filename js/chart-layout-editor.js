@@ -19,10 +19,11 @@ import {
   applyPortDrag,
   applyEndpointDrag,
   clearEdgeManualLayout,
+  finalizeWaypointRelative,
   ARROW_TIP_LEN,
   snapAngleDeg,
   boundsFromDomRect,
-} from './chart-layout-geometry.js?v=22';
+} from './chart-layout-geometry.js?v=25';
 
 const LAYOUT_ID = 'main';
 const LOCAL_KEY = 'banshu_chart_layout_v1';
@@ -90,6 +91,9 @@ export function initChartLayoutEditor(options) {
   let elbowDragMoved = false;
   let edgeJustSelected = false;
   let lastEdgePaths = new Map();
+  let edgesRenderRaf = 0;
+  let cachedRenderPlan = null;
+  let cachedRenderPlanKey = '';
   let dragLastNormX = 0;
   let dragLastNormY = 0;
 
@@ -238,11 +242,13 @@ export function initChartLayoutEditor(options) {
     historyIndex = history.length - 1;
     $('#chart-layout-undo').disabled = historyIndex <= 0;
     $('#chart-layout-redo').disabled = historyIndex >= history.length - 1;
+    invalidateRenderPlanCache();
   }
 
   function initHistory() {
     history = [captureState()];
     historyIndex = 0;
+    invalidateRenderPlanCache();
   }
 
   function applyCanvas(raw) {
@@ -255,6 +261,7 @@ export function initChartLayoutEditor(options) {
     $('#chart-layout-edge-panel').hidden = true;
     $('#chart-layout-node-panel').hidden = true;
     $('#chart-layout-zone-panel').hidden = true;
+    invalidateRenderPlanCache();
     renderAll();
     syncToolHint();
   }
@@ -408,8 +415,51 @@ export function initChartLayoutEditor(options) {
     return map;
   }
 
+  function layoutGeometryFingerprint() {
+    const parts = [];
+    canvas.nodes.forEach(function (n) {
+      parts.push(n.slug + ':' + n.x + ',' + n.y + ',' + normalizeSize(n.size));
+    });
+    canvas.edges.forEach(function (e, i) {
+      let chunk = String(i) + ':' + e.kind;
+      if (e.source) chunk += ':s' + JSON.stringify(e.source);
+      if (e.target) chunk += ':t' + JSON.stringify(e.target);
+      if (e.waypoints && e.waypoints.length) chunk += ':w' + JSON.stringify(e.waypoints);
+      if (e.labelPoint) chunk += ':l' + JSON.stringify(e.labelPoint);
+      parts.push(chunk);
+    });
+    return parts.join(';');
+  }
+
+  function invalidateRenderPlanCache() {
+    cachedRenderPlan = null;
+    cachedRenderPlanKey = '';
+  }
+
+  function getRenderPlan(w, h, boundsMap) {
+    const bounds = boundsMap || collectCardOuterBounds();
+    const key = w + 'x' + h + '|' + layoutGeometryFingerprint();
+    if (cachedRenderPlan && cachedRenderPlanKey === key) return cachedRenderPlan;
+    const plan = buildRenderPlan(canvas, w, h, personName, { boundsMap: bounds });
+    cachedRenderPlan = plan;
+    cachedRenderPlanKey = key;
+    return plan;
+  }
+
   function renderPlanOptions() {
     return { boundsMap: collectCardOuterBounds() };
+  }
+
+  function scheduleRenderEdges() {
+    if (edgesRenderRaf) return;
+    edgesRenderRaf = requestAnimationFrame(function () {
+      edgesRenderRaf = 0;
+      renderEdgesNow();
+    });
+  }
+
+  function renderEdges() {
+    scheduleRenderEdges();
   }
 
   function appendElbowHandle(group, pt, edgeIndex, cornerIndex, selected, dragging) {
@@ -518,12 +568,14 @@ export function initChartLayoutEditor(options) {
     const rect = stage.getBoundingClientRect();
     const w = rect.width || 1;
     const h = rect.height || 1;
-    const plan = buildRenderPlan(canvas, w, h, personName, { boundsMap: boundsMap || collectCardOuterBounds() });
+    const plan = getRenderPlan(w, h, boundsMap || collectCardOuterBounds());
     const item = plan.edges.find(function (it) { return it.index === edgeIndex; });
     if (!item || !item.endpointFrom || !item.endpointTo) return -1;
     // 端点→...waypoints→端点 のアンカー列（正規化）で最寄り区間を求める
     const anchors = [{ x: item.endpointFrom.x / w, y: item.endpointFrom.y / h }];
-    (edge.waypoints || []).forEach(function (wp) { anchors.push({ x: wp.x, y: wp.y }); });
+    (item.waypointHandles || []).forEach(function (handle) {
+      anchors.push({ x: handle.x / w, y: handle.y / h });
+    });
     anchors.push({ x: item.endpointTo.x / w, y: item.endpointTo.y / h });
     let bestSeg = 0;
     let bestD = Infinity;
@@ -544,7 +596,7 @@ export function initChartLayoutEditor(options) {
     const w = rect.width || 1;
     const h = rect.height || 1;
     const norm = { x: clamp01(px / w), y: clamp01(py / h) };
-    const plan = buildRenderPlan(canvas, w, h, personName, { boundsMap: boundsMap || collectCardOuterBounds() });
+    const plan = getRenderPlan(w, h, boundsMap || collectCardOuterBounds());
     const item = plan.edges.find(function (it) { return it.index === edgeIndex; });
     if (!item || !item.pts) return -1;
     const pts = item.pts;
@@ -573,9 +625,7 @@ export function initChartLayoutEditor(options) {
     const rect = stage.getBoundingClientRect();
     const px = clientX - rect.left;
     const py = clientY - rect.top;
-    const plan = buildRenderPlan(canvas, rect.width || 1, rect.height || 1, personName, {
-      boundsMap: boundsMap || collectCardOuterBounds(),
-    });
+    const plan = getRenderPlan(rect.width || 1, rect.height || 1, boundsMap || collectCardOuterBounds());
     const item = plan.edges.find(function (it) { return it.index === edgeIndex; });
     if (!item || !item.cornerHandles) return null;
     let best = null;
@@ -718,6 +768,21 @@ export function initChartLayoutEditor(options) {
       if (edgesSvg.hasPointerCapture(e.pointerId)) edgesSvg.releasePointerCapture(e.pointerId);
       const drag = pendingElbowDrag;
       pendingElbowDrag = null;
+      if (elbowDragMoved && drag.waypointIndex >= 0) {
+        const edge = canvas.edges[drag.edgeIndex];
+        const wp = edge && edge.waypoints && edge.waypoints[drag.waypointIndex];
+        if (wp && Number.isFinite(wp.x) && Number.isFinite(wp.y)) {
+          const rect = stage.getBoundingClientRect();
+          const w = rect.width || 1;
+          const h = rect.height || 1;
+          const nodeMap = new Map(canvas.nodes.map(function (n) { return [n.slug, n]; }));
+          finalizeWaypointRelative(edge, drag.waypointIndex, wp.x * w, wp.y * h, nodeMap, w, h, {
+            boundsMap: collectCardOuterBounds(),
+            edgePaths: lastEdgePaths,
+            canvas: canvas.edges,
+          });
+        }
+      }
       if (elbowDragMoved) {
         canvas = normalizeCanvas(canvas);
         pushHistory();
@@ -818,7 +883,7 @@ export function initChartLayoutEditor(options) {
     const rect = stage.getBoundingClientRect();
     const w = rect.width || 1;
     const h = rect.height || 1;
-    const plan = buildRenderPlan(canvas, w, h, personName, renderPlanOptions());
+    const plan = getRenderPlan(w, h, collectCardOuterBounds());
     const item = plan.edges.find(function (it) { return it.index === index; });
     const lb = item && item.labels[0];
     if (lb) {
@@ -906,14 +971,14 @@ export function initChartLayoutEditor(options) {
     if (!readOnly) bindZoneEvents();
   }
 
-  function renderEdges() {
+  function renderEdgesNow() {
     if (!edgesSvg || !stage) return;
     const rect = stage.getBoundingClientRect();
     const w = rect.width || 1;
     const h = rect.height || 1;
     edgesSvg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
     edgesSvg.innerHTML = '';
-    const plan = buildRenderPlan(canvas, w, h, personName, renderPlanOptions());
+    const plan = getRenderPlan(w, h, collectCardOuterBounds());
     lastEdgePaths = plan.edgePaths || new Map();
     const edgesInteractive = !readOnly && tool === 'move';
     edgesSvg.classList.toggle('chart-layout-edges--edit', edgesInteractive);
@@ -1113,7 +1178,7 @@ export function initChartLayoutEditor(options) {
     renderZones();
     renderNodes();
     renderSizeGuides();
-    requestAnimationFrame(renderEdges);
+    scheduleRenderEdges();
   }
 
   function closeEdgeModal() {
@@ -1607,7 +1672,12 @@ export function initChartLayoutEditor(options) {
     saveToCloud,
     mergeInitialLoad,
     render: renderAll,
-    destroy: function () { window.removeEventListener('resize', renderEdges); },
+    destroy: function () {
+      window.removeEventListener('resize', renderEdges);
+      if (edgesRenderRaf) cancelAnimationFrame(edgesRenderRaf);
+      edgesRenderRaf = 0;
+      invalidateRenderPlanCache();
+    },
   };
 }
 
