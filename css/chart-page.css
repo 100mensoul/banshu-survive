@@ -137,6 +137,14 @@
   box-shadow: 0 0 0 6px rgba(224, 54, 44, 0.22), 0 8px 20px rgba(0, 0, 0, 0.18);
 }
 
+/* 相関図ノードも同様に強調（赤枠） */
+.page-chart .chart-layout-node.is-active {
+  outline: 3px solid #e0362c;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(224, 54, 44, 0.22), 0 6px 16px rgba(0, 0, 0, 0.2);
+  z-index: 5;
+}
+
 .page-chart .chart-card__photo {
   display: block;
   width: 100%;

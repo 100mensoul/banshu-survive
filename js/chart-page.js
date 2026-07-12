@@ -147,10 +147,18 @@ window.initChartPage = function (data) {
 
   function setActiveCard(id) {
     const board = document.getElementById('chart-board-root');
-    if (!board) return;
-    board.querySelectorAll('.chart-card').forEach(function (card) {
-      card.classList.toggle('is-active', card.getAttribute('data-chart-id') === id);
-    });
+    if (board) {
+      board.querySelectorAll('.chart-card').forEach(function (card) {
+        card.classList.toggle('is-active', card.getAttribute('data-chart-id') === id);
+      });
+    }
+    // 相関図（インタラクティブチャート）のノードも同様に強調
+    const layout = document.getElementById('chart-layout-root');
+    if (layout) {
+      layout.querySelectorAll('.chart-layout-node[data-slug]').forEach(function (node) {
+        node.classList.toggle('is-active', node.getAttribute('data-slug') === id);
+      });
+    }
   }
 
   function updateModalNav(id) {
