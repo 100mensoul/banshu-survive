@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="毎夢ドラマ『播州サバイブ』相関図。登場人物の関係性がひと目でわかるビジュアルチャート。写真をクリックすると詳細をご覧いただけます。">
   <link rel="stylesheet" href="../css/main.css?v=navmichi7">
-  <link rel="stylesheet" href="../css/chart-page.css?v=8">
-  <link rel="stylesheet" href="../css/chart-layout.css?v=16">
+  <link rel="stylesheet" href="../css/chart-page.css?v=12">
+  <link rel="stylesheet" href="../css/chart-layout.css?v=18">
 </head>
 <body class="page-chart">
 
@@ -44,7 +44,7 @@
         <div class="dropbtn" tabindex="0">キャスト</div>
         <div class="dropdown-content">
           <a href="chart.html" aria-current="page">相関図</a>
-          <a href="himejin.html">ひめじんファイル</a>
+          <a href="himejin.html">ひめじんFile</a>
         </div>
       </div>
 
@@ -105,7 +105,7 @@
       <div class="chart-himejin-cta__inner">
         <h2 id="chart-himejin-cta-title">相関図に載りきらないオールキャスト情報</h2>
         <p class="chart-himejin-cta__lead">播州サバイブに登場するすべての登場人物データは、こちらからご覧いただけます</p>
-        <a href="himejin.html" class="chart-himejin-cta__btn">ひめじんファイルを見る<span class="chart-himejin-cta__arrow" aria-hidden="true">→</span></a>
+        <a href="himejin.html" class="chart-himejin-cta__btn">ひめじんFileを見る<span class="chart-himejin-cta__arrow" aria-hidden="true">→</span></a>
       </div>
     </section>
   </main>
@@ -116,10 +116,12 @@
   </footer>
 
   <div id="chart-modal" class="chart-modal" hidden role="dialog" aria-modal="true" aria-labelledby="chart-modal-title">
+    <button type="button" class="chart-modal__nav chart-modal__nav--prev" data-modal-prev aria-label="前の人物">‹</button>
     <div class="chart-modal__panel">
       <button type="button" class="chart-modal__close" data-close-modal aria-label="閉じる">×</button>
       <div id="chart-modal-body"></div>
     </div>
+    <button type="button" class="chart-modal__nav chart-modal__nav--next" data-modal-next aria-label="次の人物">›</button>
   </div>
 
   <script>
@@ -145,7 +147,7 @@
   </script>
   <script src="../js/supabase-public-config.js"></script>
   <script src="../js/chart-cast-data.js?v=2"></script>
-  <script src="../js/chart-page.js?v=4"></script>
+  <script src="../js/chart-page.js?v=7"></script>
   <script type="module" src="../js/chart-cast-public.js?v=2"></script>
   <script type="module" src="../js/chart-layout-public.js?v=25"></script>
   <script type="module" src="../js/home-episode-nav.js"></script>
