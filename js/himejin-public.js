@@ -2,6 +2,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const CORE_TRIBE_CODES = ['banshujin', 'nbt', 'himejin'];
 
+/** @type {{ profiles: Array, clanTitleByCode: Map, index: number }} */
+const modalNav = {
+  profiles: [],
+  clanTitleByCode: new Map(),
+  index: -1,
+};
+
 function esc(s) {
   return String(s ?? '')
     .replace(/&/g, '&amp;')
@@ -52,10 +59,22 @@ function tribeCode(row) {
   return ['banshujin', 'nbt', 'himejin', 'unknown'].includes(code) ? code : 'unknown';
 }
 
-function openModal(row, clanTitle) {
-  const modal = document.getElementById('typo-modal');
+function clanTitleFor(row) {
+  if (!row || !row.clan_code) return null;
+  return modalNav.clanTitleByCode.get(row.clan_code) || null;
+}
+
+function updateNavButtonsVisibility() {
+  const prevBtn = document.querySelector('[data-modal-prev]');
+  const nextBtn = document.querySelector('[data-modal-next]');
+  const show = modalNav.profiles.length > 1;
+  if (prevBtn) prevBtn.hidden = !show;
+  if (nextBtn) nextBtn.hidden = !show;
+}
+
+function renderModalContent(row, clanTitle, slideDir) {
   const body = document.getElementById('typo-modal-body');
-  if (!modal || !body) return;
+  if (!body || !row) return;
 
   const metaBits = [esc(row.tribe_label || '未判明')];
   if (clanTitle) metaBits.push(esc(clanTitle));
@@ -72,6 +91,11 @@ function openModal(row, clanTitle) {
   const taglineBlock = row.tagline
     ? '<p class="typo-modal__tagline">' + esc(row.tagline) + '</p>'
     : '';
+
+  body.classList.remove('is-slide-from-left', 'is-slide-from-right');
+  if (slideDir === 'left' || slideDir === 'right') {
+    void body.offsetWidth;
+  }
 
   body.innerHTML =
     '<div class="typo-modal__watermark" aria-hidden="true">' +
@@ -90,8 +114,46 @@ function openModal(row, clanTitle) {
     esc(row.intro || '（紹介文は準備中です）') +
     '</p>';
 
+  if (slideDir === 'right') {
+    body.classList.add('is-slide-from-right');
+  } else if (slideDir === 'left') {
+    body.classList.add('is-slide-from-left');
+  }
+}
+
+function openModalAt(index, slideDir) {
+  const modal = document.getElementById('typo-modal');
+  const stage = modal ? modal.querySelector('.typo-modal__stage') : null;
+  if (!modal || !modalNav.profiles.length) return;
+
+  const len = modalNav.profiles.length;
+  const nextIndex = ((index % len) + len) % len;
+  const row = modalNav.profiles[nextIndex];
+  if (!row) return;
+
+  const wasHidden = modal.hidden;
+  modalNav.index = nextIndex;
+  renderModalContent(row, clanTitleFor(row), slideDir || null);
+  updateNavButtonsVisibility();
+
+  if (stage) {
+    stage.classList.toggle('is-open-float', wasHidden && !slideDir);
+  }
+
   modal.hidden = false;
   document.documentElement.classList.add('typo-modal-open');
+}
+
+function openModal(row) {
+  if (!row || !modalNav.profiles.length) return;
+  const index = modalNav.profiles.findIndex((p) => p === row || (p.slug && p.slug === row.slug));
+  openModalAt(index >= 0 ? index : 0, null);
+}
+
+function showAdjacent(delta) {
+  const modal = document.getElementById('typo-modal');
+  if (!modal || modal.hidden || modalNav.profiles.length < 2) return;
+  openModalAt(modalNav.index + delta, delta > 0 ? 'right' : 'left');
 }
 
 function closeModal() {
@@ -99,8 +161,14 @@ function closeModal() {
   if (!modal) return;
   modal.hidden = true;
   document.documentElement.classList.remove('typo-modal-open');
+  modalNav.index = -1;
+  const stage = modal.querySelector('.typo-modal__stage');
+  if (stage) stage.classList.remove('is-open-float');
   const body = document.getElementById('typo-modal-body');
-  if (body) body.innerHTML = '';
+  if (body) {
+    body.classList.remove('is-slide-from-left', 'is-slide-from-right');
+    body.innerHTML = '';
+  }
 }
 
 function bindModalUi() {
@@ -109,9 +177,24 @@ function bindModalUi() {
   modal.dataset.bound = '1';
   modal.addEventListener('click', (e) => {
     if (e.target.closest('[data-close-modal]')) closeModal();
+    if (e.target.closest('[data-modal-prev]')) showAdjacent(-1);
+    if (e.target.closest('[data-modal-next]')) showAdjacent(1);
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !modal.hidden) closeModal();
+    if (modal.hidden) return;
+    if (e.key === 'Escape') {
+      closeModal();
+      return;
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      showAdjacent(-1);
+      return;
+    }
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      showAdjacent(1);
+    }
   });
 }
 
@@ -122,7 +205,7 @@ function pickSpotlightIndex(count) {
   return seed % count;
 }
 
-function renderSpotlight(row, clanTitle, onOpen) {
+function renderSpotlight(row, onOpen) {
   const section = document.getElementById('himejin-spotlight-section');
   const root = document.getElementById('himejin-spotlight-root');
   if (!section || !root || !row) return;
@@ -145,12 +228,13 @@ function renderSpotlight(row, clanTitle, onOpen) {
       ? '<p class="himejin-spotlight__tagline">' + esc(row.tagline) + '</p>'
       : '<p class="himejin-spotlight__tagline">' + esc(row.tribe_label || '') + '</p>') +
     '</div>';
-  btn.addEventListener('click', () => onOpen(row, clanTitle));
+  btn.addEventListener('click', () => onOpen(row));
   root.replaceChildren(btn);
 }
 
-function buildIndexButton(row, clanTitle, onOpen) {
+function buildIndexButton(row, onOpen) {
   const code = tribeCode(row);
+  const clanTitle = clanTitleFor(row);
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'typo-index__item';
@@ -169,7 +253,7 @@ function buildIndexButton(row, clanTitle, onOpen) {
     (clanTitle ? ' · ' + esc(clanTitle) : '') +
     '</span>' +
     (row.tagline ? '<span class="typo-index__tagline">' + esc(row.tagline) + '</span>' : '');
-  btn.addEventListener('click', () => onOpen(row, clanTitle));
+  btn.addEventListener('click', () => onOpen(row));
   return btn;
 }
 
@@ -177,19 +261,21 @@ function renderIndex(profiles, clanTitleByCode) {
   const root = document.getElementById('typo-index-root');
   if (!root) return;
 
-  const openForRow = (row, clanTitle) => openModal(row, clanTitle);
+  modalNav.profiles = profiles;
+  modalNav.clanTitleByCode = clanTitleByCode;
+  modalNav.index = -1;
+  updateNavButtonsVisibility();
+
+  const openForRow = (row) => openModal(row);
   const frag = document.createDocumentFragment();
 
   const spotlightIdx = pickSpotlightIndex(profiles.length);
   if (spotlightIdx >= 0) {
-    const sp = profiles[spotlightIdx];
-    const spClan = sp.clan_code ? clanTitleByCode.get(sp.clan_code) : null;
-    renderSpotlight(sp, spClan, openForRow);
+    renderSpotlight(profiles[spotlightIdx], openForRow);
   }
 
   profiles.forEach((row, index) => {
-    const clanTitle = row.clan_code ? clanTitleByCode.get(row.clan_code) : null;
-    const btn = buildIndexButton(row, clanTitle, openForRow);
+    const btn = buildIndexButton(row, openForRow);
     if (index === spotlightIdx) {
       btn.setAttribute('data-spotlight', '1');
     }
@@ -228,6 +314,7 @@ async function loadTribeDescriptions(supabase) {
 }
 
 bindModalUi();
+updateNavButtonsVisibility();
 
 const url = window.__SB_URL;
 const key = window.__SB_ANON_KEY;
