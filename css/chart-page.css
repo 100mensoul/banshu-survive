@@ -130,6 +130,13 @@
   outline-offset: 2px;
 }
 
+/* モーダルで開いている人物カードを一覧で強調（赤枠） */
+.page-chart .chart-card.is-active {
+  outline: 3px solid #e0362c;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(224, 54, 44, 0.22), 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
 .page-chart .chart-card__photo {
   display: block;
   width: 100%;
@@ -363,6 +370,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
   padding: 1rem;
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(3px);
@@ -374,6 +382,7 @@
 
 .chart-modal__panel {
   position: relative;
+  flex: 0 1 360px;
   width: min(100%, 360px);
   max-height: min(90vh, 640px);
   overflow-y: auto;
@@ -402,6 +411,47 @@
 
 .chart-modal__close:hover {
   background: rgba(0, 0, 0, 0.5);
+}
+
+.chart-modal__nav {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 2rem;
+  height: 2.75rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 2.2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.chart-modal__nav:hover {
+  color: #fff;
+}
+
+.chart-modal__nav:active {
+  transform: scale(0.88);
+}
+
+.chart-modal__nav[hidden] {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .chart-modal {
+    gap: 0.2rem;
+    padding: 0.6rem;
+  }
+
+  .chart-modal__nav {
+    width: 1.6rem;
+    font-size: 1.8rem;
+  }
 }
 
 .chart-modal__photo {

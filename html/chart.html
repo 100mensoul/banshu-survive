@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="毎夢ドラマ『播州サバイブ』相関図。登場人物の関係性がひと目でわかるビジュアルチャート。写真をクリックすると詳細をご覧いただけます。">
   <link rel="stylesheet" href="../css/main.css?v=navmichi7">
-  <link rel="stylesheet" href="../css/chart-page.css?v=8">
-  <link rel="stylesheet" href="../css/chart-layout.css?v=16">
+  <link rel="stylesheet" href="../css/chart-page.css?v=11">
+  <link rel="stylesheet" href="../css/chart-layout.css?v=18">
 </head>
 <body class="page-chart">
 
@@ -116,10 +116,12 @@
   </footer>
 
   <div id="chart-modal" class="chart-modal" hidden role="dialog" aria-modal="true" aria-labelledby="chart-modal-title">
+    <button type="button" class="chart-modal__nav chart-modal__nav--prev" data-modal-prev aria-label="前の人物">‹</button>
     <div class="chart-modal__panel">
       <button type="button" class="chart-modal__close" data-close-modal aria-label="閉じる">×</button>
       <div id="chart-modal-body"></div>
     </div>
+    <button type="button" class="chart-modal__nav chart-modal__nav--next" data-modal-next aria-label="次の人物">›</button>
   </div>
 
   <script>
@@ -145,7 +147,7 @@
   </script>
   <script src="../js/supabase-public-config.js"></script>
   <script src="../js/chart-cast-data.js?v=2"></script>
-  <script src="../js/chart-page.js?v=4"></script>
+  <script src="../js/chart-page.js?v=6"></script>
   <script type="module" src="../js/chart-cast-public.js?v=2"></script>
   <script type="module" src="../js/chart-layout-public.js?v=25"></script>
   <script type="module" src="../js/home-episode-nav.js"></script>

@@ -135,10 +135,53 @@ window.initChartPage = function (data) {
 
   const modal = document.getElementById('chart-modal');
   const modalBody = document.getElementById('chart-modal-body');
+  const modalPrevBtn = modal && modal.querySelector('[data-modal-prev]');
+  const modalNextBtn = modal && modal.querySelector('[data-modal-next]');
+  let currentModalId = null;
+
+  function memberIndexById(id) {
+    return allMembers().findIndex(function (m) {
+      return m.id === id;
+    });
+  }
+
+  function setActiveCard(id) {
+    const board = document.getElementById('chart-board-root');
+    if (!board) return;
+    board.querySelectorAll('.chart-card').forEach(function (card) {
+      card.classList.toggle('is-active', card.getAttribute('data-chart-id') === id);
+    });
+  }
+
+  function updateModalNav(id) {
+    const list = allMembers();
+    if (!list.length) return;
+    const idx = memberIndexById(id);
+    if (idx < 0) return;
+    const prev = list[(idx - 1 + list.length) % list.length];
+    const next = list[(idx + 1) % list.length];
+    // 人物が2人以上のときだけ前後ナビを表示（ループ）
+    const show = list.length > 1;
+    if (modalPrevBtn) {
+      modalPrevBtn.hidden = !show;
+      if (prev) {
+        modalPrevBtn.dataset.target = prev.id;
+        modalPrevBtn.setAttribute('aria-label', prev.name + ' の詳細へ');
+      }
+    }
+    if (modalNextBtn) {
+      modalNextBtn.hidden = !show;
+      if (next) {
+        modalNextBtn.dataset.target = next.id;
+        modalNextBtn.setAttribute('aria-label', next.name + ' の詳細へ');
+      }
+    }
+  }
 
   function openModal(id) {
     const m = memberById(id);
     if (!m || !modal || !modalBody) return;
+    currentModalId = m.id;
     let inner = '';
     if (m.photo && String(m.photo).trim()) {
       inner +=
@@ -177,6 +220,8 @@ window.initChartPage = function (data) {
         );
       });
     }
+    updateModalNav(m.id);
+    setActiveCard(m.id);
     modal.hidden = false;
     document.documentElement.classList.add('chart-modal-open');
     modal.querySelector('.chart-modal__close').focus();
@@ -185,18 +230,34 @@ window.initChartPage = function (data) {
   function closeModal() {
     if (!modal) return;
     modal.hidden = true;
+    currentModalId = null;
+    setActiveCard(null);
     document.documentElement.classList.remove('chart-modal-open');
     if (modalBody) modalBody.innerHTML = '';
+  }
+
+  function stepModal(dir) {
+    const list = allMembers();
+    if (list.length < 2 || currentModalId == null) return;
+    const idx = memberIndexById(currentModalId);
+    if (idx < 0) return;
+    const nextIdx = (idx + dir + list.length) % list.length;
+    openModal(list[nextIdx].id);
   }
 
   function bindModal() {
     if (!modal || modal.dataset.bound === '1') return;
     modal.dataset.bound = '1';
     modal.addEventListener('click', function (e) {
-      if (e.target.closest('[data-close-modal]')) closeModal();
+      if (e.target.closest('[data-close-modal]')) { closeModal(); return; }
+      if (e.target.closest('[data-modal-prev]')) { stepModal(-1); return; }
+      if (e.target.closest('[data-modal-next]')) { stepModal(1); return; }
     });
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && modal && !modal.hidden) closeModal();
+      if (!modal || modal.hidden) return;
+      if (e.key === 'Escape') { closeModal(); return; }
+      if (e.key === 'ArrowLeft') { stepModal(-1); return; }
+      if (e.key === 'ArrowRight') { stepModal(1); return; }
     });
   }
 

@@ -20,6 +20,22 @@
   border-radius: 10px;
 }
 
+.chart-layout-toolbar[hidden],
+.chart-layout-node-panel[hidden],
+.chart-layout-zone-panel[hidden],
+.chart-layout-size-guide[hidden] {
+  display: none !important;
+}
+
+/* 公開ページ: 編集UIを完全に出さない */
+.chart-layout-app--readonly .chart-layout-toolbar,
+.chart-layout-app--readonly .chart-layout-node-panel,
+.chart-layout-app--readonly .chart-layout-zone-panel,
+.chart-layout-app--readonly .chart-layout-size-guide,
+.chart-layout-app--readonly .chart-layout-edge-modal {
+  display: none !important;
+}
+
 .chart-layout-toolbar button {
   padding: 0.4rem 0.75rem;
   border: 1px solid #bbb;
@@ -525,6 +541,8 @@
   aspect-ratio: 4 / 3;
   min-height: 320px;
   max-height: 72vh;
+  /* カード幅をステージ幅の割合で決めるためのコンテナ基準 */
+  container-type: inline-size;
   background: var(--layout-bg);
   border: 1px solid var(--layout-border);
   border-radius: 14px;
@@ -627,7 +645,8 @@
 .chart-layout-node {
   position: absolute;
   transform: translate(-50%, -50%) scale(var(--node-scale, 1));
-  width: clamp(72px, 11vw, 108px);
+  /* ステージ幅の割合（cqw）でサイズを決めるため、編集/公開でコンテナ幅が違っても相対配置が一致する */
+  width: clamp(64px, 10.5cqw, 112px);
   padding: 0;
   border: 2px solid rgba(255, 255, 255, 0.95);
   border-radius: 10px;
@@ -749,6 +768,22 @@
   color: var(--chart-muted, #4a5568);
 }
 
+/* 公開ページ: 編集画面と同じ縦横比を保ち、max-height によるつぶれを防ぐ */
+.page-chart .chart-layout-stage {
+  max-height: none;
+  min-height: 320px;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .page-chart .chart-layout-stage {
+    min-height: 0;
+    /* モバイルでも 4:3 を維持（幅から高さを決める） */
+    aspect-ratio: 4 / 3;
+  }
+}
+
 /* 管理画面 */
 body.chart-layout-auth {
   margin: 0;
@@ -830,6 +865,7 @@ body.chart-layout-page .chart-layout-stage {
   }
 
   .chart-layout-node {
-    width: clamp(64px, 18vw, 92px);
+    /* 狭い画面ではステージ幅も狭いので下限を少し下げる */
+    width: clamp(58px, 11cqw, 96px);
   }
 }
