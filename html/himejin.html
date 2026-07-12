@@ -12,7 +12,7 @@
     }
   </style>
   <link rel="stylesheet" href="../css/main.css?v=navmichi7">
-  <link rel="stylesheet" href="../css/himejin-typo-prototype.css?v=4">
+  <link rel="stylesheet" href="../css/himejin-typo-prototype.css?v=14">
 </head>
 <body class="page-himejin-typo">
 
@@ -122,7 +122,9 @@
     <div id="typo-modal" class="typo-modal" hidden aria-modal="true" role="dialog" aria-label="ひめじん詳細">
       <div class="typo-modal__stage">
         <button type="button" class="typo-modal__close" data-close-modal aria-label="閉じる">×</button>
-        <div id="typo-modal-body"></div>
+        <button type="button" class="typo-modal__nav typo-modal__nav--prev" data-modal-prev aria-label="前のひめじん">＜</button>
+        <button type="button" class="typo-modal__nav typo-modal__nav--next" data-modal-next aria-label="次のひめじん">＞</button>
+        <div id="typo-modal-body" class="typo-modal__body"></div>
       </div>
     </div>
 
@@ -155,6 +157,6 @@
   </script>
   <script src="../js/supabase-public-config.js"></script>
   <script type="module" src="../js/home-episode-nav.js"></script>
-  <script type="module" src="../js/himejin-public.js?v=4"></script>
+  <script type="module" src="../js/himejin-public.js?v=6"></script>
 </body>
 </html>

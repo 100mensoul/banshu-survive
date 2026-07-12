@@ -308,7 +308,6 @@
   justify-content: center;
   background: var(--typo-stage-bg, var(--typo-bg));
   overflow: auto;
-  animation: typo-modal-in 0.38s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes typo-modal-in {
   from {
@@ -338,6 +337,105 @@
 }
 .page-himejin-typo .typo-modal__close:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.page-himejin-typo .typo-modal__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--typo-fg);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.82;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.page-himejin-typo .typo-modal__nav:hover,
+.page-himejin-typo .typo-modal__nav:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  opacity: 1;
+  outline: none;
+}
+.page-himejin-typo .typo-modal__nav--prev {
+  left: max(0.55rem, env(safe-area-inset-left, 0px));
+}
+.page-himejin-typo .typo-modal__nav--next {
+  right: max(0.55rem, env(safe-area-inset-right, 0px));
+}
+.page-himejin-typo .typo-modal__nav[hidden] {
+  display: none !important;
+}
+
+/* 一覧からの初回オープン：ステージ全体が浮かび上がる */
+.page-himejin-typo .typo-modal:not([hidden]) .typo-modal__stage.is-open-float {
+  animation: typo-modal-in 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ＜＞移動：本文だけスライド */
+.page-himejin-typo .typo-modal__body {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+.page-himejin-typo .typo-modal__body.is-slide-from-right {
+  animation: typo-modal-slide-from-right 1.2s cubic-bezier(0.4, 0.05, 0.2, 1);
+  will-change: transform, opacity;
+}
+.page-himejin-typo .typo-modal__body.is-slide-from-left {
+  animation: typo-modal-slide-from-left 1.2s cubic-bezier(0.4, 0.05, 0.2, 1);
+  will-change: transform, opacity;
+}
+@keyframes typo-modal-slide-from-right {
+  from {
+    opacity: 0.05;
+    transform: translate3d(42%, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+@keyframes typo-modal-slide-from-left {
+  from {
+    opacity: 0.05;
+    transform: translate3d(-42%, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+.page-himejin-typo .typo-modal__body.is-slide-from-right .typo-name__glyph,
+.page-himejin-typo .typo-modal__body.is-slide-from-left .typo-name__glyph,
+.page-himejin-typo .typo-modal__body.is-slide-from-right .typo-modal__tagline,
+.page-himejin-typo .typo-modal__body.is-slide-from-left .typo-modal__tagline,
+.page-himejin-typo .typo-modal__body.is-slide-from-right .typo-modal__intro,
+.page-himejin-typo .typo-modal__body.is-slide-from-left .typo-modal__intro,
+.page-himejin-typo .typo-modal__body.is-slide-from-right .typo-modal__rule,
+.page-himejin-typo .typo-modal__body.is-slide-from-left .typo-modal__rule {
+  animation: none;
+}
+/* スライド移動時：写真は一緒に横から入り、余韻を持ってゆっくり浮かび上がる */
+.page-himejin-typo .typo-modal__body.is-slide-from-right .typo-modal__photo,
+.page-himejin-typo .typo-modal__body.is-slide-from-left .typo-modal__photo {
+  animation: typo-modal-photo-float 1.2s 1s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+}
+@keyframes typo-modal-photo-float {
+  from {
+    opacity: 0.72;
+    transform: translate3d(0, 8px, 0) scale(0.99);
+  }
+  to {
+    opacity: 0.88;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
 }
 
 .page-himejin-typo .typo-modal__watermark {
@@ -523,7 +621,11 @@ html.typo-modal-open {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-himejin-typo .typo-modal__stage,
+  .page-himejin-typo .typo-modal:not([hidden]) .typo-modal__stage.is-open-float,
+  .page-himejin-typo .typo-modal__body.is-slide-from-right,
+  .page-himejin-typo .typo-modal__body.is-slide-from-left,
+  .page-himejin-typo .typo-modal__body.is-slide-from-right .typo-modal__photo,
+  .page-himejin-typo .typo-modal__body.is-slide-from-left .typo-modal__photo,
   .page-himejin-typo .typo-name__glyph,
   .page-himejin-typo .typo-modal__tagline,
   .page-himejin-typo .typo-modal__intro,
@@ -546,5 +648,12 @@ html.typo-modal-open {
   .page-himejin-typo .typo-modal__stage {
     justify-content: flex-start;
     padding-top: 3.25rem;
+    padding-left: 3.2rem;
+    padding-right: 3.2rem;
+  }
+  .page-himejin-typo .typo-modal__nav {
+    width: 2.35rem;
+    height: 2.35rem;
+    font-size: 1.05rem;
   }
 }
