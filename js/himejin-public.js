@@ -9,6 +9,19 @@ const modalNav = {
   index: -1,
 };
 
+/** @type {{ session: object|null, supabase: object|null }} */
+const editState = {
+  session: null,
+  supabase: null,
+};
+
+const TRIBE_LABELS = {
+  banshujin: '播州族',
+  nbt: 'NEOバンシュウ族',
+  himejin: 'ひめじん',
+  unknown: '未判明',
+};
+
 function esc(s) {
   return String(s ?? '')
     .replace(/&/g, '&amp;')
@@ -97,6 +110,11 @@ function renderModalContent(row, clanTitle, slideDir) {
     void body.offsetWidth;
   }
 
+  const adminLink =
+    editState.session && row.slug
+      ? '<a class="typo-modal__admin-link" href="../admin/himejin-editor.html">詳しく編集</a>'
+      : '';
+
   body.innerHTML =
     '<div class="typo-modal__watermark" aria-hidden="true">' +
     esc(firstGlyph(row.name)) +
@@ -112,7 +130,8 @@ function renderModalContent(row, clanTitle, slideDir) {
     taglineBlock +
     '<p class="typo-modal__intro">' +
     esc(row.intro || '（紹介文は準備中です）') +
-    '</p>';
+    '</p>' +
+    adminLink;
 
   if (slideDir === 'right') {
     body.classList.add('is-slide-from-right');
@@ -181,6 +200,11 @@ function bindModalUi() {
     if (e.target.closest('[data-modal-next]')) showAdjacent(1);
   });
   document.addEventListener('keydown', (e) => {
+    const editModal = document.getElementById('himejin-edit-modal');
+    if (editModal && !editModal.hidden && e.key === 'Escape') {
+      closeEditModal();
+      return;
+    }
     if (modal.hidden) return;
     if (e.key === 'Escape') {
       closeModal();
@@ -195,6 +219,207 @@ function bindModalUi() {
       e.preventDefault();
       showAdjacent(1);
     }
+  });
+}
+
+function wantsEditQuery() {
+  return new URLSearchParams(window.location.search).get('edit') === '1';
+}
+
+function makeSlug(name) {
+  const ascii = String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  if (ascii.length >= 2) return ascii.slice(0, 48);
+  return 'hj-' + Date.now().toString(36);
+}
+
+function showEditMsg(text, ok) {
+  const el = document.getElementById('himejin-edit-msg');
+  if (!el) return;
+  el.hidden = !text;
+  el.textContent = text || '';
+  el.classList.toggle('is-ok', !!ok);
+  el.classList.toggle('is-err', !!text && !ok);
+}
+
+function openEditModal() {
+  const modal = document.getElementById('himejin-edit-modal');
+  const form = document.getElementById('himejin-edit-form');
+  if (!modal || !form) return;
+  form.reset();
+  const tribe = document.getElementById('edit-tribe');
+  if (tribe) tribe.value = 'unknown';
+  showEditMsg('', true);
+  modal.hidden = false;
+  document.documentElement.classList.add('typo-modal-open');
+  const nameInput = document.getElementById('edit-name');
+  if (nameInput) nameInput.focus();
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('himejin-edit-modal');
+  if (!modal) return;
+  modal.hidden = true;
+  const detail = document.getElementById('typo-modal');
+  if (!detail || detail.hidden) {
+    document.documentElement.classList.remove('typo-modal-open');
+  }
+  showEditMsg('', true);
+}
+
+function buildAddButton() {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'typo-index__item typo-index__add';
+  btn.setAttribute('aria-label', 'ひめじんを追加');
+  btn.innerHTML =
+    '<span class="typo-index__add-plus" aria-hidden="true">＋</span>' +
+    '<span class="typo-index__add-label">追加</span>';
+  btn.addEventListener('click', openEditModal);
+  return btn;
+}
+
+function updateEditBar(session) {
+  const bar = document.getElementById('himejin-edit-bar');
+  const loginForm = document.getElementById('himejin-edit-login');
+  const logoutBtn = document.getElementById('himejin-edit-logout');
+  const label = document.getElementById('himejin-edit-bar-label');
+  const showBar = wantsEditQuery() || !!session;
+
+  if (bar) bar.hidden = !showBar;
+  document.body.classList.toggle('has-edit-bar', showBar);
+  if (loginForm) loginForm.hidden = !!session;
+  if (logoutBtn) logoutBtn.hidden = !session;
+  if (label) label.textContent = session ? '編集モード' : 'ログインして編集';
+}
+
+async function reloadPublishedProfiles() {
+  const supabase = editState.supabase;
+  if (!supabase) return;
+  const { data, error } = await supabase
+    .from('himejin_profiles')
+    .select('id,slug,name,tribe_code,tribe_label,clan_code,tagline,intro,photo_url,sort_order')
+    .eq('status', 'published')
+    .order('sort_order', { ascending: true })
+    .order('updated_at', { ascending: true });
+  if (error) {
+    console.error(error);
+    return;
+  }
+  renderIndex(data || [], modalNav.clanTitleByCode);
+}
+
+function setEditSession(session) {
+  editState.session = session || null;
+  updateEditBar(editState.session);
+  renderIndex(modalNav.profiles, modalNav.clanTitleByCode, { keepModalIndex: true });
+  const detail = document.getElementById('typo-modal');
+  if (detail && !detail.hidden && modalNav.index >= 0) {
+    const row = modalNav.profiles[modalNav.index];
+    if (row) renderModalContent(row, clanTitleFor(row), null);
+  }
+}
+
+function bindEditUi(supabase) {
+  editState.supabase = supabase;
+  const editModal = document.getElementById('himejin-edit-modal');
+  const form = document.getElementById('himejin-edit-form');
+  const loginForm = document.getElementById('himejin-edit-login');
+  const logoutBtn = document.getElementById('himejin-edit-logout');
+
+  if (editModal && editModal.dataset.bound !== '1') {
+    editModal.dataset.bound = '1';
+    editModal.addEventListener('click', (e) => {
+      if (e.target.closest('[data-edit-close]')) closeEditModal();
+    });
+  }
+
+  if (form && form.dataset.bound !== '1') {
+    form.dataset.bound = '1';
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!editState.session) {
+        showEditMsg('ログインが必要です（?edit=1 でログイン）', false);
+        return;
+      }
+      const name = (document.getElementById('edit-name')?.value || '').trim();
+      const tribeCodeVal = document.getElementById('edit-tribe')?.value || 'unknown';
+      const tagline = (document.getElementById('edit-tagline')?.value || '').trim();
+      const intro = (document.getElementById('edit-intro')?.value || '').trim();
+      if (!name) {
+        showEditMsg('名前を入力してください', false);
+        return;
+      }
+
+      const saveBtn = document.getElementById('himejin-edit-save');
+      if (saveBtn) saveBtn.disabled = true;
+      showEditMsg('保存中…', true);
+
+      const maxOrder = modalNav.profiles.reduce((max, row) => {
+        const n = Number(row.sort_order);
+        return Number.isFinite(n) ? Math.max(max, n) : max;
+      }, 0);
+
+      let slug = makeSlug(name);
+      const existing = new Set(modalNav.profiles.map((p) => p.slug).filter(Boolean));
+      if (existing.has(slug)) slug = slug + '-' + Date.now().toString(36).slice(-4);
+
+      const payload = {
+        slug,
+        name,
+        tribe_code: tribeCodeVal,
+        tribe_label: TRIBE_LABELS[tribeCodeVal] || TRIBE_LABELS.unknown,
+        tagline: tagline || null,
+        intro: intro || null,
+        sort_order: maxOrder + 10,
+        status: 'published',
+      };
+
+      const { error } = await supabase.from('himejin_profiles').insert(payload);
+      if (saveBtn) saveBtn.disabled = false;
+      if (error) {
+        showEditMsg('保存エラー: ' + error.message, false);
+        return;
+      }
+      showEditMsg('追加しました', true);
+      await reloadPublishedProfiles();
+      closeEditModal();
+    });
+  }
+
+  if (loginForm && loginForm.dataset.bound !== '1') {
+    loginForm.dataset.bound = '1';
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = (document.getElementById('himejin-edit-email')?.value || '').trim();
+      const password = document.getElementById('himejin-edit-password')?.value || '';
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        alert('ログイン失敗: ' + error.message);
+        return;
+      }
+    });
+  }
+
+  if (logoutBtn && logoutBtn.dataset.bound !== '1') {
+    logoutBtn.dataset.bound = '1';
+    logoutBtn.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      closeEditModal();
+    });
+  }
+
+  updateEditBar(null);
+  supabase.auth.onAuthStateChange((_event, session) => {
+    setEditSession(session);
+  });
+  supabase.auth.getSession().then(({ data }) => {
+    setEditSession(data.session);
   });
 }
 
@@ -257,13 +482,15 @@ function buildIndexButton(row, onOpen) {
   return btn;
 }
 
-function renderIndex(profiles, clanTitleByCode) {
+function renderIndex(profiles, clanTitleByCode, options) {
   const root = document.getElementById('typo-index-root');
   if (!root) return;
 
+  const keepIndex = options && options.keepModalIndex === true ? modalNav.index : -1;
+
   modalNav.profiles = profiles;
   modalNav.clanTitleByCode = clanTitleByCode;
-  modalNav.index = -1;
+  modalNav.index = keepIndex;
   updateNavButtonsVisibility();
 
   const openForRow = (row) => openModal(row);
@@ -281,6 +508,10 @@ function renderIndex(profiles, clanTitleByCode) {
     }
     frag.appendChild(btn);
   });
+
+  if (editState.session) {
+    frag.appendChild(buildAddButton());
+  }
 
   root.replaceChildren(frag);
   root.removeAttribute('aria-busy');
@@ -324,12 +555,13 @@ const urlOk =
 
 if (keyOk && urlOk) {
   const supabase = createClient(url, key);
+  bindEditUi(supabase);
 
   const [clanResult, profilesResult] = await Promise.all([
     supabase.from('clan_descriptions').select('code,title').order('sort_order', { ascending: true }),
     supabase
       .from('himejin_profiles')
-      .select('slug,name,tribe_code,tribe_label,clan_code,tagline,intro,photo_url')
+      .select('id,slug,name,tribe_code,tribe_label,clan_code,tagline,intro,photo_url,sort_order')
       .eq('status', 'published')
       .order('sort_order', { ascending: true })
       .order('updated_at', { ascending: true }),
@@ -341,8 +573,8 @@ if (keyOk && urlOk) {
   const profiles = profilesResult.data;
   const profilesError = profilesResult.error;
 
-  if (!profilesError && profiles && profiles.length) {
-    renderIndex(profiles, clanTitleByCode);
+  if (!profilesError) {
+    renderIndex(profiles || [], clanTitleByCode);
   }
 }
 
