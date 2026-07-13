@@ -10,6 +10,7 @@
   --saijiki-hour-h: 28px;
   --saijiki-gutter-w: 2.5rem;
   --saijiki-col-w: 3.75rem;
+  --saijiki-col-w-split: 7.25rem;
   --saijiki-page-pad: 0.5rem;
   --saijiki-font-serif: 'Shippori Mincho B1', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
   --saijiki-font-sans: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', system-ui, sans-serif;
@@ -156,7 +157,7 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
   min-height: 0;
   width: 100%;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x proximity;
   padding-bottom: 0.25rem;
@@ -177,6 +178,8 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
   width: max-content;
   min-width: min-content;
 }
+
+/* 日ごとの幅は JS の inline grid-template-columns で指定（分割日のみ広く） */
 
 .saijiki-grid-corner {
   grid-column: 1;
@@ -248,19 +251,21 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
   border-right: 1px solid rgba(255, 255, 255, 0.4);
   border-bottom: 1px solid rgba(255, 255, 255, 0.35);
   background: rgba(255, 255, 255, 0.12);
-  min-height: 1.65rem;
+  min-height: 2rem;
 }
 
 .saijiki-allday-col {
   grid-row: 2;
+  position: relative;
   border-right: 1px solid rgba(255, 255, 255, 0.2);
   border-bottom: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.08);
-  padding: 0.15rem;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.18rem 0.15rem;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  min-height: 1.65rem;
+  min-height: 2rem;
+  justify-content: flex-start;
 }
 
 .saijiki-time-gutter {
@@ -309,6 +314,9 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
 .saijiki-day-col {
   grid-row: 2;
   position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
   border-right: 1px solid rgba(255, 255, 255, 0.18);
   background: repeating-linear-gradient(
     to bottom,
@@ -319,7 +327,53 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
   );
 }
 
-.saijiki-day-col > .saijiki-block-slot {
+.saijiki-day-allday-lane {
+  display: none;
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 42%;
+  min-width: 2.4rem;
+  max-width: 3.4rem;
+  height: 100%;
+  padding: 2px 1px 2px 2px;
+  box-sizing: border-box;
+  gap: 2px;
+  flex-direction: row;
+  border-right: 1px dashed rgba(45, 95, 115, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.saijiki-day-col--has-allday .saijiki-day-allday-lane {
+  display: flex;
+}
+
+.saijiki-day-col--allday-only .saijiki-day-allday-lane {
+  width: 100%;
+  max-width: none;
+  border-right: none;
+}
+
+.saijiki-day-col--allday-only .saijiki-day-timed-lane {
+  display: none;
+}
+
+.saijiki-day-col--split .saijiki-day-allday-lane {
+  width: 44%;
+  max-width: 3.5rem;
+}
+
+.saijiki-day-timed-lane {
+  position: relative;
+  z-index: 2;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.saijiki-day-timed-lane > .saijiki-block-slot {
   position: absolute;
   left: 0;
   right: 0;
@@ -327,7 +381,7 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
   container-name: saijiki-block;
 }
 
-.saijiki-day-col > .saijiki-block-slot > .saijiki-block {
+.saijiki-day-timed-lane > .saijiki-block-slot > .saijiki-block {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -342,6 +396,25 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
   padding: clamp(2px, 4cqh, 6px) clamp(3px, 6cqw, 5px);
 }
 
+.saijiki-day-allday-lane > .saijiki-block-slot {
+  container-type: size;
+  container-name: saijiki-block;
+}
+
+.saijiki-day-allday-lane > .saijiki-block-slot > .saijiki-block {
+  position: absolute;
+  inset: 0;
+  left: 1px;
+  right: 1px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: clamp(2px, 3cqh, 5px);
+  padding: clamp(3px, 5cqh, 7px) clamp(2px, 4cqw, 4px);
+}
+
 /* すべて縦書き。短い枠は上から途中まで表示（モーダルで全文） */
 .saijiki-block--vertical {
   flex-direction: column;
@@ -351,12 +424,14 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
   padding: clamp(2px, 4cqh, 6px) clamp(2px, 4cqw, 4px);
 }
 
-.saijiki-day-col > .saijiki-block-slot > .saijiki-block.saijiki-block--vertical {
+.saijiki-day-timed-lane > .saijiki-block-slot > .saijiki-block.saijiki-block--vertical,
+.saijiki-day-allday-lane > .saijiki-block-slot > .saijiki-block.saijiki-block--vertical {
   align-items: center;
   justify-content: center;
 }
 
-.saijiki-day-col > .saijiki-block-slot > .saijiki-block.saijiki-block--vertical.saijiki-block--tall {
+.saijiki-day-timed-lane > .saijiki-block-slot > .saijiki-block.saijiki-block--vertical.saijiki-block--tall,
+.saijiki-day-allday-lane > .saijiki-block-slot > .saijiki-block.saijiki-block--vertical.saijiki-block--tall {
   align-items: stretch;
   justify-content: flex-start;
 }
@@ -407,26 +482,6 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
   opacity: 0.8;
 }
 
-.saijiki-block--vertical.saijiki-block--allday {
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-}
-
-.saijiki-block--allday .saijiki-block-time {
-  writing-mode: vertical-rl;
-  font-size: clamp(0.48rem, 5cqh, 0.62rem);
-  opacity: 0.75;
-  flex-shrink: 0;
-}
-
-.saijiki-block-slot--allday > .saijiki-block--allday {
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.82);
-  z-index: 0;
-}
-
 .saijiki-block-slot:not(.saijiki-block-slot--allday) {
   z-index: 1;
 }
@@ -455,7 +510,7 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
   text-align: left;
   font-family: inherit;
   color: var(--saijiki-ink);
-  background: rgba(255, 255, 255, 0.78);
+  background: color-mix(in srgb, var(--block-accent, #b8c9d4) 20%, rgba(255, 255, 255, 0.86));
   border-left: 3px solid var(--block-accent, #b8c9d4);
   box-shadow: 0 1px 4px rgba(26, 58, 74, 0.07);
 }
@@ -469,6 +524,49 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
   outline: 2px solid var(--saijiki-water-light);
   outline-offset: 1px;
   z-index: 3;
+}
+
+/* 終日レーン内：縦書きフルハイト（通常 absolute をレーン内に限定） */
+.saijiki-day-allday-lane .saijiki-block.saijiki-block--allday {
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  top: 0;
+  bottom: 0;
+  width: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  writing-mode: horizontal-tb;
+  padding: clamp(3px, 5cqh, 7px) clamp(2px, 4cqw, 4px);
+  background: color-mix(in srgb, var(--block-accent, #b8c9d4) 24%, rgba(255, 255, 255, 0.88));
+}
+
+.saijiki-day-allday-lane .saijiki-block.saijiki-block--allday .saijiki-block-time {
+  display: block;
+  writing-mode: horizontal-tb;
+  align-self: flex-start;
+  flex-shrink: 0;
+  font-size: clamp(0.42rem, 4.5cqh, 0.58rem);
+  opacity: 0.75;
+}
+
+.saijiki-day-allday-lane .saijiki-block.saijiki-block--allday .saijiki-block-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  align-self: center;
+  font-family: var(--saijiki-font-serif);
+  letter-spacing: 0.05em;
+  font-size: clamp(0.58rem, 10cqh, 1.15rem);
+  text-align: center;
+  margin-inline: auto;
+  flex: 1 1 auto;
+  max-height: 100%;
 }
 
 .saijiki-block-time {
@@ -643,6 +741,322 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
 
 .saijiki-error { color: #8b3a3a; }
 
+/* 暦イベント（カレンダー上部帯） */
+.saijiki-almanac-gutter {
+  grid-column: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.35rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  color: var(--saijiki-sub);
+  border-top: 1px solid rgba(255, 255, 255, 0.45);
+  border-right: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.28);
+  box-sizing: border-box;
+}
+
+.saijiki-almanac-bg {
+  border-top: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.2);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.saijiki-almanac-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-top: 1px dashed rgba(45, 95, 115, 0.28);
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--saijiki-sub);
+  font-size: 0.72rem;
+  cursor: pointer;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.saijiki-almanac-empty:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.saijiki-almanac-slot {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.saijiki-block--almanac {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  writing-mode: horizontal-tb;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.saijiki-block--almanac .saijiki-block-title {
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  font-family: var(--saijiki-font-serif);
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 複数日イベント（列をまたぐ縦ブロック） */
+.saijiki-md-slot {
+  position: relative;
+  z-index: 3;
+  min-width: 0;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.saijiki-md-slot .saijiki-block {
+  pointer-events: auto;
+}
+
+.saijiki-md-slot--allday .saijiki-block--multiday {
+  justify-content: center;
+}
+
+.saijiki-md-slot--timed .saijiki-block--multiday {
+  justify-content: flex-start;
+}
+
+.saijiki-block--multiday {
+  position: absolute;
+  inset: 0;
+  left: 2px;
+  right: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: clamp(3px, 4cqh, 6px) clamp(2px, 4cqw, 4px);
+  overflow: hidden;
+}
+
+.saijiki-block--multiday .saijiki-block-time {
+  writing-mode: horizontal-tb;
+  font-size: 0.56rem;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+
+.saijiki-block--multiday .saijiki-block-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-family: var(--saijiki-font-serif);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1.12;
+  flex: 1 1 auto;
+  max-height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* 日跨ぎ終日（旧・横帯・互換用） */
+.saijiki-span-gutter {
+  grid-column: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.35rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  color: var(--saijiki-sub);
+  border-top: 1px solid rgba(255, 255, 255, 0.45);
+  border-right: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.28);
+  box-sizing: border-box;
+}
+
+.saijiki-span-bg {
+  border-top: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.2);
+  box-sizing: border-box;
+}
+
+.saijiki-span-slot {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.saijiki-block--span {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.45rem;
+  writing-mode: horizontal-tb;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.saijiki-block--span .saijiki-block-time {
+  writing-mode: horizontal-tb;
+  flex-shrink: 0;
+  font-size: 0.56rem;
+  opacity: 0.8;
+}
+
+.saijiki-block--span .saijiki-block-title {
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  font-family: var(--saijiki-font-serif);
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 期間メモ（カレンダー下帯） */
+.saijiki-period-gutter {
+  grid-row: 3;
+  grid-column: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.45rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  color: var(--saijiki-sub);
+  border-top: 1px solid rgba(255, 255, 255, 0.45);
+  border-right: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.28);
+  box-sizing: border-box;
+}
+
+.saijiki-period-bg {
+  grid-row: 3;
+  border-top: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.22);
+  box-sizing: border-box;
+}
+
+.saijiki-period-empty {
+  grid-row: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px dashed rgba(45, 95, 115, 0.28);
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--saijiki-sub);
+  font-size: 0.72rem;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.saijiki-period-empty:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.saijiki-period-note-slot {
+  grid-row: 3;
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.saijiki-period-note {
+  grid-row: 3;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+  margin: 3px 2px;
+  padding: 0.35rem 0.4rem 0.4rem;
+  border: none;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--saijiki-ink);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 1px 5px rgba(26, 58, 74, 0.08);
+  box-sizing: border-box;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.saijiki-period-note:hover {
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 2px 8px rgba(26, 58, 74, 0.12);
+}
+
+.saijiki-period-note--draft {
+  opacity: 0.72;
+  border: 1px dashed rgba(45, 95, 115, 0.35);
+}
+
+.saijiki-period-note-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.2rem 0.6rem;
+  flex-shrink: 0;
+  font-size: 0.58rem;
+  color: var(--saijiki-sub);
+  line-height: 1.3;
+}
+
+.saijiki-period-note-title-label {
+  font-weight: 600;
+  color: var(--saijiki-ink);
+  font-size: 0.66rem;
+}
+
+.saijiki-period-note-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-family: var(--saijiki-font-serif);
+  font-size: clamp(0.62rem, 1.6vw, 0.78rem);
+  line-height: 1.55;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  align-self: flex-end;
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .saijiki-footer {
   flex-shrink: 0;
   text-align: center;
@@ -662,6 +1076,7 @@ body.saijiki-proto--no-video .saijiki-proto-bg-video {
 @media (max-width: 640px) {
   :root {
     --saijiki-col-w: 3.35rem;
+    --saijiki-col-w-split: 6.5rem;
     --saijiki-gutter-w: 2.15rem;
     --saijiki-page-pad: 0.45rem;
   }

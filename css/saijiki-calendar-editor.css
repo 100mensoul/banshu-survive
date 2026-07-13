@@ -1,0 +1,467 @@
+/* 歳時記カレンダー編集（管理画面） */
+
+body.saijiki-cal-editor {
+  height: 100vh;
+  overflow: hidden;
+}
+
+body.saijiki-cal-editor.saijiki-proto--no-video .saijiki-proto-bg-video {
+  display: none;
+}
+
+.saijiki-cal-header {
+  flex-shrink: 0;
+}
+
+.saijiki-cal-hint {
+  margin: 0.15rem var(--saijiki-page-pad) 0.35rem;
+  font-size: 0.68rem;
+  color: var(--saijiki-sub);
+}
+
+.saijiki-cal-text-btn {
+  border: none;
+  background: transparent;
+  color: var(--saijiki-water-mid);
+  font-size: 0.72rem;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+.saijiki-cal-text-btn:hover {
+  text-decoration: underline;
+}
+
+.err {
+  position: relative;
+  z-index: 2;
+  margin: 0.5rem var(--saijiki-page-pad);
+  background: #ffe8e8;
+  border: 1px solid #e66;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.saijiki-cal-msg {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 16px rgba(26, 58, 74, 0.18);
+  max-width: min(90vw, 420px);
+}
+
+.saijiki-cal-msg.ok {
+  background: #e8f5e9;
+  border: 1px solid #4a7c59;
+  color: #1e3d24;
+}
+
+.saijiki-cal-msg.err {
+  background: #ffe8e8;
+  border: 1px solid #e66;
+  color: #5a1a1a;
+  margin: 0;
+}
+
+.saijiki-cal-auth {
+  position: relative;
+  z-index: 2;
+  max-width: 360px;
+  margin: 1.5rem auto;
+  padding: 1.1rem 1.2rem;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(26, 58, 74, 0.1);
+}
+
+.saijiki-cal-auth label {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--saijiki-ink);
+}
+
+.saijiki-cal-auth input {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.55rem 0.65rem;
+  box-sizing: border-box;
+  border: 1px solid #c5d4dc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.saijiki-cal-auth-actions {
+  margin-top: 0.85rem;
+}
+
+.saijiki-cal-auth button,
+.saijiki-cal-form-actions button {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #2d5f73;
+  background: #ffeb3b;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.saijiki-cal-form-actions button.secondary {
+  background: #e8e8e8;
+  border-color: #999;
+}
+
+.saijiki-cal-form-actions button.danger {
+  background: #ffcccc;
+  border-color: #a44;
+  margin-left: auto;
+}
+
+#app.saijiki-main {
+  flex: 1;
+  min-height: 0;
+}
+
+#saijiki-cal-root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* 空きマスをクリック可能に */
+.saijiki-cal-editor .saijiki-day-timed-lane {
+  cursor: cell;
+}
+
+.saijiki-cal-editor .saijiki-day-timed-lane:hover {
+  background-color: rgba(126, 200, 227, 0.1);
+}
+
+.saijiki-cal-editor .saijiki-day-allday-lane {
+  cursor: cell;
+}
+
+.saijiki-cal-editor .saijiki-day-allday-lane:hover {
+  background: rgba(126, 200, 227, 0.16);
+}
+
+.saijiki-cal-editor .saijiki-date-header {
+  cursor: pointer;
+}
+
+.saijiki-cal-editor .saijiki-date-header:hover {
+  background: rgba(126, 200, 227, 0.35);
+}
+
+.saijiki-cal-editor .saijiki-block {
+  cursor: pointer;
+}
+
+/* 下書き：破線＋少し薄く */
+.saijiki-cal-editor .saijiki-block--draft {
+  opacity: 0.72;
+  border-style: dashed;
+  border-left-style: solid;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.saijiki-cal-editor .saijiki-block--draft::after {
+  content: '下書き';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.45rem;
+  line-height: 1;
+  color: var(--saijiki-sub);
+  writing-mode: horizontal-tb;
+  letter-spacing: 0;
+  pointer-events: none;
+}
+
+.saijiki-cal-editor .saijiki-legend-item--draft {
+  border-style: dashed;
+}
+
+/* 編集モーダル */
+.saijiki-cal-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.saijiki-cal-modal[hidden] {
+  display: none;
+}
+
+.saijiki-cal-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 58, 74, 0.45);
+}
+
+.saijiki-cal-modal-box {
+  position: relative;
+  width: min(440px, 100%);
+  max-height: min(90vh, 720px);
+  overflow-y: auto;
+  background: #f8fcfe;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  padding: 1rem 1.1rem 1.15rem;
+  box-shadow: 0 10px 28px rgba(26, 58, 74, 0.2);
+  outline: none;
+}
+
+.saijiki-cal-modal-close {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.45rem;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--saijiki-sub);
+  font-size: 1.35rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.saijiki-cal-modal-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.saijiki-cal-modal-heading {
+  margin: 0 2rem 0.75rem 0;
+  font-family: var(--saijiki-font-serif);
+  font-size: 1.05rem;
+  color: var(--saijiki-water-deep);
+}
+
+#saijiki-cal-form label {
+  display: block;
+  margin-top: 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--saijiki-ink);
+}
+
+#saijiki-cal-form input[type="text"],
+#saijiki-cal-form input[type="date"],
+#saijiki-cal-form input[type="time"],
+#saijiki-cal-form select,
+#saijiki-cal-form textarea {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.6rem;
+  box-sizing: border-box;
+  border: 1px solid #c5d4dc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+#saijiki-cal-form textarea {
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.saijiki-cal-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.saijiki-cal-row > label {
+  flex: 1 1 140px;
+}
+
+.saijiki-cal-check {
+  display: flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.saijiki-cal-check input {
+  width: auto !important;
+  margin: 0 !important;
+}
+
+.saijiki-cal-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+#time-row.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ひめろぐ選択 */
+.saijiki-cal-himelog-picker {
+  margin-top: 0.35rem;
+  padding: 0.65rem 0.7rem;
+  background: rgba(248, 250, 245, 0.9);
+  border: 1px dashed #9abf9a;
+  border-radius: 10px;
+  font-size: 0.82rem;
+}
+
+.saijiki-cal-himelog-hint {
+  margin: 0 0 0.45rem;
+  font-size: 0.72rem;
+  color: #6b7a55;
+  font-weight: 400;
+}
+
+.saijiki-cal-himelog-selected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.55rem;
+  min-height: 1.4rem;
+}
+
+.saijiki-cal-himelog-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.18rem 0.4rem;
+  border-radius: 999px;
+  background: #eef4e6;
+  border: 1px solid #c5d8b0;
+  font-size: 0.74rem;
+}
+
+.saijiki-cal-himelog-chip button {
+  padding: 0 0.2rem;
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #666;
+  line-height: 1;
+}
+
+.saijiki-cal-himelog-candidates {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid #e3ead8;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.3rem;
+}
+
+.saijiki-cal-himelog-candidate {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  padding: 0.3rem 0.35rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.saijiki-cal-himelog-candidate:hover {
+  background: #f5fbe9;
+}
+
+.saijiki-cal-himelog-candidate input {
+  margin-top: 0.15rem;
+  width: auto !important;
+}
+
+.saijiki-cal-himelog-candidate-meta {
+  font-size: 0.68rem;
+  color: #888;
+}
+
+.saijiki-cal-color-field {
+  margin: 0.15rem 0 0.35rem;
+}
+
+.saijiki-cal-color-label {
+  display: block;
+  font-size: 0.78rem;
+  margin-bottom: 0.35rem;
+}
+
+.saijiki-cal-color-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.saijiki-cal-color-swatch {
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 999px;
+  border: 2px solid rgba(26, 58, 74, 0.18);
+  padding: 0;
+  cursor: pointer;
+  background: var(--swatch, #ccc);
+  box-sizing: border-box;
+}
+
+.saijiki-cal-color-swatch:hover {
+  transform: scale(1.06);
+}
+
+.saijiki-cal-color-swatch.is-selected {
+  border-color: #1a3a4a;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 0 4px #1a3a4a;
+}
+
+.saijiki-cal-color-swatch--auto {
+  background:
+    linear-gradient(135deg, #e8eef2 45%, transparent 45%),
+    linear-gradient(135deg, transparent 55%, #c5d4de 55%),
+    #f4f7f9;
+  position: relative;
+}
+
+.saijiki-cal-color-swatch--auto::after {
+  content: '自動';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.42rem;
+  color: #5a6f7a;
+  letter-spacing: 0.02em;
+}
+
+/* ドラッグ作成プレビュー */
+.saijiki-cal-drag-ghost {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  border-radius: 6px;
+  background: rgba(126, 200, 227, 0.45);
+  border: 1px dashed rgba(45, 95, 115, 0.65);
+  pointer-events: none;
+  z-index: 5;
+}

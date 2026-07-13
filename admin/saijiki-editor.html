@@ -85,6 +85,30 @@
     .himelog-candidate:hover { background: #f5fbe9; }
     .himelog-candidate input { margin-top: 0.2rem; flex: none; }
     .himelog-candidate-meta { font-size: 0.72rem; color: #888; }
+    .color-field { margin-top: 0.75rem; }
+    .color-label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .color-palette { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+    .color-swatch {
+      width: 1.55rem; height: 1.55rem; border-radius: 999px;
+      border: 2px solid rgba(0,0,0,0.15); padding: 0; cursor: pointer;
+      background: var(--swatch, #ccc); box-sizing: border-box;
+    }
+    .color-swatch.is-selected {
+      border-color: #222;
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #222;
+    }
+    .color-swatch--auto {
+      background:
+        linear-gradient(135deg, #e8eef2 45%, transparent 45%),
+        linear-gradient(135deg, transparent 55%, #c5d4de 55%),
+        #f4f7f9;
+      position: relative; font-size: 0.42rem; color: #5a6f7a;
+    }
+    .list-swatch {
+      display: inline-block; width: 0.65rem; height: 0.65rem;
+      border-radius: 999px; margin-right: 0.3rem; vertical-align: middle;
+      border: 1px solid rgba(0,0,0,0.12);
+    }
   </style>
 </head>
 <body>
@@ -96,6 +120,8 @@
   </div>
 
   <div class="toolbar">
+    <a href="saijiki-calendar-editor.html"><strong>カレンダー編集</strong></a>
+    <span>·</span>
     <a href="../html/saijiki.html" target="_blank" rel="noopener">公開ページを開く</a>
     <span>·</span>
     <a href="../index.html">サイトトップ</a>
@@ -165,6 +191,13 @@
           <label>関連ダイジェスト slug（任意）<input type="text" id="digest_slug" placeholder="（後日実装）"></label>
         </div>
 
+        <div class="color-field">
+          <span class="color-label">色分け（任意）</span>
+          <input type="hidden" id="event_color" value="">
+          <div class="color-palette" id="event-color-palette" role="listbox" aria-label="イベントの色"></div>
+          <p class="hint">未選択のときは関連エピソードに応じた自動色になります。</p>
+        </div>
+
         <label>関連ひめろぐ</label>
         <div class="himelog-picker">
           <p class="hint" style="margin:0 0 0.5rem;">複数選べます。公開イベントに下書き・非公開メモを紐付けると警告します。</p>
@@ -211,6 +244,79 @@
       let allRows = [];
       let himelogCandidates = [];
       let selectedHimelogIds = [];
+
+      const EVENT_COLOR_PALETTE = [
+        '#5a8f9e',
+        '#7ec8e3',
+        '#6b9e78',
+        '#a8c686',
+        '#c4a574',
+        '#d9896c',
+        '#9b7e6b',
+        '#7a6b8a',
+        '#c97b9b',
+        '#4a6fa5',
+      ];
+
+      function normalizeEventColor(value) {
+        if (!value) return null;
+        const s = String(value).trim().toLowerCase();
+        return EVENT_COLOR_PALETTE.find((c) => c.toLowerCase() === s) || null;
+      }
+
+      function getSelectedEventColor() {
+        const input = document.getElementById('event_color');
+        return normalizeEventColor(input?.value || '');
+      }
+
+      function setSelectedEventColor(value) {
+        const input = document.getElementById('event_color');
+        const normalized = normalizeEventColor(value);
+        if (input) input.value = normalized || '';
+        syncColorPaletteUi();
+      }
+
+      function syncColorPaletteUi() {
+        const palette = document.getElementById('event-color-palette');
+        if (!palette) return;
+        const selected = getSelectedEventColor() || '';
+        palette.querySelectorAll('.color-swatch').forEach((btn) => {
+          const v = btn.dataset.color || '';
+          btn.classList.toggle('is-selected', v === selected);
+        });
+      }
+
+      function renderColorPalette() {
+        const palette = document.getElementById('event-color-palette');
+        if (!palette || palette.dataset.ready === '1') {
+          syncColorPaletteUi();
+          return;
+        }
+        palette.innerHTML = '';
+
+        const autoBtn = document.createElement('button');
+        autoBtn.type = 'button';
+        autoBtn.className = 'color-swatch color-swatch--auto';
+        autoBtn.dataset.color = '';
+        autoBtn.textContent = '自動';
+        autoBtn.title = '自動（関連エピソード）';
+        autoBtn.addEventListener('click', () => setSelectedEventColor(null));
+        palette.appendChild(autoBtn);
+
+        EVENT_COLOR_PALETTE.forEach((color) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'color-swatch';
+          btn.dataset.color = color;
+          btn.style.setProperty('--swatch', color);
+          btn.title = color;
+          btn.addEventListener('click', () => setSelectedEventColor(color));
+          palette.appendChild(btn);
+        });
+
+        palette.dataset.ready = '1';
+        syncColorPaletteUi();
+      }
 
       function showMsg(text, ok) {
         msg.textContent = text;
@@ -352,6 +458,7 @@
         document.getElementById('status').value = 'draft';
         document.getElementById('related_episode_slug').value = '';
         document.getElementById('digest_slug').value = '';
+        setSelectedEventColor(null);
         selectedHimelogIds = [];
         document.getElementById('meta-line').textContent = '';
         renderHimelogPicker();
@@ -370,6 +477,7 @@
         document.getElementById('status').value = row.status || 'draft';
         document.getElementById('related_episode_slug').value = row.related_episode_slug || '';
         document.getElementById('digest_slug').value = row.digest_slug || '';
+        setSelectedEventColor(row.color || null);
         selectedHimelogIds = Array.isArray(row.himelog_entry_ids) ? [...row.himelog_entry_ids] : [];
         const created = fmt(row.created_at);
         const updated = fmt(row.updated_at);
@@ -387,7 +495,12 @@
         allRows.forEach((row) => {
           const li = document.createElement('li');
           li.dataset.id = row.id;
+          const color = normalizeEventColor(row.color);
+          const swatch = color
+            ? '<span class="list-swatch" style="background:' + escapeHtml(color) + '"></span>'
+            : '';
           li.innerHTML =
+            swatch +
             '<strong>' + escapeHtml(fmtDate(row.event_date)) + '</strong>' +
             weightBadge(row.weight) + statusBadge(row.status) +
             '<br><span style="opacity:.85">' + escapeHtml(row.title || '') + '</span>';
@@ -472,6 +585,7 @@
           related_episode_slug: document.getElementById('related_episode_slug').value.trim() || null,
           digest_slug: document.getElementById('digest_slug').value.trim() || null,
           himelog_entry_ids: selectedHimelogIds,
+          color: getSelectedEventColor(),
         };
 
         let result;
@@ -529,6 +643,7 @@
         if (session) {
           authPanel.hidden = true;
           app.hidden = false;
+          renderColorPalette();
           loadList();
           loadHimelogCandidates();
         } else {

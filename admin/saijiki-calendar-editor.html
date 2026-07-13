@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>歳時記カレンダー編集｜播州サバイブ</title>
+  <link rel="stylesheet" href="../css/saijiki.css?v=26" />
+  <link rel="stylesheet" href="../css/saijiki-calendar-editor.css?v=9" />
+</head>
+<body class="saijiki-proto saijiki-cal-editor">
+
+  <div class="saijiki-proto-bg" aria-hidden="true">
+    <video
+      class="saijiki-proto-bg-video"
+      muted
+      loop
+      playsinline
+      preload="none"
+      poster="../videos/suiro-flow-poster.jpg"
+    >
+      <source src="../videos/suiro-flow-loop.mp4" type="video/mp4" />
+    </video>
+    <div class="saijiki-proto-bg-veil"></div>
+  </div>
+
+  <header class="saijiki-header saijiki-cal-header">
+    <div class="saijiki-header-inner">
+      <h1 class="saijiki-title">歳時記カレンダー編集</h1>
+      <nav class="saijiki-nav" aria-label="サブナビ">
+        <button type="button" class="saijiki-cal-text-btn" id="btn-almanac-add" hidden>暦＋</button>
+        <button type="button" class="saijiki-cal-text-btn" id="btn-period-add" hidden>期間メモ＋</button>
+        <a href="saijiki-editor.html">一覧編集</a>
+        <a href="../html/saijiki.html" target="_blank" rel="noopener">公開ページ</a>
+        <button type="button" class="saijiki-cal-text-btn" id="btn-signout" hidden>ログアウト</button>
+      </nav>
+    </div>
+    <p class="saijiki-cal-hint" id="editor-hint" hidden>
+      上帯＝暦イベント。1日終日は左レーン縦表示。複数日は列をまたいで縦に連結
+    </p>
+  </header>
+
+  <div class="err" id="config-missing" hidden>
+    <strong>Supabase 接続設定</strong>がありません。<code>js/supabase-public-config.js</code> を確認してください。
+  </div>
+
+  <div id="msg" class="saijiki-cal-msg" hidden></div>
+
+  <div class="panel saijiki-cal-auth" id="auth-panel">
+    <strong>ログイン</strong>（編集者アカウント）
+    <label>メール<input type="email" id="email" autocomplete="username" /></label>
+    <label>パスワード<input type="password" id="password" autocomplete="current-password" /></label>
+    <div class="saijiki-cal-auth-actions">
+      <button type="button" id="btn-signin">ログイン</button>
+    </div>
+  </div>
+
+  <main class="saijiki-main" id="app" hidden>
+    <div id="saijiki-cal-root">
+      <p class="saijiki-loading">読み込み中…</p>
+    </div>
+  </main>
+
+  <div id="saijiki-cal-modal" class="saijiki-cal-modal" hidden>
+    <div class="saijiki-cal-modal-backdrop" id="saijiki-cal-modal-backdrop"></div>
+    <div
+      class="saijiki-cal-modal-box"
+      id="saijiki-cal-modal-box"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="saijiki-cal-modal-heading"
+      tabindex="-1"
+    >
+      <button type="button" class="saijiki-cal-modal-close" id="saijiki-cal-modal-close" aria-label="閉じる">×</button>
+      <h2 class="saijiki-cal-modal-heading" id="saijiki-cal-modal-heading">出来事を追加</h2>
+
+      <form id="saijiki-cal-form" spellcheck="true">
+        <input type="hidden" id="row-id" value="" />
+
+        <label>出来事（必須）
+          <input type="text" id="title" required placeholder="例：湯立て神事" />
+        </label>
+
+        <div class="saijiki-cal-row">
+          <label>日付（必須）<input type="date" id="event_date" required /></label>
+          <label>終了日（任意・複数日）<input type="date" id="event_date_end" /></label>
+        </div>
+
+        <label class="saijiki-cal-check">
+          <input type="checkbox" id="event_almanac" />
+          暦イベント（上部帯：夏至・夏越しの祓・祭日など）
+        </label>
+
+        <label class="saijiki-cal-check">
+          <input type="checkbox" id="all_day" />
+          終日（時刻なし）
+        </label>
+
+        <div class="saijiki-cal-row" id="time-row">
+          <label>開始時刻<input type="time" id="start_time" /></label>
+          <label>終了時刻<input type="time" id="end_time" /></label>
+        </div>
+
+        <div class="saijiki-cal-row">
+          <label>重要度
+            <select id="weight">
+              <option value="major">重要</option>
+              <option value="normal" selected>通常</option>
+              <option value="minor">小</option>
+            </select>
+          </label>
+          <label>公開状態
+            <select id="status">
+              <option value="draft">下書き</option>
+              <option value="published">公開</option>
+            </select>
+          </label>
+        </div>
+
+        <label>備考
+          <textarea id="note" rows="3" placeholder="補足・メモ"></textarea>
+        </label>
+
+        <label>関連エピソード slug（任意）
+          <input type="text" id="related_episode_slug" placeholder="ep-15" />
+        </label>
+
+        <div class="saijiki-cal-color-field">
+          <span class="saijiki-cal-color-label">色分け（任意）</span>
+          <input type="hidden" id="event_color" value="" />
+          <div
+            class="saijiki-cal-color-palette"
+            id="event-color-palette"
+            role="listbox"
+            aria-label="イベントの色"
+          ></div>
+          <p class="saijiki-cal-himelog-hint">未選択のときは関連エピソードに応じた自動色になります。</p>
+        </div>
+
+        <label>関連ひめろぐ</label>
+        <div class="saijiki-cal-himelog-picker">
+          <p class="saijiki-cal-himelog-hint">複数選べます。公開イベントに下書き・非公開メモを紐付けると警告します。</p>
+          <div class="saijiki-cal-himelog-selected" id="himelog-selected"></div>
+          <div class="saijiki-cal-himelog-candidates" id="himelog-candidates">
+            <p class="saijiki-cal-himelog-hint">読み込み中…</p>
+          </div>
+        </div>
+
+        <div class="saijiki-cal-form-actions">
+          <button type="submit">保存</button>
+          <button type="button" class="secondary" id="btn-cancel">キャンセル</button>
+          <button type="button" class="danger" id="btn-delete" hidden>削除…</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="saijiki-period-modal" class="saijiki-cal-modal" hidden>
+    <div class="saijiki-cal-modal-backdrop" id="saijiki-period-modal-backdrop"></div>
+    <div
+      class="saijiki-cal-modal-box"
+      id="saijiki-period-modal-box"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="saijiki-period-modal-heading"
+      tabindex="-1"
+    >
+      <button type="button" class="saijiki-cal-modal-close" id="saijiki-period-modal-close" aria-label="閉じる">×</button>
+      <h2 class="saijiki-cal-modal-heading" id="saijiki-period-modal-heading">期間メモを追加</h2>
+
+      <form id="saijiki-period-form" spellcheck="true">
+        <input type="hidden" id="period-row-id" value="" />
+
+        <label>期間名（必須）
+          <input type="text" id="period_title" required placeholder="例：タネを植えた" />
+        </label>
+
+        <div class="saijiki-cal-row">
+          <label>開始日（必須）<input type="date" id="period_start" required /></label>
+          <label>終了日（必須）<input type="date" id="period_end" required /></label>
+        </div>
+
+        <label>公開状態
+          <select id="period_status">
+            <option value="draft">下書き</option>
+            <option value="published">公開</option>
+          </select>
+        </label>
+
+        <label>概要・レポート
+          <textarea id="period_body" rows="8" placeholder="この期間のまとめ（公開ページでは縦書き表示）"></textarea>
+        </label>
+
+        <div class="saijiki-cal-form-actions">
+          <button type="submit">保存</button>
+          <button type="button" class="secondary" id="btn-period-cancel">キャンセル</button>
+          <button type="button" class="danger" id="btn-period-delete" hidden>削除…</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/supabase-public-config.js"></script>
+  <script type="module" src="../js/saijiki-calendar-editor.js?v=9"></script>
+</body>
+</html>
